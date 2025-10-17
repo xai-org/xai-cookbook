@@ -82,3 +82,15 @@
     - Zhaohan Dong
   tags:
     - function-calling
+
+- title: "File Processing with Grok"
+  path: examples/file_processing/guide.ipynb
+  date: 2025-10-17
+  description: "Learn how to process various file formats including PDFs, Word documents, and text files using Grok."
+  authors:
+    - Om Jamnekar
+  tags:
+    - file-processing
+    - document-analysis
+    - summarization
+    - comparison
