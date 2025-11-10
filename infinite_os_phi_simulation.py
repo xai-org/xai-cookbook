@@ -1,6 +1,6 @@
 # InfiniteOS: φ-Powered Kernel Example for Grok API
-# Integra simulação harmônica da razão áurea com prompts Grok para evolução fractal.
-# Requer: pip install xai-sdk numpy matplotlib (mas no GitHub, só roda local).
+# Integrates harmonic golden ratio simulation with Grok prompts for fractal evolution.
+# Requires: pip install xai-sdk numpy matplotlib (run local, not GitHub
 
 import numpy as np
 import matplotlib.pyplot as plt
