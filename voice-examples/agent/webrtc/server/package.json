@@ -1,0 +1,40 @@
+{
+  "name": "xai-voice-webrtc-server",
+  "version": "1.0.0",
+  "overrides": {
+    "ip": ">=2.0.1"
+  },
+  "description": "XAI Voice WebRTC Server - WebRTC to WebSocket relay server",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "ts-node src/index.ts",
+    "start": "node dist/index.js",
+    "watch": "tsc --watch"
+  },
+  "keywords": [
+    "xai",
+    "voice",
+    "webrtc",
+    "websocket",
+    "realtime",
+    "api"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-ws": "^5.0.2",
+    "werift": "^0.21.1",
+    "ws": "^8.17.1"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/express-ws": "^3.0.4",
+    "@types/node": "^20.12.12",
+    "@types/ws": "^8.5.10",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.5"
+  }
+}
