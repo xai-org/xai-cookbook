@@ -173,3 +173,10 @@ cython_debug/
 # Misc
 *.DS_Store
 *kubeconfig
+
+# Visual Studio Local Cache
+.vs/
+
+# CSharp Builds
+[Bb]in/
+[Oo]bj/
