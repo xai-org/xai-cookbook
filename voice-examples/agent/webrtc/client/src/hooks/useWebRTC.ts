@@ -246,6 +246,7 @@ export function useWebRTC(
       const tokenResponse = await fetch(`${API_BASE_URL}/session`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
       });
 
       if (!tokenResponse.ok) {
@@ -266,6 +267,7 @@ export function useWebRTC(
         body: JSON.stringify({
           sample_rate: sampleRate,
         }),
+        credentials: "include",
       });
 
       if (!response.ok) {
@@ -386,6 +388,7 @@ export function useWebRTC(
     if (sessionIdRef.current) {
       fetch(`${API_BASE_URL}/sessions/${sessionIdRef.current}`, {
         method: "DELETE",
+        credentials: "include",
       }).catch(console.error);
       sessionIdRef.current = null;
     }

@@ -1,6 +1,6 @@
 /**
  * XAI Voice WebRTC Server
- * 
+ *
  * WebRTC-to-WebSocket relay server for XAI's realtime voice API.
  * Handles signaling, peer connections, and audio/message relay.
  */
@@ -8,6 +8,7 @@
 import "dotenv/config";
 import express from "express";
 import ExpressWs from "express-ws";
+import cookieParser from "cookie-parser";
 import type WebSocket from "ws";
 import { SessionManager } from "./session-manager";
 import { RTCPeerManager } from "./rtc-peer";
@@ -16,7 +17,7 @@ import type { SignalingMessage } from "./types";
 // Helper to get timestamp with milliseconds
 const getTimestamp = () => {
   const now = new Date();
-  return now.toISOString().split('T')[1].replace('Z', '');
+  return now.toISOString().split("T")[1].replace("Z", "");
 };
 
 // Override console.log to include timestamps
@@ -29,7 +30,9 @@ const { app } = ExpressWs(express());
 
 // CORS Configuration - Configure for your specific domain in production
 // For development, you can use specific localhost ports
-const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || "http://localhost:3000,http://localhost:5173,http://localhost:8080").split(",");
+const ALLOWED_ORIGINS = (
+  process.env.ALLOWED_ORIGINS || "http://localhost:3000,http://localhost:5173,http://localhost:8080"
+).split(",");
 
 // Enable CORS for web clients - restricted to specific origins
 app.use((req, res, next) => {
@@ -40,21 +43,24 @@ app.use((req, res, next) => {
   res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
   res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
   res.header("Access-Control-Allow-Credentials", "true");
-  
+
   if (req.method === "OPTIONS") {
     return res.sendStatus(200);
   }
-  
+
   next();
 });
 
 app.use(express.json());
+app.use(cookieParser());
 
 // Configuration
 const XAI_API_KEY = process.env.XAI_API_KEY || "";
 const API_URL = process.env.API_URL || "wss://api.x.ai/v1/realtime";
 const PORT = process.env.PORT || "8000";
-const INSTRUCTIONS = process.env.INSTRUCTIONS || "You are a helpful voice assistant. You are speaking to a user in real-time over audio. Keep your responses conversational and concise since they will be spoken aloud.";
+const INSTRUCTIONS =
+  process.env.INSTRUCTIONS ||
+  "You are a helpful voice assistant. You are speaking to a user in real-time over audio. Keep your responses conversational and concise since they will be spoken aloud.";
 const VOICE = process.env.VOICE || "ara";
 
 // Initialize session manager
@@ -109,21 +115,40 @@ app.post("/session", async (req, res) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        expires_after: { seconds: 300 }
+        expires_after: { seconds: 300 },
       }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
       console.error(`❌ Failed to get ephemeral token: ${response.status} ${errorText}`);
-      return res.status(response.status).json({ 
+      return res.status(response.status).json({
         error: "Failed to create session",
-        details: errorText 
+        details: errorText,
       });
     }
 
-    const data = await response.json() as Record<string, unknown>;
+    const data = (await response.json()) as { value: string; expires_at: number };
     console.log("✅ Ephemeral session created");
+
+    // Extract ephemeral token from response
+    const token = data.value;
+    const expiresAt = data.expires_at;
+
+    // Set token in cookie if available
+    if (token && expiresAt) {
+      // Calculate expiration time (convert Unix timestamp to milliseconds)
+      const expiresInMs = expiresAt * 1000 - Date.now();
+      const maxAge = Math.max(0, Math.floor(expiresInMs / 1000)); // Convert to seconds
+
+      res.cookie("xai_ephemeral_token", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production", // Only send over HTTPS in production
+        sameSite: "lax",
+        maxAge: maxAge * 1000, // cookie-parser expects milliseconds
+      });
+      console.log(`✅ Ephemeral token stored in cookie (expires in ${maxAge}s)`);
+    }
 
     // Return token along with configuration for frontend
     res.json({
@@ -133,9 +158,9 @@ app.post("/session", async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Error creating session:", error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: "Failed to create session",
-      details: error instanceof Error ? error.message : "Unknown error"
+      details: error instanceof Error ? error.message : "Unknown error",
     });
   }
 });
@@ -143,7 +168,7 @@ app.post("/session", async (req, res) => {
 app.post("/sessions", (req, res) => {
   // Get sample rate from request body
   const requestedSampleRate = req.body.sample_rate || 24000;
-  
+
   // Validate and find closest supported sample rate
   const SUPPORTED_SAMPLE_RATES = [8000, 16000, 21050, 24000, 32000, 44100, 48000];
   let sampleRate = 24000; // default
@@ -151,12 +176,12 @@ app.post("/sessions", (req, res) => {
     sampleRate = requestedSampleRate;
   } else {
     // Find closest supported sample rate
-    sampleRate = SUPPORTED_SAMPLE_RATES.reduce((prev, curr) => 
+    sampleRate = SUPPORTED_SAMPLE_RATES.reduce((prev, curr) =>
       Math.abs(curr - requestedSampleRate) < Math.abs(prev - requestedSampleRate) ? curr : prev
     );
     console.log(`Sample rate ${requestedSampleRate}Hz not supported, using ${sampleRate}Hz`);
   }
-  
+
   const session = sessionManager.createSession(sampleRate);
   res.json({
     session_id: session.id,
@@ -182,7 +207,7 @@ app.get("/sessions", (req, res) => {
 app.delete("/sessions/:sessionId", (req, res) => {
   const { sessionId } = req.params;
   const session = sessionManager.getSession(sessionId);
-  
+
   if (!session) {
     return res.status(404).json({ error: "Session not found" });
   }
@@ -195,7 +220,7 @@ app.delete("/sessions/:sessionId", (req, res) => {
   }
 
   sessionManager.deleteSession(sessionId);
-  
+
   res.json({
     message: "Session deleted",
     session_id: sessionId,
@@ -205,7 +230,7 @@ app.delete("/sessions/:sessionId", (req, res) => {
 app.get("/sessions/:sessionId/stats", async (req, res) => {
   const { sessionId } = req.params;
   const session = sessionManager.getSession(sessionId);
-  
+
   if (!session) {
     return res.status(404).json({ error: "Session not found" });
   }
@@ -217,7 +242,7 @@ app.get("/sessions/:sessionId/stats", async (req, res) => {
 
   const stats = await peer.getStats();
   sessionManager.updateSessionStats(sessionId, stats);
-  
+
   res.json({
     session_id: sessionId,
     stats,
@@ -232,10 +257,29 @@ app.ws("/signaling/:sessionId", async (ws: WebSocket, req) => {
   const sessionId = req.params.sessionId;
   console.log(`[${sessionId}] 🔌 Client connected for signaling`);
 
+  // Read ephemeral token from cookie
+  // Try to get from parsed cookies first (cookie-parser should handle this)
+  let ephemeralToken = (req as any).cookies?.xai_ephemeral_token;
+
+  // Fallback: parse from Cookie header if not available
+  if (!ephemeralToken && req.headers.cookie) {
+    const cookieHeader = req.headers.cookie;
+    const match = cookieHeader.match(/xai_ephemeral_token=([^;]+)/);
+    if (match) {
+      ephemeralToken = match[1];
+    }
+  }
+
+  if (ephemeralToken) {
+    console.log(`[${sessionId}] ✅ Ephemeral token found in cookie`);
+  } else {
+    console.log(`[${sessionId}] ⚠️  No ephemeral token found in cookie`);
+  }
+
   // Verify session exists (must be created via POST /sessions first)
   const session = sessionManager.getSession(sessionId);
   if (!session) {
-    ws.close(1002, 'Session not found. Create session first via POST /sessions');
+    ws.close(1002, "Session not found. Create session first via POST /sessions");
     console.log(`[${sessionId}] ❌ Session not found - signaling connection rejected`);
     return;
   }
@@ -243,10 +287,11 @@ app.ws("/signaling/:sessionId", async (ws: WebSocket, req) => {
   console.log(`[${sessionId}] 🎵 Using session with sample rate: ${session.sample_rate}Hz`);
   sessionManager.updateSessionStatus(sessionId, "active");
 
+  const xaiApiKey = ephemeralToken;
   // Create RTCPeerManager with session's sample rate
   const peerManager = new RTCPeerManager({
     sessionId,
-    xaiApiKey: XAI_API_KEY,
+    xaiApiKey: xaiApiKey,
     xaiApiUrl: API_URL,
     voice: VOICE,
     instructions: INSTRUCTIONS,
@@ -256,7 +301,8 @@ app.ws("/signaling/:sessionId", async (ws: WebSocket, req) => {
   peerConnections.set(sessionId, peerManager);
 
   // Initialize XAI connection in parallel (don't block offer creation)
-  const xaiInitPromise = peerManager.initializeXAI()
+  const xaiInitPromise = peerManager
+    .initializeXAI()
     .then(() => {
       console.log(`[${sessionId}] ✅ XAI API initialized`);
     })
@@ -270,7 +316,7 @@ app.ws("/signaling/:sessionId", async (ws: WebSocket, req) => {
   ws.on("message", async (data: WebSocket.Data) => {
     try {
       const message: SignalingMessage = JSON.parse(data.toString());
-      
+
       switch (message.type) {
         case "answer":
           console.log(`[${sessionId}] 📥 Answer received from client`);
@@ -278,7 +324,7 @@ app.ws("/signaling/:sessionId", async (ws: WebSocket, req) => {
             type: "answer",
             sdp: message.sdp,
           });
-          
+
           // Send ready message
           const readyMessage: SignalingMessage = { type: "ready" };
           ws.send(JSON.stringify(readyMessage));
@@ -302,14 +348,14 @@ app.ws("/signaling/:sessionId", async (ws: WebSocket, req) => {
   // Handle client disconnect
   ws.on("close", () => {
     console.log(`[${sessionId}] Client disconnected`);
-    
+
     // Clean up peer connection
     peerManager.close();
     peerConnections.delete(sessionId);
-    
+
     // Update session status
     sessionManager.updateSessionStatus(sessionId, "closed");
-    
+
     console.log(`[${sessionId}] Session cleaned up`);
   });
 
@@ -382,6 +428,3 @@ app.listen(PORT, () => {
     console.log("⚠️  Create a .env file with your XAI_API_KEY");
   }
 });
-
-
-

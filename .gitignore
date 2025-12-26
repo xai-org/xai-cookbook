@@ -173,3 +173,6 @@ cython_debug/
 # Misc
 *.DS_Store
 *kubeconfig
+
+
+node_modules/
