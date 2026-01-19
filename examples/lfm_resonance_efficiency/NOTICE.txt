@@ -1,0 +1,5 @@
+Luton Field Model (LFM)
+Copyright © 2025 Keith Luton
+
+This framework represents nearly 20 years of research and development by Keith Luton.
+All derivations, constants, and the universal scaling law are the original work of the author.

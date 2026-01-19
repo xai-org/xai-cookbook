@@ -82,3 +82,15 @@
     - Zhaohan Dong
   tags:
     - function-calling
+
+- title: "LFM Resonance Efficiency & Adaptive Intelligence"
+  path: examples/lfm_resonance_efficiency/README.md
+  date: 2025-10-27
+  description: "Integrate the Luton Field Model (LFM) to achieve resonance-based efficiency and AGI stability locks."
+  authors:
+    - Keith Luton
+  tags:
+    - LFM
+    - AGI-Stability
+    - Field-Dynamics
+    - Efficiency
