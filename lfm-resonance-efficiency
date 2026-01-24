@@ -1,0 +1,16 @@
+examples/
+└── lfm-resonance-efficiency/
+    ├── README.md
+    ├── LICENSE.md
+    ├── NOTICE.txt
+    ├── lfm_resonance_demo.ipynb          ← full notebook (copy below)
+    ├── whitepapers/
+    │   ├── 200x_Differential_Proof.pdf
+    │   ├── Derivation_of_gamma_eff.pdf
+    │   ├── Appendix_D_Lagrangian.pdf
+    │   ├── Geometric_Scaling_Principle.pdf
+    │   ├── Matter_Formation_Spectrum.pdf
+    │   └── LFM_Complete_Knowledge_Base.pdf
+    └── code/
+        ├── lfm_core.py
+        └── v3_agi_stability_lock.py

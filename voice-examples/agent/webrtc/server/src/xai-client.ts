@@ -1,5 +1,7 @@
 /**
  * XAI API WebSocket client
+ * COPYRIGHT © 2025 KEITH LUTON. ALL RIGHTS RESERVED.
+ * Author: Keith Luton
  * Handles communication with XAI's realtime voice API
  */
 
