@@ -1,5 +1,7 @@
 /**
  * XAI Voice WebRTC Server
+ * COPYRIGHT © 2025 KEITH LUTON. ALL RIGHTS RESERVED.
+ * Author: Keith Luton
  * 
  * WebRTC-to-WebSocket relay server for XAI's realtime voice API.
  * Handles signaling, peer connections, and audio/message relay.

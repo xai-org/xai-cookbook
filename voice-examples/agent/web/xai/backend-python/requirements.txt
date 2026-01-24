@@ -3,3 +3,4 @@ uvicorn[standard]>=0.24.0
 httpx>=0.25.0
 python-dotenv>=1.0.0
 slowapi>=0.1.9
+numpy>=1.26.0

@@ -1,50 +1,33 @@
 #!/bin/bash
 
-# XAI Voice Web Backend - Python Server Startup Script
+# XAI Voice Web Backend (LFM-Enhanced) Start Script
+# COPYRIGHT © 2025 KEITH LUTON. ALL RIGHTS RESERVED.
 
-set -e
+echo "========================================"
+echo "Starting XAI Voice Web Backend (Python)"
+echo "COPYRIGHT © 2025 KEITH LUTON"
+echo "========================================"
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$SCRIPT_DIR"
-
-echo "=================================="
-echo "XAI Voice Web Backend (Python)"
-echo "=================================="
-
-# Check for .env file
+# Check if .env file exists
 if [ ! -f .env ]; then
-    echo "⚠️  .env file not found!"
+    echo "⚠️  Warning: .env file not found"
     echo "Creating .env from .env.example..."
     cp .env.example .env
     echo "⚠️  Please edit .env and add your XAI_API_KEY"
-    exit 1
+    echo ""
 fi
 
-# Create virtual environment if it doesn't exist
+# Check for venv
 if [ ! -d "venv" ]; then
     echo "📦 Creating virtual environment..."
     python3 -m venv venv
 fi
 
-# Activate virtual environment
-echo "🔧 Activating virtual environment..."
+# Activate venv and install dependencies
 source venv/bin/activate
+echo "📦 Installing/Updating dependencies..."
+pip install -r requirements.txt
 
-# Use the venv's Python directly
-PYTHON="./venv/bin/python"
-
-# Install/upgrade dependencies
-echo "📥 Installing dependencies..."
-$PYTHON -m pip install -q --upgrade pip
-$PYTHON -m pip install -q -r requirements.txt
-
-# Start the server
-echo "🚀 Starting XAI Voice Web Backend..."
-echo "📡 Server will be available at http://localhost:8000"
-echo "📊 Health check: http://localhost:8000/health"
-echo ""
-echo "Press Ctrl+C to stop the server"
-echo ""
-
-$PYTHON main.py
-
+# Start server
+echo "🚀 Starting server..."
+python main.py
