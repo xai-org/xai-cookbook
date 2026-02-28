@@ -82,3 +82,14 @@
     - Zhaohan Dong
   tags:
     - function-calling
+
+- title: "Building Observable Grok Agents"
+  path: examples/observability/guide.ipynb
+  description: "Build a tool-calling Grok agent and add observability to trace every decision, tool call, and response"
+  date: 2026-02-27
+  authors:
+    - Yuki Watanabe
+  tags:
+    - tracing
+    - observability
+    - mlflow
