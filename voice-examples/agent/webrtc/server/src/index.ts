@@ -55,7 +55,7 @@ app.use(express.json());
 const sessionLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
   max: 10,
-  message: 'Too many session creation requests, please try again later.'
+  message: "Too many session creation requests, please try again later."
 });
 
 // Configuration
