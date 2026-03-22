@@ -170,6 +170,18 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 
+# Xcode / iOS
+xcuserdata/
+*.xcuserstate
+*.xcbkptlist
+*.xcscheme
+*.moved-aside
+DerivedData/
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
 # Misc
 *.DS_Store
 *kubeconfig
