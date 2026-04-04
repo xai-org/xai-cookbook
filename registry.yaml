@@ -85,6 +85,7 @@
 
 - title: "Building a Research Assistant with Web + X Search"
   path: examples/research_assistant_web_x_search/guide.ipynb
+  image: images/research_assistant.jpg
   date: 2026-04-04
   description: "Cross-reference vetted news reporting with public discourse on X to produce a structured divergence briefing"
   authors:
