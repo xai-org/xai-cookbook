@@ -182,6 +182,25 @@ DerivedData/
 *.dSYM.zip
 *.dSYM
 
+# Android
+*.apk
+*.ap_
+*.dex
+bin/
+gen/
+out/
+local.properties
+.gradle/
+.idea/
+*.iml
+*.iws
+*.ipr
+build/
+captures/
+.externalNativeBuild/
+.cxx/
+*.log
+
 # Misc
 *.DS_Store
 *kubeconfig
