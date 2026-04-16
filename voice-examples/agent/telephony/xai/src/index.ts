@@ -11,7 +11,11 @@ app.use(express.urlencoded({ extended: true })).use(express.json());
 // ========================================
 // Configuration
 // ========================================
-const XAI_API_KEY = process.env.XAI_API_KEY || "";
+const XAI_API_KEY = process.env.XAI_API_KEY;
+if (!XAI_API_KEY) {
+  console.error("ERROR: XAI_API_KEY environment variable is required");
+  process.exit(1);
+}
 const API_URL = process.env.API_URL || "wss://api.x.ai/v1/realtime";
 // Feature flags
 const ENABLE_TOOLS = process.env.ENABLE_TOOLS !== "false"; // Default: enabled
