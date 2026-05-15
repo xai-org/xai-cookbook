@@ -14,26 +14,32 @@ Below are steps to run these notebooks locally with your own API key, which you 
    ```bash
    git clone https://github.com/xai-org/xai-cookbook.git
    cd xai-cookbook
+   ```
 
 2. Install dependencies:
    ```bash
    uv sync
+   ```
 
 3. Install pre-commit hooks:
-    ```bash
-    uv run pre-commit install
+   ```bash
+   uv run pre-commit install
+   ```
 
 4. Configure git lfs (install it if you haven't already):
-    ```bash
-    git lfs install
+   ```bash
+   git lfs install
+   ```
 
-5. Copy the  `.env.example` file and rename it to `.env` and add your API key (the repo is set-up to ignore .env so that it won't be committed).:
+5. Copy the `.env.example` file and rename it to `.env` and add your API key (the repo is set up to ignore `.env` so that it won't be committed):
    ```bash
    cp .env.example .env
+   ```
 
 6. Launch Jupyter in the notebook directory and run the desired notebook:
-    ```bash
-    uv run jupyter notebook examples/
+   ```bash
+   uv run jupyter notebook examples/
+   ```
    
 Alternatively, use VS Code’s notebook extension:
 - Open the notebook in VS Code.
