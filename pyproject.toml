@@ -5,11 +5,20 @@ description = "xAI Cookbook - showcasing practical usage of xAI's APIs"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "aiofiles>=25.1.0",
     "check-jsonschema>=0.31.2",
     "jupyter>=1.1.1",
+    "openai>=2.37.0",
+    "pandas>=3.0.3",
     "pip>=25.0.1",
     "python-dotenv>=1.0.1",
+    "rich>=15.0.0",
 ]
 
 [dependency-groups]
-dev = ["nbmake>=1.5.5", "pre-commit>=4.1.0", "pytest>=8.3.4"]
+dev = [
+    "nbdime>=4.0.4",
+    "nbmake>=1.5.5",
+    "pre-commit>=4.1.0",
+    "pytest>=8.3.4",
+]
