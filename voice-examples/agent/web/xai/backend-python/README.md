@@ -4,15 +4,14 @@
 > **These are example implementations for learning and development purposes only.**
 > **NOT PRODUCTION-READY WITHOUT ADDITIONAL HARDENING.**
 
-FastAPI-based WebSocket proxy server for XAI's realtime voice API. Designed for web clients with browser-based audio capture and playback.
+FastAPI server that mints ephemeral tokens so web clients can connect directly to XAI's realtime voice API. This backend does not proxy audio or WebSocket traffic; the browser opens the realtime connection itself using the short-lived token.
 
 ## Features
 
-- REST API for session management
-- WebSocket proxy to XAI realtime voice API
-- Server-side VAD (Voice Activity Detection)
-- Bidirectional audio streaming (PCM16 with native sample rate support)
-- Real-time message logging
+- REST API that issues ephemeral session tokens
+- Direct client-to-XAI connection (no server-side audio or WebSocket proxying)
+- Per-IP rate limiting on session creation
+- CORS restricted to configured origins
 
 ## Prerequisites
 
@@ -59,15 +58,12 @@ python main.py
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `XAI_API_KEY` | Your XAI API key (required) | - |
-| `API_URL` | XAI API endpoint | `wss://api.x.ai/v1/realtime` |
 | `PORT` | Server port | `8000` |
 | `INSTRUCTIONS` | Bot system instructions | "You are a helpful voice assistant..." |
 | `VOICE` | Voice model to use | `ara` |
 | `ALLOWED_ORIGINS` | CORS allowed origins (comma-separated) | `http://localhost:3000,http://localhost:5173,http://localhost:8080` |
 
 ## API Endpoints
-
-### REST Endpoints
 
 #### `GET /`
 Root endpoint with service information.
@@ -78,57 +74,23 @@ Health check endpoint.
 {
   "status": "healthy",
   "provider": "XAI",
-  "timestamp": "2025-12-03T...",
-  "sessions_active": 0
+  "timestamp": "2025-12-03T..."
 }
 ```
 
-#### `POST /sessions`
-Create a new session.
+#### `POST /session`
+Mint an ephemeral token for a direct client-to-XAI realtime connection. Rate limited to 10 requests per minute per IP. Takes no request body.
 ```json
 {
-  "session_id": "uuid",
-  "websocket_url": "/ws/{session_id}"
+  "client_secret": {
+    "value": "ephemeral-token",
+    "expires_at": 1733250000
+  },
+  "voice": "ara",
+  "instructions": "You are a helpful voice assistant..."
 }
 ```
-
-#### `GET /sessions`
-List all active sessions.
-
-#### `DELETE /sessions/{session_id}`
-Delete a specific session.
-
-### WebSocket Endpoint
-
-#### `WS /ws/{session_id}`
-WebSocket connection for bidirectional audio streaming.
-
-**Client → Server Messages:**
-```json
-{"type": "input_audio_buffer.append", "audio": "base64_pcm16_native_rate"}
-{"type": "input_audio_buffer.commit"}
-{"type": "response.create"}
-```
-
-**Server → Client Messages:**
-All XAI API events are forwarded to the client, including:
-- `conversation.created`
-- `session.updated`
-- `input_audio_buffer.speech_started`
-- `input_audio_buffer.speech_stopped`
-- `response.output_audio.delta` - Bot audio (base64 PCM16 at native sample rate)
-- `response.output_audio_transcript.delta` - Bot speech transcript
-- `response.created`
-- `response.done`
-- `error`
-
-## Audio Format
-
-- **Format**: PCM16
-- **Sample Rate**: Native browser sample rate (auto-detected, typically 48kHz, 44.1kHz, or 24kHz)
-- **Channels**: Mono
-- **Encoding**: Base64 in WebSocket messages
-- **Chunk Size**: ~100ms recommended
+The client uses `client_secret.value` to open the realtime connection directly to XAI. The `voice` and `instructions` fields echo the server configuration so the frontend can apply them.
 
 ## Testing
 
@@ -138,11 +100,8 @@ Test the server with curl:
 # Health check
 curl http://localhost:8000/health
 
-# Create session
-curl -X POST http://localhost:8000/sessions
-
-# List sessions
-curl http://localhost:8000/sessions
+# Create an ephemeral session token
+curl -X POST http://localhost:8000/session
 ```
 
 ## Development
@@ -163,10 +122,9 @@ uvicorn.run(
 
 ```
 Web Client (Browser)
-    ↓ WebSocket
-    ↓
-FastAPI Server (this)
-    ↓ WebSocket
+    │  1. POST /session  →  FastAPI Server (this)  →  XAI client_secrets API
+    │                                                       ↓ ephemeral token
+    │  2. WebSocket (direct, using ephemeral token)
     ↓
 XAI Realtime Voice API
 ```
@@ -175,6 +133,7 @@ XAI Realtime Voice API
 
 - `fastapi` - Web framework
 - `uvicorn` - ASGI server
-- `websockets` - WebSocket client library
+- `httpx` - Async HTTP client used to request ephemeral tokens from XAI
+- `slowapi` - Rate limiting
 - `python-dotenv` - Environment variable management
 
