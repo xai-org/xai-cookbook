@@ -82,3 +82,15 @@
     - Zhaohan Dong
   tags:
     - function-calling
+
+- title: "Human Sign-off for Irreversible Tool Calls"
+  path: examples/human_in_the_loop_signoff/guide.ipynb
+  description: "Add a human-in-the-loop approval step to a Grok function-calling agent: low-risk tool calls run immediately, irreversible ones (payments, account changes) require a named human's sign-off before they execute."
+  date: 2026-06-08
+  authors:
+    - Iman Schrock
+  tags:
+    - function-calling
+    - agents
+    - tool-use
+    - human-in-the-loop
