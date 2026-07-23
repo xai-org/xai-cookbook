@@ -82,3 +82,16 @@
     - Zhaohan Dong
   tags:
     - function-calling
+
+- title: "Deterministic Guardrails for Grok Tool Calls"
+  path: examples/deterministic_tool_call_guardrails/guide.ipynb
+  date: 2026-07-23
+  description: "Wrap Grok function calling in four zero-token, fail-closed checks: argument validation, an action-tier gate for irreversible tools, output verification, and a grounding check"
+  authors:
+    - Anton Dzyatkovsky
+  tags:
+    - function-calling
+    - structured-outputs
+    - guardrails
+    - reliability
+    - production
