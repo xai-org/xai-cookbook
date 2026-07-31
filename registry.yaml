@@ -82,3 +82,15 @@
     - Zhaohan Dong
   tags:
     - function-calling
+- title: "Grounded RAG with Verifiable Citations (Grok)"
+  path: examples/grounded_rag_with_citations/guide.ipynb
+  date: 2026-07-24
+  description: "Build a grounded RAG loop on Grok where a deterministic zero-token verifier checks that every sentence is cited AND each citation is genuinely supported by its chunk, failing closed on hallucinated or mis-cited claims"
+  authors:
+    - Anton Dzyatkovsky
+  tags:
+    - rag
+    - citations
+    - retrieval
+    - structured-outputs
+    - reliability
