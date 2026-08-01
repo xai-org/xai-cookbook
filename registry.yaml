@@ -82,3 +82,15 @@
     - Zhaohan Dong
   tags:
     - function-calling
+- title: "Evaluating Grok Applications: Deterministic Checks + LLM-as-Judge"
+  path: examples/evaluating_grok_applications/guide.ipynb
+  date: 2026-07-24
+  description: "Build an eval harness for a Grok app: zero-token deterministic graders for schema, labels and content, an LLM-as-judge on Grok for subjective quality, short-circuiting to keep costs down, plus a regression gate between two variants"
+  authors:
+    - Anton Dzyatkovsky
+  tags:
+    - evaluation
+    - llm-as-judge
+    - testing
+    - structured-outputs
+    - reliability
