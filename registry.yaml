@@ -82,3 +82,15 @@
     - Zhaohan Dong
   tags:
     - function-calling
+- title: "Defending Grok Agents Against Prompt Injection in Tool Results"
+  path: examples/defending_against_prompt_injection/guide.ipynb
+  date: 2026-07-24
+  description: "Four layers that keep indirect prompt injection contained in a Grok agent: fencing untrusted tool output as data, a zero-token injection scanner, taint-based capability control that removes privileged tools, and egress filtering that blocks attacker-supplied destinations"
+  authors:
+    - Anton Dzyatkovsky
+  tags:
+    - security
+    - prompt-injection
+    - agents
+    - function-calling
+    - reliability
