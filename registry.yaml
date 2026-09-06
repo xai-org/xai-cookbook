@@ -82,3 +82,16 @@
     - Zhaohan Dong
   tags:
     - function-calling
+
+- title: "Grok Voice Agent over Plivo Audio Streaming"
+  path: voice-examples/agent/telephony/xai/plivo/README.md
+  description: "Bidirectional mu-law 8 kHz telephony bridge between Plivo Audio Streaming and the Grok Realtime API (inbound, outbound, barge-in, end-call tool)"
+  date: 2026-09-06
+  authors:
+    - Longhao Wang
+  tags:
+    - voice
+    - telephony
+    - realtime
+    - plivo
+    - websocket
