@@ -4,7 +4,7 @@
 > **These are example implementations for learning and development purposes only.**  
 > **NOT PRODUCTION-READY WITHOUT ADDITIONAL HARDENING.**  
 
-Voice agents accessible via phone calls using Twilio integration.
+Voice agents accessible via phone calls using Twilio or Plivo integration.
 
 ## Overview
 
@@ -14,7 +14,7 @@ These examples demonstrate how to build voice agents that can be accessed via ph
 
 ### [XAI Native](xai/)
 
-Native XAI implementation with Twilio Media Streams.
+Native XAI Realtime examples by provider: [Twilio](xai/twilio/) and [Plivo](xai/plivo/).
 
 **Features:**
 - Direct WebSocket integration with XAI
@@ -23,7 +23,7 @@ Native XAI implementation with Twilio Media Streams.
 
 **Tech Stack:**
 - Node.js + TypeScript
-- Twilio Media Streams
+- Twilio Media Streams or Plivo Audio Streaming
 - WebSockets
 - Express server
 
@@ -32,7 +32,7 @@ Native XAI implementation with Twilio Media Streams.
 ### XAI Native (Recommended)
 
 ```bash
-cd xai
+cd xai/twilio
 npm install
 
 # Configure environment
@@ -109,7 +109,7 @@ TWILIO_PHONE_NUMBER=+1234567890
 ### 2. Configure Environment
 
 ```bash
-cd xai
+cd xai/twilio
 cp .env.example .env
 
 # Edit .env with:
@@ -277,8 +277,8 @@ curl -X POST https://api.twilio.com/2010-04-01/Accounts/$TWILIO_ACCOUNT_SID/Call
 
 ## Documentation
 
-- **[XAI Implementation README](xai/README.md)** - XAI implementation details
-- **[Twilio Docs](https://www.twilio.com/docs/voice/media-streams)** - Twilio Media Streams
+- **[Twilio](xai/twilio/README.md)** · **[Plivo](xai/plivo/README.md)**
+- **[Twilio Media Streams](https://www.twilio.com/docs/voice/media-streams)** · **[Plivo Audio Streaming](https://plivo.com/docs/voice-agents/audio-streaming/overview)** or Plivo Audio Streaming
 - **[XAI API Docs](https://x.ai/api)** - XAI Realtime API
 
 ## Examples
