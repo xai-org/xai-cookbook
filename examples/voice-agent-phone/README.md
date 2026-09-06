@@ -1,22 +1,22 @@
 ---
 title: Phone Voice Agent
-seo_title: "AI Phone Agent: Answer Calls with Twilio and the Grok API"
-description: A voice agent you can call on the phone, using Twilio.
+seo_title: "AI Phone Agent: Answer Calls with Twilio or Plivo and the Grok API"
+description: A voice agent you can call on the phone, using Twilio or Plivo.
 type: app
 level: intermediate
 languages: [typescript]
 code:
   typescript: xai
 capabilities: [voice]
-env: [XAI_API_KEY, TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER]
+env: [XAI_API_KEY, TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER, PLIVO_AUTH_ID, PLIVO_AUTH_TOKEN, PLIVO_PHONE_NUMBER]
 icon: phone
-authors: [Damien Murphy]
+authors: [Damien Murphy, Longhao Wang]
 date: 2025-12-15
 ---
 
 # Phone Voice Agent
 
-This example builds a voice agent you can call on the phone, with Twilio and the Grok API's realtime voice. It's a starting point for phone lines that talk with callers in real time, like support or bookings.
+This example builds a voice agent you can call on the phone, with Twilio or Plivo and the Grok API's realtime voice. It's a starting point for phone lines that talk with callers in real time, like support or bookings.
 
 > **Note:** These are example implementations for learning and development, and they aren't production-ready without additional hardening.
 
@@ -28,7 +28,7 @@ These examples demonstrate how to build voice agents that can be accessed via ph
 
 ### [XAI Native](xai/)
 
-Native XAI implementation with Twilio Media Streams.
+Native XAI Realtime examples by provider: [Twilio](xai/twilio/) and [Plivo](xai/plivo/).
 
 **Features:**
 - Direct WebSocket integration with XAI
@@ -37,7 +37,7 @@ Native XAI implementation with Twilio Media Streams.
 
 **Tech Stack:**
 - Node.js + TypeScript
-- Twilio Media Streams
+- Twilio Media Streams or Plivo Audio Streaming
 - WebSockets
 - Express server
 
@@ -46,7 +46,7 @@ Native XAI implementation with Twilio Media Streams.
 ### XAI Native (recommended)
 
 ```bash
-cd xai
+cd xai/twilio
 npm install
 
 # Configure environment
@@ -123,7 +123,7 @@ TWILIO_PHONE_NUMBER=+1234567890
 ### 2. Configure the environment
 
 ```bash
-cd xai
+cd xai/twilio
 cp .env.example .env
 
 # Edit .env with:
@@ -291,8 +291,8 @@ curl -X POST https://api.twilio.com/2010-04-01/Accounts/$TWILIO_ACCOUNT_SID/Call
 
 ## Documentation
 
-- **[XAI Implementation README](xai/README.md)** - XAI implementation details
-- **[Twilio Docs](https://www.twilio.com/docs/voice/media-streams)** - Twilio Media Streams
+- **[Twilio](xai/twilio/README.md)** · **[Plivo](xai/plivo/README.md)**
+- **[Twilio Media Streams](https://www.twilio.com/docs/voice/media-streams)** · **[Plivo Audio Streaming](https://plivo.com/docs/voice-agents/audio-streaming/overview)**
 - **[XAI API Docs](https://x.ai/api)** - XAI Realtime API
 
 ## Examples

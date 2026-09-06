@@ -166,13 +166,14 @@
   - swift
   - kotlin
 - title: Phone Voice Agent
-  seo_title: 'AI Phone Agent: Answer Calls with Twilio and the Grok API'
+  seo_title: 'AI Phone Agent: Answer Calls with Twilio or Plivo and the Grok API'
   path: examples/voice-agent-phone/README.md
   icon: phone
-  description: A voice agent you can call on the phone, using Twilio.
+  description: A voice agent you can call on the phone, using Twilio or Plivo.
   date: 2025-12-15
   authors:
   - Damien Murphy
+  - Longhao Wang
   tags:
   - voice
   type: app
