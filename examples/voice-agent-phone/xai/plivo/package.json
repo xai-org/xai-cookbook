@@ -23,5 +23,8 @@
     "nodemon": "^3.1.7",
     "ts-node": "^10.9.2",
     "typescript": "^5.6.2"
+  },
+  "overrides": {
+    "form-data": "2.5.4"
   }
 }
