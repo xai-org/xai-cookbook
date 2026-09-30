@@ -6,7 +6,7 @@ New to the API? Start with the [xAI docs](https://docs.x.ai), browse the [models
 
 ## Start here
 
-- **Notebooks:** [Function Calling 101](examples/function-calling/). Notebooks keep their outputs, so you can read them on GitHub without running anything.
+- **Notebooks:** [Quickstart](examples/quickstart/), then [Function Calling 101](examples/function-calling/). Notebooks keep their outputs, so you can read them on GitHub without running anything.
 - **Voice:** [Web Voice Agent](examples/voice-agent-web/), a browser app you can talk to.
 
 ## Examples
@@ -18,13 +18,13 @@ Every example is a folder under [`examples/`](examples/) with a README that expl
 
 | Example | What you'll learn | Level | Code |
 | --- | --- | --- | --- |
+| [Quickstart](examples/quickstart/) | Send your first requests with the Responses API, stream replies, hold a conversation, and get structured output. | Beginner | [Python](examples/quickstart/python/) |
 | [Function Calling 101](examples/function-calling/) | Define tools, let Grok decide when to call them, and feed the results back. | Beginner | [Python](examples/function-calling/python/) |
 
 ### Guides
 
 | Example | What you'll learn | Level | Code |
 | --- | --- | --- | --- |
-| [Building a Unified Chat Experience](examples/multi-turn-chat/) | Multi-turn chat with streaming, function calling, structured outputs, and image understanding. | Beginner | [Python](examples/multi-turn-chat/python/) |
 | [Hyper-Personalized Marketing](examples/personalized-marketing/) | Generate customer profiles, then write tailored copy and generate an image for each. | Intermediate | [Python](examples/personalized-marketing/python/) |
 | [Object Detection](examples/object-detection/) | Count and locate objects in photos, including niche objects and text in several languages, by describing what to find. | Intermediate | [Python](examples/object-detection/python/) |
 | [Structured Data from Fashion Images](examples/fashion-data-extraction/) | Turn fashion photos into structured JSON, process hundreds of images concurrently, and measure accuracy against labeled data. | Intermediate | [Python](examples/fashion-data-extraction/python/) |
