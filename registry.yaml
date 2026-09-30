@@ -82,3 +82,15 @@
     - Zhaohan Dong
   tags:
     - function-calling
+
+- title: "Chat with PDFs and Other Files"
+  path: examples/files_chat_with_pdf/guide.ipynb
+  date: 2026-05-15
+  description: "Learn how to attach public PDFs, upload private files, and ask Grok questions about one or more documents"
+  authors:
+    - Mukunda Katta
+  tags:
+    - files
+    - pdf
+    - document-understanding
+    - responses-api
