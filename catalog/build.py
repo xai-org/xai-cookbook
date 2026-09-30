@@ -91,8 +91,8 @@ def load_examples() -> tuple[list[dict], list[str]]:
     return examples, errors
 
 
-def sort_key(example: dict) -> tuple[int, float, str]:
-    return LEVELS.index(example["level"]), example.get("order", float("inf")), example["title"].lower()
+def sort_key(example: dict) -> tuple[int, str]:
+    return LEVELS.index(example["level"]), example["title"].lower()
 
 
 def render_catalog(examples: list[dict]) -> str:

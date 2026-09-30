@@ -3,7 +3,6 @@ title: Your example's title
 description: One sentence on what someone will learn or build.
 type: recipe                 # recipe | guide | app
 level: beginner              # beginner | intermediate | advanced
-# order: 1                   # optional; lower numbers are listed first within a level
 languages: [python]          # python | typescript | swift | kotlin
 capabilities: [chat]         # see catalog/schema.json for the full list
 models: [grok-4.7]

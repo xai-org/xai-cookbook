@@ -1,33 +1,23 @@
 # xAI Cookbook
 
-Runnable examples for building with Grok: Python notebooks and complete voice agent apps for the browser, phone calls, iOS, and Android. Each example teaches one idea end to end, and the code is meant to be copied.
+Runnable examples for building with Grok: complete voice agent apps for the browser, phone calls, iOS, and Android, and a Python notebook that analyzes live posts from 𝕏. Each example teaches one idea end to end, and the code is meant to be copied.
 
-New to the API? Start with the [xAI docs](https://docs.x.ai), browse the [models](https://docs.x.ai/developers/models), and get an API key from the [xAI Console](https://console.x.ai).
+New to the API? Start with the [quickstart](https://docs.x.ai/developers/quickstart) in the xAI docs, browse the [models](https://docs.x.ai/developers/models), and get an API key from the [xAI Console](https://console.x.ai).
 
 ## Start here
 
-- **Notebooks:** [Quickstart](examples/quickstart/), then [Function Calling 101](examples/function-calling/). Notebooks keep their outputs, so you can read them on GitHub without running anything.
 - **Voice:** [Web Voice Agent](examples/voice-agent-web/), a browser app you can talk to.
+- **𝕏 data:** [Real-Time Sentiment Analysis on 𝕏](examples/x-sentiment-analysis/), a notebook that searches 𝕏 live and scores sentiment. It keeps its outputs, so you can read it on GitHub without running anything.
 
 ## Examples
 
 Every example is a folder under [`examples/`](examples/) with a README that explains what it teaches and how to run it. This list is generated from those READMEs.
 
 <!-- catalog:start -->
-### Recipes
-
-| Example | What you'll learn | Level | Code |
-| --- | --- | --- | --- |
-| [Quickstart](examples/quickstart/) | Send your first requests with the Responses API, stream replies, hold a conversation, and get structured output. | Beginner | [Python](examples/quickstart/python/) |
-| [Function Calling 101](examples/function-calling/) | Define tools, let Grok decide when to call them, and feed the results back. | Beginner | [Python](examples/function-calling/python/) |
-
 ### Guides
 
 | Example | What you'll learn | Level | Code |
 | --- | --- | --- | --- |
-| [Hyper-Personalized Marketing](examples/personalized-marketing/) | Generate customer profiles, then write tailored copy and generate an image for each. | Intermediate | [Python](examples/personalized-marketing/python/) |
-| [Object Detection](examples/object-detection/) | Count and locate objects in photos, including niche objects and text in several languages, by describing what to find. | Intermediate | [Python](examples/object-detection/python/) |
-| [Structured Data from Fashion Images](examples/fashion-data-extraction/) | Turn fashion photos into structured data, process a batch of images concurrently, and measure accuracy against labeled data. | Intermediate | [Python](examples/fashion-data-extraction/python/) |
 | [Real-Time Sentiment Analysis on 𝕏](examples/x-sentiment-analysis/) | Pull the latest posts from 𝕏 with Grok's X Search tool, filter out noise with a fast model, and score sentiment with a reasoning model. | Advanced | [Python](examples/x-sentiment-analysis/python/) |
 
 ### Apps

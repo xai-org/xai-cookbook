@@ -23,11 +23,6 @@
     "level": {
       "enum": ["beginner", "intermediate", "advanced"]
     },
-    "order": {
-      "description": "Optional. Within the same type and level, lower numbers are listed first. Examples without one come last, sorted by title.",
-      "type": "integer",
-      "minimum": 1
-    },
     "languages": {
       "type": "array",
       "minItems": 1,
