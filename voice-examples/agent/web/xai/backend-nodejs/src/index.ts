@@ -49,7 +49,11 @@ const sessionLimiter = rateLimit({
 app.use(limiter);
 
 // Configuration
-const XAI_API_KEY = process.env.XAI_API_KEY || "";
+const XAI_API_KEY = process.env.XAI_API_KEY;
+if (!XAI_API_KEY) {
+  console.error("ERROR: XAI_API_KEY environment variable is required");
+  process.exit(1);
+}
 const PORT = process.env.PORT || "8000";
 const INSTRUCTIONS = process.env.INSTRUCTIONS || "You are a helpful voice assistant. You are speaking to a user in real-time over audio. Keep your responses conversational and concise since they will be spoken aloud.";
 const VOICE = process.env.VOICE || "ara";
@@ -134,7 +138,7 @@ app.listen(PORT, () => {
   console.log("=".repeat(60));
   console.log("🚀 XAI Voice Web Backend (Node.js) Starting");
   console.log("=".repeat(60));
-  console.log(`🔑 API Key: ${XAI_API_KEY ? "Configured" : "❌ Missing"}`);
+  console.log(`🔑 API Key: Configured`);
   console.log(`🌐 Port: ${PORT}`);
   console.log(`🎙️  Voice: ${VOICE}`);
   console.log(`📝 Instructions: ${INSTRUCTIONS.substring(0, 50)}...`);
@@ -144,7 +148,4 @@ app.listen(PORT, () => {
   console.log(`Health check: http://localhost:${PORT}/health`);
   console.log("=".repeat(60));
 
-  if (!XAI_API_KEY) {
-    console.log("⚠️  WARNING: XAI_API_KEY not configured!");
-  }
 });
