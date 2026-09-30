@@ -28,7 +28,7 @@ Every example is a folder under [`examples/`](examples/) with a README that expl
 | [Hyper-Personalized Marketing](examples/personalized-marketing/) | Generate customer profiles, then write tailored copy and generate an image for each. | Intermediate | [Python](examples/personalized-marketing/python/) |
 | [Object Detection](examples/object-detection/) | Count and locate objects in photos, including niche objects and text in several languages, by describing what to find. | Intermediate | [Python](examples/object-detection/python/) |
 | [Structured Data from Fashion Images](examples/fashion-data-extraction/) | Turn fashion photos into structured data, process a batch of images concurrently, and measure accuracy against labeled data. | Intermediate | [Python](examples/fashion-data-extraction/python/) |
-| [Real-Time Sentiment Analysis on 𝕏](examples/x-sentiment-analysis/) | Stream posts from 𝕏, filter out noise with a fast model, and score sentiment with a reasoning model. | Advanced | [Python](examples/x-sentiment-analysis/python/) |
+| [Real-Time Sentiment Analysis on 𝕏](examples/x-sentiment-analysis/) | Pull the latest posts from 𝕏 with Grok's X Search tool, filter out noise with a fast model, and score sentiment with a reasoning model. | Advanced | [Python](examples/x-sentiment-analysis/python/) |
 
 ### Apps
 
