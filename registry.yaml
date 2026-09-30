@@ -1,6 +1,18 @@
 # Example entry:
 
-# - title: Grok Vision Notebook
+# - title: How AI Agents Are Replacing the Slowest Part of Paid Media
+  path: examples/adspirer_campaign_launch.ipynb
+  date: 2026-04-02
+  authors:
+    - name: Abhi Mekala
+      github: amekala
+  tags:
+    - mcp
+    - advertising
+    - campaign-creation
+  description: Create Google + Meta ad campaigns with 8+ creative variants in a single chat session using Adspirer MCP.
+
+- title: Grok Vision Notebook
 #   path: examples/grok_vision.ipynb
 #   date: yyyy-mm-dd
 #   authors:
