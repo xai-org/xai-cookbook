@@ -45,7 +45,7 @@
 - title: Structured Data from Fashion Images
   path: examples/fashion-data-extraction/python/guide.ipynb
   image: examples/fashion-data-extraction/cover.jpg
-  description: Turn fashion photos into structured JSON, process hundreds of images concurrently, and measure accuracy against labeled data.
+  description: Turn fashion photos into structured data, process a batch of images concurrently, and measure accuracy against labeled data.
   date: 2025-03-03
   authors:
   - Omar Diab

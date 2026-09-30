@@ -1,6 +1,6 @@
 ---
 title: Structured Data from Fashion Images
-description: Turn fashion photos into structured JSON, process hundreds of images concurrently, and measure accuracy against labeled data.
+description: Turn fashion photos into structured data, process a batch of images concurrently, and measure accuracy against labeled data.
 type: guide
 level: intermediate
 languages: [python]
@@ -19,12 +19,12 @@ Tag a set of fashion photos with structured attributes, then check the results a
 
 ## What you'll learn
 
-- Pull attributes like clothing type and color out of photos as JSON
-- Process hundreds of images concurrently with the async client
+- Pull attributes like clothing type and color out of photos with structured outputs
+- Process a batch of images concurrently with the async client
 - Measure accuracy against labels, then improve the schema based on what the errors show
 
 ## Run it
 
 Open [`python/guide.ipynb`](python/guide.ipynb). If you haven't set up the repo yet, follow [Run the notebooks](../../README.md#run-the-notebooks) in the main README. The images and labels are in [`python/data/`](python/data/).
 
-A full run sends 250 images, so it takes a few minutes and uses more credits than the other notebooks.
+A run sends 100 images, so it takes a few minutes and uses more credits than the other notebooks. To evaluate more or fewer, change `NUM_IMAGES` in the notebook.
