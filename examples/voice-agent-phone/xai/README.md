@@ -26,7 +26,7 @@ This project demonstrates how to integrate [Twilio's Programmable Voice API](htt
 ```bash
 # Clone the repository
 git clone <your-repo-url>
-cd examples/agent/telephony/xai
+cd examples/voice-agent-phone/xai
 ```
 
 ### 2. Install Dependencies

@@ -15,7 +15,7 @@ See the [xAI Voice Agent API docs](https://docs.x.ai/developers/model-capabiliti
 
 ### Production: Ephemeral Tokens
 
-For production apps, implement `AuthService.getEphemeralToken()` to fetch short-lived tokens from your backend instead of hardcoding API keys in the client. See [AuthService.kt](/app/src/main/java/ai/x/voiceapiandroidexample/AuthService.kt) for guidance.
+For production apps, implement `AuthService.getEphemeralToken()` to fetch short-lived tokens from your backend instead of hardcoding API keys in the client. See [AuthService.kt](app/src/main/java/ai/x/voiceapiandroidexample/AuthService.kt) for guidance.
 
 Learn more: [Ephemeral Tokens](https://docs.x.ai/developers/model-capabilities/audio/ephemeral-tokens)
 

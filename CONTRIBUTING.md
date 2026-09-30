@@ -20,9 +20,10 @@ Before submitting, ask:
 1. **Fork the Repository**: Click "Fork" at the top right to create your copy.
 2. **Clone Your Fork**: `git clone https://github.com/your-username/xai-cookbook.git`
 3. **Create a Branch**: Use a descriptive name, e.g., `git checkout -b add-image-analysis-cookbook`.
-4. **Add Your Cookbook**:
-   - For standalone notebooks, save as `examples/<notebook_title>.ipynb`.
-   - For notebooks with files, create `examples/<Title>/` with the notebook and all dependencies.
+4. **Add Your Example**:
+   - Copy [`templates/example/`](templates/example/) to `examples/<name>/`. Pick a short, lowercase, hyphenated name that says what the example teaches, like `function-calling`.
+   - Fill in the front matter at the top of its `README.md`. [`catalog/schema.json`](catalog/schema.json) lists every field and the values it allows.
+   - Put the code in a folder named after its language, like `python/` for a notebook or `typescript/` for a TypeScript project. Keep data and images next to the code that uses them.
    - Test thoroughly, your notebook should be runnable end-to-end out of the box (assuming a valid API key is provided)
    - **Style**:
      - Use clear, descriptive cell titles for sections or steps.
@@ -32,7 +33,7 @@ Before submitting, ask:
      - Minimize dependencies.
      - Use `%pip install <package1> <package2>`.
      - Commercial packages are fine but must not be promotional or imply xAI endorsement.
-   - Update `registry.yaml` with details about your new notebook.
+   - Run `uv run catalog/build.py` to add your example to the list in `README.md` and to `registry.yaml`. Don't edit either by hand.
 5. **Commit Changes**: Use clear messages, e.g., `git commit -m "Add text summarization cookbook"`.
 6. **Push to Your Fork**: `git push origin your-branch-name`
 7. **Open a Pull Request**:
@@ -47,7 +48,7 @@ Before submitting, ask:
 - **Description**: Explain what it does, why it’s useful, and any setup notes or dependencies.
 - **Checklist**:
   - Run all cells in your Jupyter Notebook to ensure all outputs are shown and there are no errors.
-  - Add your Juptyer Notebook in registry.yaml using relative path to the repo.
+  - Fill in your example's front matter and run `uv run catalog/build.py`.
   - Push your changes to your fork and then open a PR to the main repo.
   - Use the PR template.
 

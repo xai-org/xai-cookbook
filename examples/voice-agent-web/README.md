@@ -1,3 +1,18 @@
+---
+title: Web Voice Agent
+description: A React client with swappable Python and Node.js backends that talk to the Voice Agent API over WebSocket.
+type: app
+level: intermediate
+languages: [typescript, python]
+code:
+  typescript: .
+  python: xai/backend-python
+capabilities: [voice]
+env: [XAI_API_KEY]
+authors: [Damien Murphy]
+date: 2025-12-15
+---
+
 # Web Examples
 
 > **IMPORTANT DISCLAIMER**

@@ -10,9 +10,9 @@ repos:
       entry: uv run pytest --nbmake
       language: system
       files: ^examples/.*\.ipynb$
-- repo: https://github.com/python-jsonschema/check-jsonschema
-  rev: 0.31.2
-  hooks:
-    - id: check-jsonschema
-      files: registry.yaml
-      args: ["--schemafile", ".github/registry_schema.json"]
+    - id: catalog
+      name: Check example front matter, the catalog, and links
+      entry: uv run catalog/build.py --check
+      language: system
+      pass_filenames: false
+      files: (\.md$|^registry\.yaml$|^catalog/)

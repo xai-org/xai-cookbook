@@ -1,3 +1,17 @@
+---
+title: WebRTC Voice Agent
+description: A low-latency browser voice agent that uses WebRTC between the browser and a server, which connects to xAI over WebSocket.
+type: app
+level: advanced
+languages: [typescript]
+code:
+  typescript: .
+capabilities: [voice]
+env: [XAI_API_KEY]
+authors: [Damien Murphy]
+date: 2025-12-15
+---
+
 # XAI Voice WebRTC Agent Example
 
 > **IMPORTANT DISCLAIMER**  

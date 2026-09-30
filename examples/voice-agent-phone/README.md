@@ -1,3 +1,17 @@
+---
+title: Phone Voice Agent
+description: A voice agent you can call on the phone, using Twilio.
+type: app
+level: intermediate
+languages: [typescript]
+code:
+  typescript: xai
+capabilities: [voice]
+env: [XAI_API_KEY, TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER]
+authors: [Damien Murphy]
+date: 2025-12-15
+---
+
 # Grok Voice Agent API - Telephony Agent Examples
 
 > **IMPORTANT DISCLAIMER**  

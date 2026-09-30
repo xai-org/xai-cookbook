@@ -17,4 +17,4 @@ Why this change matters:
 - [ ] Included relevant dependencies
 - [ ] API key is not in committed files
 - [ ] Notebook runs end-to-end with cell outputs shown and no errors
-- [ ] Added new notebook entry to `registry.yaml` (if PR adds a new notebook)
+- [ ] Filled in the front matter in the example's README and ran `uv run catalog/build.py` (if PR adds an example)

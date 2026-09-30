@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Example front matter",
+  "description": "The block between --- lines at the top of every examples/<name>/README.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["title", "description", "type", "level", "languages", "capabilities", "authors", "date"],
+  "properties": {
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "description": {
+      "description": "One sentence on what someone will learn or build. Shown in the README catalog.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "type": {
+      "description": "recipe: one concept, short. guide: an end-to-end walkthrough. app: a complete project you run.",
+      "enum": ["recipe", "guide", "app"]
+    },
+    "level": {
+      "enum": ["beginner", "intermediate", "advanced"]
+    },
+    "languages": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/language" }
+    },
+    "code": {
+      "description": "Where each language's code lives, relative to the example folder. Defaults to a folder named after the language, like python/.",
+      "type": "object",
+      "propertyNames": { "$ref": "#/$defs/language" },
+      "additionalProperties": { "type": "string", "minLength": 1 }
+    },
+    "notebook": {
+      "description": "Path to the example's notebook, relative to the example folder. Notebooks are what the docs site renders.",
+      "type": "string",
+      "pattern": "\\.ipynb$"
+    },
+    "cover": {
+      "description": "Cover image, relative to the example folder.",
+      "type": "string"
+    },
+    "capabilities": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "chat",
+          "streaming",
+          "function-calling",
+          "structured-output",
+          "reasoning",
+          "image-understanding",
+          "image-generation",
+          "voice",
+          "text-to-speech",
+          "x-data"
+        ]
+      }
+    },
+    "models": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "env": {
+      "description": "Environment variables the example needs.",
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" }
+    },
+    "authors": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "date": {
+      "description": "When the example was first published, as YYYY-MM-DD.",
+      "type": "string",
+      "format": "date"
+    }
+  },
+  "$defs": {
+    "language": {
+      "enum": ["python", "typescript", "swift", "kotlin"]
+    }
+  }
+}
