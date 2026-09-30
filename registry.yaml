@@ -4,7 +4,7 @@
 - title: Real-Time Sentiment Analysis on 𝕏
   path: examples/x-sentiment-analysis/python/guide.ipynb
   image: examples/x-sentiment-analysis/cover.jpg
-  description: Pull the latest posts from 𝕏 with Grok's X Search tool, filter out noise with a fast model, and score sentiment with a reasoning model.
+  description: Pull the latest posts from 𝕏 with Grok's X Search tool, filter out the noise with a quick pass, and score sentiment with a deeper one.
   date: 2025-04-10
   authors:
   - Omar Diab

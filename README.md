@@ -18,7 +18,7 @@ Every example is a folder under [`examples/`](examples/) with a README that expl
 
 | Example | What you'll learn | Level | Code |
 | --- | --- | --- | --- |
-| [Real-Time Sentiment Analysis on 𝕏](examples/x-sentiment-analysis/) | Pull the latest posts from 𝕏 with Grok's X Search tool, filter out noise with a fast model, and score sentiment with a reasoning model. | Advanced | [Python](examples/x-sentiment-analysis/python/) |
+| [Real-Time Sentiment Analysis on 𝕏](examples/x-sentiment-analysis/) | Pull the latest posts from 𝕏 with Grok's X Search tool, filter out the noise with a quick pass, and score sentiment with a deeper one. | Advanced | [Python](examples/x-sentiment-analysis/python/) |
 
 ### Apps
 
