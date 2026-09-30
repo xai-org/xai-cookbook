@@ -1,9 +1,0 @@
-examples/**/*.png filter=lfs diff=lfs merge=lfs -text
-examples/**/*.jpg filter=lfs diff=lfs merge=lfs -text
-examples/**/*.jpeg filter=lfs diff=lfs merge=lfs -text
-examples/**/*.gif filter=lfs diff=lfs merge=lfs -text
-examples/**/*.bmp filter=lfs diff=lfs merge=lfs -text
-examples/**/*.tiff filter=lfs diff=lfs merge=lfs -text
-examples/**/*.webp filter=lfs diff=lfs merge=lfs -text
-images/**/*.jpg filter=lfs diff=lfs merge=lfs -text
-images/**/*.png filter=lfs diff=lfs merge=lfs -text
