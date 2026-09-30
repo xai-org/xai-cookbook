@@ -32,7 +32,7 @@ Before submitting, ask:
      - Minimize dependencies.
      - Use `%pip install <package1> <package2>`.
      - Commercial packages are fine but must not be promotional or imply xAI endorsement.
-   - Update `registry.yaml` with details about your new notebook.
+   - Add your notebook to `registry.yaml` and to the notebook table in `README.md`.
 5. **Commit Changes**: Use clear messages, e.g., `git commit -m "Add text summarization cookbook"`.
 6. **Push to Your Fork**: `git push origin your-branch-name`
 7. **Open a Pull Request**:
