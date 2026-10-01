@@ -57,6 +57,7 @@
           "reasoning",
           "image-understanding",
           "image-generation",
+          "video-generation",
           "voice",
           "text-to-speech",
           "x-data"
