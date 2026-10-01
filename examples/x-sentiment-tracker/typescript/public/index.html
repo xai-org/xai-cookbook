@@ -129,15 +129,15 @@
 <main>
   <p class="eyebrow">SpaceXAI Cookbook</p>
   <h1>𝕏 Sentiment Tracker</h1>
-  <p class="lede">Enter a topic, like a coin, a stock, or a company. Grok searches 𝕏 for recent posts about it every minute, filters out the noise, and keeps a running sentiment score from −1 (bearish) to +1 (bullish).</p>
+  <p class="lede">Enter a topic, like a company, a product, or an event. Grok searches 𝕏 for recent posts about it every minute, filters out the noise, and keeps a running sentiment score from −1 (negative) to +1 (positive).</p>
   <form id="form">
-    <input id="topic" required value="Bitcoin" aria-label="Topic to track" placeholder="A coin, a stock, or a company">
+    <input id="topic" required value="SpaceX" aria-label="Topic to track" placeholder="A company, a product, or an event">
     <button id="go" class="pill pill-primary">Start tracking <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg></button>
   </form>
   <div class="examples">Try one:
-    <button type="button" class="pill pill-secondary">Bitcoin</button>
-    <button type="button" class="pill pill-secondary">Ethereum</button>
-    <button type="button" class="pill pill-secondary">Nvidia</button>
+    <button type="button" class="pill pill-secondary">SpaceX</button>
+    <button type="button" class="pill pill-secondary">Starship</button>
+    <button type="button" class="pill pill-secondary">Starlink</button>
   </div>
 
   <div class="stage">
@@ -147,7 +147,7 @@
         <div class="now">
           <p id="score"></p>
           <div class="meter"><span id="fill"></span><span id="marker" hidden></span></div>
-          <div class="scale"><span>−1 Bearish</span><span>Neutral</span><span>Bullish +1</span></div>
+          <div class="scale"><span>−1 Negative</span><span>Neutral</span><span>Positive +1</span></div>
         </div>
         <div>
           <p class="card-label">By round</p>

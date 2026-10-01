@@ -4,6 +4,7 @@ import { xSearch } from "@xai-official/sdk/tools";
 
 const client = new xAI();
 
+export const DEFAULT_TOPIC = "SpaceX";
 export const ROUNDS = 3;
 const INTERVAL_SECONDS = 60;
 const WINDOW = 20;
@@ -54,7 +55,7 @@ const FILTER_SCHEMA = {
 const SENTIMENT_SCHEMA = {
   type: "object",
   properties: {
-    score: { type: "number", minimum: -1, maximum: 1, description: "From -1 (bearish) to 1 (bullish), with 0 being neutral" },
+    score: { type: "number", minimum: -1, maximum: 1, description: "From -1 (negative) to 1 (positive), with 0 being neutral" },
     reasoning: { type: "string", description: "A brief explanation of how you arrived at the score" },
     key_posts: {
       type: "array",
@@ -139,7 +140,7 @@ async function filterPosts(posts: Post[], topic: string, signal?: AbortSignal): 
       input: [
         {
           role: "system",
-          content: `You pick out X posts that say something meaningful about market sentiment toward ${topic}: opinions, news, or observations about how it's doing. Leave out ads, spam, vague hype, and posts that are mainly about something else. Return the IDs of the posts worth keeping, or an empty list.`,
+          content: `You pick out X posts that show how people feel about ${topic}: opinions, reactions, or news with a clear take on it. Leave out ads, spam, vague hype, and posts that are mainly about something else. Return the IDs of the posts worth keeping, or an empty list.`,
         },
         { role: "user", content: JSON.stringify(posts) },
       ],
@@ -158,7 +159,7 @@ async function scoreSentiment(posts: Post[], topic: string, on: TrackEvents, sig
       input: [
         {
           role: "system",
-          content: `You're a market analyst. Score the overall sentiment toward ${topic} in these X posts from -1 (bearish) to 1 (bullish), with 0 being neutral. Weigh each post by how clear its sentiment is and how prominent its author is, and base the score only on these posts. Explain the score briefly and list the posts that influenced it most.`,
+          content: `Score the overall sentiment toward ${topic} in these X posts from -1 (very negative) to 1 (very positive), with 0 being neutral. Weigh each post by how clear its sentiment is and how prominent its author is, and base the score only on these posts. Explain the score briefly and list the posts that influenced it most.`,
         },
         { role: "user", content: JSON.stringify(posts) },
       ],

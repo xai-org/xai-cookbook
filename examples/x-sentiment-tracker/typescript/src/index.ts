@@ -1,7 +1,7 @@
 import { styleText } from "node:util";
-import { ROUNDS, track } from "./sentiment.ts";
+import { DEFAULT_TOPIC, ROUNDS, track } from "./sentiment.ts";
 
-const topic = process.argv.slice(2).join(" ") || "Bitcoin";
+const topic = process.argv.slice(2).join(" ") || DEFAULT_TOPIC;
 
 await track(topic, {
   round: (round, query) => console.log(styleText("bold", `\nRound ${round} of ${ROUNDS}: searching X for ${query}`)),

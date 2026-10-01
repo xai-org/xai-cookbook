@@ -13,7 +13,7 @@ date: 2026-10-01
 
 # 𝕏 Sentiment Tracker
 
-Give it a topic, like a coin or a company, and it searches 𝕏 for recent posts about it every minute, filters out the noise, and keeps a running sentiment score. It runs as a small web app or in your terminal, and shows each search, the posts it keeps, and Grok's reasoning as they happen. It's the TypeScript version of the [𝕏 sentiment notebook](../x-sentiment-analysis/).
+Give it a topic, like a company, a product, or an event, and it searches 𝕏 for recent posts about it every minute, filters out the noise, and keeps a running sentiment score. It runs as a small web app or in your terminal, and shows each search, the posts it keeps, and Grok's reasoning as they happen. It follows the same approach as the [𝕏 sentiment notebook](../x-sentiment-analysis/).
 
 ## What you'll learn
 
@@ -33,15 +33,15 @@ npm install
 npm run web
 ```
 
-Open http://localhost:3000, enter a topic, and click **Start tracking**. The page shows each search as it runs, the posts Grok keeps, and its reasoning, then the score on a scale from -1 (bearish) to +1 (bullish). Click **Stop** or close the page to stop tracking.
+Open http://localhost:3000, enter a topic, and click **Start tracking**. The page shows each search as it runs, the posts Grok keeps, and its reasoning, then the score on a scale from -1 (negative) to +1 (positive). Click **Stop** or close the page to stop tracking.
 
-To track a topic from the terminal instead, pass it as an argument. It defaults to Bitcoin.
+To track a topic from the terminal instead, pass it as an argument. It defaults to SpaceX.
 
 ```bash
-npm start -- Bitcoin
+npm start -- SpaceX
 ```
 
-The topic goes into the search query as is, so you can use 𝕏's search operators in it, like `BTC OR Bitcoin`.
+The topic goes into the search query as is, so you can use 𝕏's search operators in it, like `Starship OR Starlink`.
 
 It runs three rounds a minute apart. To change that, edit `ROUNDS` and `INTERVAL_SECONDS` at the top of `src/sentiment.ts`. X Search is billed per post it fetches, on top of token costs. Each search fetches about 10 posts, so a run costs around 20 cents.
 

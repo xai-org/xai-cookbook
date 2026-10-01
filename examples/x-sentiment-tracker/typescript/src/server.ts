@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { type ServerResponse, createServer } from "node:http";
-import { ROUNDS, track } from "./sentiment.ts";
+import { DEFAULT_TOPIC, ROUNDS, track } from "./sentiment.ts";
 
 const PORT = Number(process.env.PORT ?? 3000);
 const PAGE = new URL("../public/index.html", import.meta.url);
@@ -8,7 +8,7 @@ const PAGE = new URL("../public/index.html", import.meta.url);
 createServer(async (req, res) => {
   const url = new URL(req.url ?? "/", "http://localhost");
   if (url.pathname === "/") return reply(res, 200, "text/html; charset=utf-8", await readFile(PAGE));
-  if (url.pathname === "/api/track") return trackTopic(url.searchParams.get("topic") || "Bitcoin", res);
+  if (url.pathname === "/api/track") return trackTopic(url.searchParams.get("topic") || DEFAULT_TOPIC, res);
   reply(res, 404, "text/plain", "Not found");
 }).listen(PORT, "127.0.0.1", () => console.log(`Open http://localhost:${PORT}`));
 
