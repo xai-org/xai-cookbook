@@ -1,11 +1,12 @@
 # xAI Cookbook
 
-Runnable examples for building with Grok: complete voice agent apps for the browser, phone calls, iOS, and Android, and a Python notebook that analyzes live posts from 𝕏. Each example teaches one idea end to end, and the code is meant to be copied.
+Runnable examples for building with Grok: a TypeScript app that turns articles into podcast episodes, complete voice agent apps for the browser, phone calls, iOS, and Android, and a Python notebook that analyzes live posts from 𝕏. Each example teaches one idea end to end, and the code is meant to be copied.
 
 New to the API? Start with the [quickstart](https://docs.x.ai/developers/quickstart) in the xAI docs, browse the [models](https://docs.x.ai/developers/models), and get an API key from the [xAI Console](https://console.x.ai).
 
 ## Start here
 
+- **TypeScript:** [Podcast from a Link](examples/podcast-from-a-link/), which turns any article into a two-host episode with a few calls to the xAI SDK.
 - **Voice:** [Web Voice Agent](examples/voice-agent-web/), a browser app you can talk to.
 - **𝕏 data:** [Real-Time Sentiment Analysis on 𝕏](examples/x-sentiment-analysis/), a notebook that searches 𝕏 live and scores sentiment. It keeps its outputs, so you can read it on GitHub without running anything.
 
@@ -24,6 +25,7 @@ Every example is a folder under [`examples/`](examples/) with a README that expl
 
 | Example | What you'll learn | Level | Code |
 | --- | --- | --- | --- |
+| [Podcast from a Link](examples/podcast-from-a-link/) | Turn an article or a PDF into a two-host podcast episode, and watch it being written and recorded live in a small web app. | Beginner | [TypeScript](examples/podcast-from-a-link/typescript/) |
 | [Mobile Voice Apps](examples/voice-agent-mobile/) | Native iOS and Android apps for real-time voice conversations with Grok, plus text-to-speech on iOS. | Intermediate | [Swift](examples/voice-agent-mobile/swift/) · [Kotlin](examples/voice-agent-mobile/kotlin/) |
 | [Phone Voice Agent](examples/voice-agent-phone/) | A voice agent you can call on the phone, using Twilio. | Intermediate | [TypeScript](examples/voice-agent-phone/xai/) |
 | [Web Voice Agent](examples/voice-agent-web/) | A React client with swappable Python and Node.js backends that talk to the Voice Agent API over WebSocket. | Intermediate | [TypeScript](examples/voice-agent-web/) · [Python](examples/voice-agent-web/xai/backend-python/) |
@@ -31,6 +33,18 @@ Every example is a folder under [`examples/`](examples/) with a README that expl
 <!-- catalog:end -->
 
 The apps are for learning and aren't production-ready as-is.
+
+## Run the TypeScript apps
+
+Each app in a `typescript/` folder is its own npm project built on the [xAI TypeScript SDK](https://www.npmjs.com/package/@xai-official/sdk). You'll need Node.js 22.13 or newer and an API key from the [xAI Console](https://console.x.ai). Copy `.env.example` to `.env` at the root of the repo and add your key, then:
+
+```bash
+cd examples/podcast-from-a-link/typescript
+npm install
+npm start -- https://en.wikipedia.org/wiki/Voyager_Golden_Record
+```
+
+Each app's README lists the arguments it takes.
 
 ## Run the notebooks
 
