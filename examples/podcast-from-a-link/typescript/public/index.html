@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Podcast from a Link</title>
+<style>
+  :root {
+    --bg: #fff;
+    --fg: #0a0a0a;
+    --muted: rgb(10 10 10 / 0.6);
+    --faint: rgb(10 10 10 / 0.3);
+    --card: #f9f8f6;
+    --secondary: #f2f1ef;
+    --secondary-hover: #e9e8e5;
+    --border: rgb(10 10 10 / 0.15);
+    --rule: rgb(213 217 226 / 0.55);
+    --primary: #0a0a0a;
+    --primary-hover: #202329;
+    --on-primary: #f9f8f6;
+    --bubble: rgb(10 10 10 / 0.06);
+    --track: rgb(10 10 10 / 0.08);
+    --track-ready: rgb(10 10 10 / 0.2);
+    --accent: #ff6308;
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 14px/24px var(--sans); background: var(--bg); color: var(--fg); -webkit-font-smoothing: antialiased; }
+  main { max-width: 1120px; margin: 0 auto; padding: 72px 24px; }
+  .eyebrow { margin: 0; font-size: 14px; }
+  h1 { margin: 8px 0 0; font-size: 48px; line-height: 1.1; font-weight: 450; letter-spacing: -0.01em; }
+  .lede { margin: 12px 0 32px; max-width: 620px; font-size: 16px; line-height: 26px; color: var(--muted); }
+
+  button { font: inherit; border: 0; cursor: pointer; }
+  .pill { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 40px; padding: 0 18px; border-radius: 9999px; font-size: 14px; font-weight: 500; white-space: nowrap; text-decoration: none; }
+  .pill-primary { background: var(--primary); color: var(--on-primary); }
+  .pill-primary:hover { background: var(--primary-hover); }
+  .pill-primary:disabled { opacity: 0.4; cursor: default; }
+  .pill-secondary { background: var(--secondary); color: var(--fg); }
+  .pill-secondary:hover { background: var(--secondary-hover); }
+  .pill svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+
+  form { display: flex; gap: 8px; max-width: 720px; }
+  input { flex: 1; height: 40px; padding: 0 18px; border: 1px solid var(--border); border-radius: 9999px; background: var(--bg); color: var(--fg); font: inherit; outline: none; }
+  input:focus { border-color: var(--fg); }
+  input::placeholder { color: var(--faint); }
+  .examples { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; font-size: 13px; color: var(--muted); }
+  .examples .pill { height: 30px; padding: 0 12px; font-size: 13px; }
+
+  .stage { display: grid; gap: 16px; margin-top: 48px; }
+  .card { background: var(--card); border-radius: 16px; padding: 20px 22px; }
+  .card-label { display: flex; align-items: center; gap: 8px; margin: 0 0 12px; font-size: 13px; font-weight: 500; color: var(--muted); }
+  .thinking summary { margin: 0; list-style: none; cursor: pointer; }
+  .thinking summary::-webkit-details-marker { display: none; }
+  .thinking:has(#reasoning:empty) summary { cursor: default; }
+  .chevron { width: 14px; height: 14px; margin-left: auto; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.2s; }
+  .thinking[open] .chevron { transform: rotate(180deg); }
+  .thinking:has(#reasoning:empty) .chevron { display: none; }
+  #reasoning { margin-top: 12px; max-height: 200px; overflow: auto; white-space: pre-wrap; font: 12px/20px var(--mono); color: var(--muted); }
+  #reasoning:empty { display: none; }
+  .dots { display: none; gap: 4px; }
+  .card.active .dots { display: inline-flex; }
+  .dots i { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); animation: blink 1.2s infinite both; }
+  .dots i:nth-child(2) { animation-delay: 0.2s; }
+  .dots i:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes blink { 0%, 80%, 100% { opacity: 0.25; } 40% { opacity: 1; } }
+
+  #title { margin: 0 0 20px; font-size: 24px; line-height: 32px; font-weight: 450; letter-spacing: -0.01em; }
+  #title:empty { display: none; }
+  /* The padding lets the first and last lines scroll toward the middle of the box. */
+  #lines {
+    position: relative; display: flex; flex-direction: column; gap: 14px;
+    height: min(520px, 60vh); padding: 160px 0; overflow-y: auto; scrollbar-width: none;
+    -webkit-mask-image: linear-gradient(to bottom, transparent, #000 72px, #000 calc(100% - 72px), transparent);
+    mask-image: linear-gradient(to bottom, transparent, #000 72px, #000 calc(100% - 72px), transparent);
+  }
+  #lines::-webkit-scrollbar { display: none; }
+  .line { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; cursor: pointer; animation: appear 0.3s ease-out; }
+  .line.guest { align-items: flex-end; }
+  @keyframes appear { from { opacity: 0; transform: translateY(4px); } }
+  .speaker { display: flex; align-items: center; gap: 6px; padding: 0 6px; font-size: 12px; line-height: 16px; color: var(--muted); }
+  .status { color: var(--faint); }
+  .bubble { max-width: min(80%, 640px); padding: 9px 15px; border: 1px solid transparent; border-radius: 18px 18px 18px 6px; background: var(--bubble); font-size: 14px; line-height: 22px; transition: background 0.2s, color 0.2s; }
+  .guest .bubble { border-color: var(--rule); border-radius: 18px 18px 6px 18px; background: var(--bg); }
+  .line:hover .bubble { border-color: var(--border); }
+  .line.playing .bubble { border-color: transparent; background: var(--primary); color: var(--on-primary); }
+  .eq { display: none; align-items: flex-end; gap: 2px; height: 10px; }
+  .playing .eq { display: inline-flex; }
+  .eq i { width: 2px; height: 100%; border-radius: 1px; background: var(--accent); animation: eq 0.9s ease-in-out infinite; }
+  .eq i:nth-child(2) { animation-delay: 0.15s; }
+  .eq i:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes eq { 0%, 100% { transform: scaleY(0.3); } 50% { transform: scaleY(1); } }
+  .tag { margin: 0 2px; padding: 1px 6px; border-radius: 9999px; background: var(--bubble); font: 11px/16px var(--mono); color: var(--muted); }
+  .playing .tag { background: rgb(128 128 128 / 0.3); color: inherit; opacity: 0.8; }
+  .emphasis { font-weight: 600; }
+  .whisper { font-style: italic; opacity: 0.7; }
+  .slow { letter-spacing: 0.06em; }
+
+  .player { display: none; align-items: center; gap: 16px; margin-top: 16px; }
+  .player.visible { display: flex; }
+  #play { flex: none; display: grid; place-items: center; width: 40px; height: 40px; padding: 0; border-radius: 50%; background: var(--primary); color: var(--on-primary); }
+  #play svg { width: 16px; height: 16px; fill: currentColor; }
+  #progress { flex: 1; display: flex; gap: 3px; }
+  #progress span { flex: 1; height: 4px; border-radius: 2px; background: var(--track); overflow: hidden; cursor: pointer; }
+  #progress span.ready { background: var(--track-ready); }
+  #progress span i { display: block; width: 0; height: 100%; background: var(--fg); }
+  #now { min-width: 200px; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  #download { display: none; height: 32px; padding: 0 14px; font-size: 13px; }
+
+  @media (max-width: 860px) {
+    h1 { font-size: 36px; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <p class="eyebrow">SpaceXAI Cookbook</p>
+  <h1>Podcast from a Link</h1>
+  <p class="lede">Paste a link to an article or a PDF. Grok writes a conversation about it between two hosts, and each line is voiced as soon as it's written, so the episode starts playing before the script is done.</p>
+  <form id="form">
+    <input id="source" type="url" required aria-label="Link to an article or a PDF" placeholder="https://en.wikipedia.org/wiki/Voyager_Golden_Record">
+    <button id="go" class="pill pill-primary">Make episode <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg></button>
+  </form>
+  <div class="examples">Try one:
+    <button type="button" class="pill pill-secondary" data-url="https://en.wikipedia.org/wiki/Voyager_Golden_Record">Voyager Golden Record</button>
+    <button type="button" class="pill pill-secondary" data-url="https://arxiv.org/pdf/1706.03762">Attention Is All You Need (PDF)</button>
+  </div>
+
+  <div class="stage">
+    <details class="card thinking" id="thinking" open hidden>
+      <summary class="card-label"><span id="status">Reading the link</span> <span class="dots"><i></i><i></i><i></i></span><svg class="chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4"/></svg></summary>
+      <div id="reasoning"></div>
+    </details>
+    <section class="card" id="script" hidden>
+      <p class="card-label">Script <span class="dots"><i></i><i></i><i></i></span></p>
+      <p id="title"></p>
+      <div id="lines"></div>
+      <div class="player" id="player">
+        <button id="play"></button>
+        <div id="progress"></div>
+        <span id="now"></span>
+        <a id="download" class="pill pill-secondary" download="episode.mp3">Download MP3</a>
+      </div>
+    </section>
+  </div>
+</main>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  const audio = new Audio();
+  const ICONS = {
+    play: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 2.5v11l9-5.5z"/></svg>',
+    pause: '<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3.5" y="2.5" width="3" height="11" rx="1"/><rect x="9.5" y="2.5" width="3" height="11" rx="1"/></svg>',
+  };
+  showPlayButton("pause");
+  let lines = [];
+  let current = 0;
+  let playing = false;
+  let writingDone = false;
+  let thinkingSince = 0;
+
+  document.querySelectorAll(".examples button").forEach((button) => {
+    button.onclick = () => ($("source").value = button.dataset.url);
+  });
+
+  $("thinking").querySelector("summary").onclick = (event) => {
+    if (!$("reasoning").textContent) event.preventDefault();
+  };
+
+  $("form").onsubmit = (event) => {
+    event.preventDefault();
+    reset();
+    playing = true;
+    $("go").disabled = true;
+    const events = new EventSource(`/api/episode?source=${encodeURIComponent($("source").value)}`);
+    const on = (name, handler) => events.addEventListener(name, (message) => handler(JSON.parse(message.data)));
+
+    on("step", ({ step, status }) => {
+      if (step === "think" && status === "active") {
+        thinkingSince = Date.now();
+        $("status").textContent = "Thinking";
+      }
+      if (step === "think" && status === "done") {
+        $("thinking").open = false;
+        $("thinking").classList.remove("active");
+        $("status").textContent = `Thought for ${Math.round((Date.now() - thinkingSince) / 1000)} seconds`;
+      }
+      if (step === "write") {
+        $("script").hidden = false;
+        $("script").classList.toggle("active", status === "active");
+        if (status === "done") writingDone = true;
+      }
+    });
+    on("reasoning", ({ text }) => {
+      $("reasoning").textContent += text;
+      $("reasoning").scrollTop = $("reasoning").scrollHeight;
+    });
+    on("title", ({ title }) => ($("title").textContent = title));
+    on("line", addLine);
+    on("audio", ({ index, url }) => {
+      lines[index].url = url;
+      lines[index].el.querySelector(".status").textContent = "";
+      $("progress").children[index].classList.add("ready");
+      $("player").classList.add("visible");
+      if (playing && index === current && audio.paused) playLine(index);
+    });
+    on("done", ({ download }) => {
+      $("download").href = download;
+      $("download").style.display = "inline-flex";
+      $("go").disabled = false;
+      events.close();
+    });
+    on("failure", ({ message }) => {
+      alert(message);
+      $("thinking").classList.remove("active");
+      $("script").classList.remove("active");
+      $("status").textContent = "Couldn't make the episode";
+      $("go").disabled = false;
+      events.close();
+    });
+  };
+
+  function addLine({ index, speaker, name, text }) {
+    const el = document.createElement("div");
+    el.className = `line ${speaker}`;
+    el.innerHTML = `<div class="speaker">${name}<span class="status">· recording…</span><span class="eq"><i></i><i></i><i></i></span></div><div class="bubble">${formatTags(escapeHtml(text))}</div>`;
+    el.onclick = () => {
+      playing = true;
+      playLine(index);
+    };
+    $("lines").append(el);
+    const segment = document.createElement("span");
+    segment.append(document.createElement("i"));
+    segment.onclick = el.onclick;
+    $("progress").append(segment);
+    lines[index] = { el };
+  }
+
+  function playLine(index) {
+    current = index;
+    lines.forEach((line, i) => line.el.classList.toggle("playing", i === index));
+    renderProgress();
+    if (index >= lines.length) {
+      if (writingDone) finish();
+      else $("now").textContent = "Waiting for the next line…";
+      return;
+    }
+    centerLine(lines[index].el);
+    $("now").textContent = `Line ${index + 1} of ${lines.length}${lines[index].url ? "" : ", still recording…"}`;
+    if (!lines[index].url) return;
+    audio.src = lines[index].url;
+    audio.play();
+    showPlayButton("pause");
+  }
+
+  audio.onended = () => playing && playLine(current + 1);
+
+  let scrollFrame = 0;
+  let scrollFallback = 0;
+  function centerLine(el) {
+    const box = $("lines");
+    const from = box.scrollTop;
+    const to = el.offsetTop - (box.clientHeight - el.offsetHeight) / 2;
+    const start = performance.now();
+    cancelAnimationFrame(scrollFrame);
+    clearTimeout(scrollFallback);
+    const step = (now) => {
+      const t = Math.min((now - start) / 500, 1);
+      box.scrollTop = from + (to - from) * (1 - (1 - t) ** 3);
+      if (t < 1) scrollFrame = requestAnimationFrame(step);
+    };
+    scrollFrame = requestAnimationFrame(step);
+    // Animation frames pause while a tab isn't being painted, so the line still ends up centered.
+    scrollFallback = setTimeout(() => (box.scrollTop = to), 600);
+  }
+
+  function renderProgress() {
+    const clip = lines[current]?.url;
+    const fraction = clip && audio.src.endsWith(clip) && audio.duration ? audio.currentTime / audio.duration : 0;
+    [...$("progress").children].forEach((segment, i) => {
+      segment.firstChild.style.width = i < current ? "100%" : i === current ? `${fraction * 100}%` : "0%";
+    });
+  }
+
+  audio.onplay = function tick() {
+    renderProgress();
+    if (!audio.paused) requestAnimationFrame(tick);
+  };
+
+  $("play").onclick = () => {
+    if (playing) {
+      playing = false;
+      audio.pause();
+      showPlayButton("play");
+      return;
+    }
+    playing = true;
+    if (current >= lines.length) {
+      playLine(0);
+    } else if (audio.src && audio.currentTime > 0 && !audio.ended) {
+      audio.play();
+      showPlayButton("pause");
+    } else {
+      playLine(current);
+    }
+  };
+
+  // The button shows the action it takes: pause while playing, play otherwise.
+  function showPlayButton(action) {
+    $("play").innerHTML = ICONS[action];
+    $("play").setAttribute("aria-label", action === "play" ? "Play" : "Pause");
+  }
+
+  function finish() {
+    playing = false;
+    current = lines.length;
+    renderProgress();
+    showPlayButton("play");
+    $("now").textContent = "Finished. Play it again or download it.";
+  }
+
+  function reset() {
+    audio.pause();
+    lines = [];
+    current = 0;
+    writingDone = false;
+    $("lines").innerHTML = "";
+    $("lines").scrollTop = 0;
+    $("progress").innerHTML = "";
+    $("reasoning").textContent = "";
+    $("title").textContent = "";
+    $("now").textContent = "";
+    $("download").style.display = "none";
+    $("player").classList.remove("visible");
+    $("script").hidden = true;
+    $("script").classList.remove("active");
+    $("status").textContent = "Reading the link";
+    $("thinking").classList.add("active");
+    $("thinking").open = true;
+    $("thinking").hidden = false;
+  }
+
+  function formatTags(html) {
+    return html
+      .replace(/\[([a-z-]+)\]/g, '<span class="tag">$1</span>')
+      .replace(/&lt;(emphasis|whisper|slow)&gt;([\s\S]*?)&lt;\/\1&gt;/g, '<span class="$1">$2</span>');
+  }
+
+  function escapeHtml(text) {
+    return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+</script>
+</body>
+</html>
