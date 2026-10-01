@@ -1,0 +1,19 @@
+{
+  "name": "storyboard-to-film",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "start": "node --env-file-if-exists=../../../.env --experimental-strip-types --no-warnings=ExperimentalWarning src/index.ts",
+    "typecheck": "tsc"
+  },
+  "dependencies": {
+    "@xai-official/sdk": "0.1.0-rc.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.5.0",
+    "typescript": "^5.9.0"
+  }
+}
