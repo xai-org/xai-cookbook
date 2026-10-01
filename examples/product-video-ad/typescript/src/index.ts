@@ -44,7 +44,7 @@ const PICK_SCHEMA = {
 let mediaCost = 0;
 
 const photoPath = process.argv[2] ?? "sample-product.jpg";
-const description = process.argv.slice(3).join(" ") || "A ceramic travel mug with a bamboo lid that keeps coffee hot for hours";
+const description = process.argv.slice(3).join(" ") || (process.argv[2] ? "The product in the photo" : "A ceramic travel mug with a bamboo lid that keeps coffee hot for hours");
 const photo = await openAsBlob(photoPath);
 
 console.log("Writing the brief");
@@ -144,6 +144,7 @@ async function animate(image: Blob, motion: string, path: string): Promise<void>
   }
   mediaCost += result.usage?.cost_usd ?? 0;
   const video = await fetch(result.video.url);
+  if (!video.ok) throw new Error(`Couldn't download the video: ${video.status}`);
   await writeFile(path, Buffer.from(await video.arrayBuffer()));
 }
 
