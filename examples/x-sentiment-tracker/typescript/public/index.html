@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>𝕏 Sentiment Tracker</title>
+<style>
+  :root {
+    --bg: #fff;
+    --fg: #0a0a0a;
+    --muted: rgb(10 10 10 / 0.6);
+    --faint: rgb(10 10 10 / 0.3);
+    --card: #f9f8f6;
+    --secondary: #f2f1ef;
+    --secondary-hover: #e9e8e5;
+    --border: rgb(10 10 10 / 0.15);
+    --rule: rgb(213 217 226 / 0.55);
+    --primary: #0a0a0a;
+    --primary-hover: #202329;
+    --on-primary: #f9f8f6;
+    --bubble: rgb(10 10 10 / 0.06);
+    --track: rgb(10 10 10 / 0.08);
+    --track-ready: rgb(10 10 10 / 0.2);
+    --accent: #ff6308;
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 14px/24px var(--sans); background: var(--bg); color: var(--fg); -webkit-font-smoothing: antialiased; }
+  main { max-width: 1120px; margin: 0 auto; padding: 72px 24px; }
+  .eyebrow { margin: 0; font-size: 14px; }
+  h1 { margin: 8px 0 0; font-size: 48px; line-height: 1.1; font-weight: 450; letter-spacing: -0.01em; }
+  .lede { margin: 12px 0 32px; max-width: 620px; font-size: 16px; line-height: 26px; color: var(--muted); }
+
+  button { font: inherit; border: 0; cursor: pointer; }
+  .pill { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 40px; padding: 0 18px; border-radius: 9999px; font-size: 14px; font-weight: 500; white-space: nowrap; text-decoration: none; }
+  .pill-primary { background: var(--primary); color: var(--on-primary); }
+  .pill-primary:hover { background: var(--primary-hover); }
+  .pill-secondary { background: var(--secondary); color: var(--fg); }
+  .pill-secondary:hover { background: var(--secondary-hover); }
+  .pill svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+
+  form { display: flex; gap: 8px; max-width: 720px; }
+  input { flex: 1; height: 40px; padding: 0 18px; border: 1px solid var(--border); border-radius: 9999px; background: var(--bg); color: var(--fg); font: inherit; outline: none; }
+  input:focus { border-color: var(--fg); }
+  input::placeholder { color: var(--faint); }
+  .examples { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; font-size: 13px; color: var(--muted); }
+  .examples .pill { height: 30px; padding: 0 12px; font-size: 13px; }
+
+  .stage, #rounds { display: grid; gap: 16px; }
+  .stage { margin-top: 48px; }
+  .card { background: var(--card); border-radius: 16px; padding: 20px 22px; animation: appear 0.3s ease-out; }
+  .card-label { display: flex; align-items: center; gap: 8px; margin: 0 0 12px; font-size: 13px; font-weight: 500; color: var(--muted); }
+  .status { color: var(--faint); }
+  .thinking summary { margin: 0; list-style: none; cursor: pointer; }
+  .thinking summary::-webkit-details-marker { display: none; }
+  .thinking:has(.reasoning:empty) summary { cursor: default; }
+  .chevron { width: 14px; height: 14px; margin-left: auto; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.2s; }
+  .thinking[open] .chevron { transform: rotate(180deg); }
+  .thinking:has(.reasoning:empty) .chevron { display: none; }
+  .reasoning { margin-top: 12px; max-height: 200px; overflow: auto; white-space: pre-wrap; font: 12px/20px var(--mono); color: var(--muted); }
+  .reasoning:empty { display: none; }
+  .dots { display: none; gap: 4px; }
+  .active > .card-label .dots { display: inline-flex; }
+  .dots i { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); animation: blink 1.2s infinite both; }
+  .dots i:nth-child(2) { animation-delay: 0.2s; }
+  .dots i:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes blink { 0%, 80%, 100% { opacity: 0.25; } 40% { opacity: 1; } }
+  @keyframes appear { from { opacity: 0; transform: translateY(4px); } }
+
+  .overview { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 32px 64px; }
+  .now { flex: 1 1 360px; max-width: 600px; }
+  #score { margin: 0 0 24px; font-size: 64px; line-height: 64px; font-weight: 450; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+  #score.empty { font-size: 16px; letter-spacing: 0; color: var(--muted); }
+  .meter { position: relative; height: 6px; border-radius: 3px; background: var(--track); }
+  .meter::before { content: ""; position: absolute; left: 50%; top: -5px; width: 1px; height: 16px; background: var(--faint); }
+  #fill { position: absolute; top: 0; bottom: 0; left: 50%; width: 0; border-radius: 3px; background: var(--fg); transition: left 0.6s, width 0.6s; }
+  #marker { position: absolute; top: 50%; left: 50%; width: 18px; height: 18px; margin: -9px 0 0 -9px; border: 3px solid var(--card); border-radius: 50%; background: var(--fg); transition: left 0.6s; }
+  .scale { display: grid; grid-template-columns: 1fr auto 1fr; margin-top: 12px; font-size: 12px; line-height: 16px; color: var(--muted); }
+  .scale span:last-child { text-align: right; }
+  #history { display: flex; gap: 4px; }
+  .past { display: grid; justify-items: center; width: 56px; font-size: 12px; line-height: 16px; color: var(--faint); font-variant-numeric: tabular-nums; }
+  .past .bar { position: relative; width: 100%; height: 72px; margin-bottom: 8px; background: linear-gradient(var(--border), var(--border)) center / 100% 1px no-repeat; }
+  .past i { position: absolute; left: 23px; right: 23px; border-radius: 2px; background: var(--track-ready); transition: height 0.6s; }
+  .past.latest i { background: var(--fg); }
+  .past b { min-height: 16px; font-weight: 500; color: var(--fg); }
+  .past.skipped b { color: var(--faint); }
+
+  .round { display: grid; gap: 12px; }
+  .round > .card-label { margin: 0; }
+  .countdown, .found, .message { margin: 0; }
+  .found:empty { display: none; }
+  .countdown-bar { height: 2px; border-radius: 1px; background: var(--track); overflow: hidden; }
+  .countdown-bar i { display: block; height: 100%; background: var(--fg); transform-origin: left; animation: drain linear forwards; }
+  @keyframes drain { to { transform: scaleX(0); } }
+  .searches { display: grid; gap: 4px; }
+  .searches:empty { display: none; }
+  .search { display: flex; gap: 8px; font: 12px/20px var(--mono); color: var(--muted); overflow-wrap: anywhere; animation: appear 0.3s ease-out; }
+  .search svg { flex: none; width: 14px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; }
+  .posts { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+  .posts:empty { display: none; }
+  .post { display: flex; flex-direction: column; gap: 6px; padding: 14px 16px; border: 1px solid var(--rule); border-radius: 12px; background: var(--bg); color: inherit; text-decoration: none; animation: appear 0.3s ease-out; }
+  .post:hover { border-color: var(--border); }
+  .post .author { display: flex; align-items: center; gap: 6px; font-weight: 500; overflow-wrap: anywhere; }
+  .post .time { font-weight: 400; color: var(--faint); white-space: nowrap; }
+  .post svg { flex: none; width: 14px; height: 14px; margin-left: auto; fill: none; stroke: var(--faint); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  .post p { display: -webkit-box; margin: 0; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 8; font-size: 13px; line-height: 20px; white-space: pre-line; overflow-wrap: anywhere; }
+  .thinking, .result { margin-top: 4px; padding-top: 16px; border-top: 1px solid var(--rule); }
+  .result-score { display: flex; align-items: baseline; gap: 10px; margin: 0 0 8px; color: var(--muted); }
+  .result-score b { font-size: 24px; line-height: 32px; font-weight: 450; letter-spacing: -0.01em; color: var(--fg); font-variant-numeric: tabular-nums; }
+  .explanation { margin: 0; max-width: 760px; }
+  .key-label { margin: 20px 0 4px; }
+  .key-label:has(+ .key-posts:empty) { display: none; }
+  .key-posts { margin: 0; padding: 0; list-style: none; }
+  .key-posts a { display: grid; grid-template-columns: 180px 1fr; gap: 16px; padding: 10px 0; border-top: 1px solid var(--rule); color: inherit; text-decoration: none; }
+  .key-posts .author { overflow: hidden; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
+  .key-posts .note { color: var(--muted); }
+  .key-posts a:hover .note { color: var(--fg); }
+
+  @media (max-width: 860px) {
+    h1 { font-size: 36px; }
+    .key-posts a { grid-template-columns: 1fr; gap: 2px; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <p class="eyebrow">SpaceXAI Cookbook</p>
+  <h1>𝕏 Sentiment Tracker</h1>
+  <p class="lede">Enter a topic, like a coin, a stock, or a company. Grok searches 𝕏 for recent posts about it every minute, filters out the noise, and keeps a running sentiment score from −1 (bearish) to +1 (bullish).</p>
+  <form id="form">
+    <input id="topic" required value="Bitcoin" aria-label="Topic to track" placeholder="A coin, a stock, or a company">
+    <button id="go" class="pill pill-primary">Start tracking <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg></button>
+  </form>
+  <div class="examples">Try one:
+    <button type="button" class="pill pill-secondary">Bitcoin</button>
+    <button type="button" class="pill pill-secondary">Ethereum</button>
+    <button type="button" class="pill pill-secondary">Nvidia</button>
+  </div>
+
+  <div class="stage">
+    <section class="card" id="sentiment" hidden>
+      <p class="card-label" id="topic-label"></p>
+      <div class="overview">
+        <div class="now">
+          <p id="score"></p>
+          <div class="meter"><span id="fill"></span><span id="marker" hidden></span></div>
+          <div class="scale"><span>−1 Bearish</span><span>Neutral</span><span>Bullish +1</span></div>
+        </div>
+        <div>
+          <p class="card-label">By round</p>
+          <div id="history"></div>
+        </div>
+      </div>
+    </section>
+    <div id="rounds"></div>
+  </div>
+</main>
+
+<template id="round">
+  <section class="card round">
+    <p class="card-label"><span class="round-label"></span><span class="status"></span><span class="dots"><i></i><i></i><i></i></span></p>
+    <p class="countdown" hidden></p>
+    <div class="countdown-bar" hidden><i></i></div>
+    <div class="searches"></div>
+    <p class="found"></p>
+    <div class="posts"></div>
+    <details class="thinking" hidden>
+      <summary class="card-label"><span class="thinking-label">Thinking</span> <span class="dots"><i></i><i></i><i></i></span><svg class="chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4"/></svg></summary>
+      <div class="reasoning"></div>
+    </details>
+    <div class="result" hidden>
+      <p class="result-score"></p>
+      <p class="explanation"></p>
+      <p class="card-label key-label">Posts that influenced it most</p>
+      <ul class="key-posts"></ul>
+    </div>
+    <p class="message" hidden></p>
+  </section>
+</template>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  const part = (name) => card.querySelector(`.${name}`);
+  const ICONS = {
+    chevron: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg>',
+    search: '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.5"/><path d="m10.5 10.5 3 3"/></svg>',
+    link: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 10.5l5-5M6.5 5.5h4v4"/></svg>',
+  };
+  const AGO = new Intl.RelativeTimeFormat("en", { style: "narrow" });
+  const posts = new Map();
+  let events;
+  let card;
+  let round = 0;
+  let rounds = 0;
+  let latest;
+  let found = 0;
+  let scored = 0;
+  let thinkingSince = 0;
+  let timer = 0;
+
+  document.querySelectorAll(".examples button").forEach((button) => {
+    button.onclick = () => ($("topic").value = button.textContent);
+  });
+
+  $("form").onsubmit = (event) => {
+    event.preventDefault();
+    if (events) return stop("Stopped.");
+    const topic = $("topic").value.trim();
+    reset(topic);
+    setRunning(true);
+    events = new EventSource(`/api/track?topic=${encodeURIComponent(topic)}`);
+    const on = (name, handler) => events.addEventListener(name, (message) => handler(JSON.parse(message.data)));
+
+    on("round", (data) => {
+      round = data.round;
+      if (round === 1) {
+        rounds = data.rounds;
+        $("history").innerHTML = Array.from({ length: rounds }, (_, i) => `<div class="past"><span class="bar"><i></i></span><b></b>Round ${i + 1}</div>`).join("");
+        card = addRound(1);
+      }
+      clearInterval(timer);
+      part("countdown").hidden = true;
+      part("countdown-bar").hidden = true;
+      setStep("searching 𝕏");
+    });
+    on("search", ({ name, input }) => {
+      const query = JSON.parse(input || "{}").query ?? name;
+      part("searches").insertAdjacentHTML("beforeend", `<div class="search">${ICONS.search}<span>${escapeHtml(query)}</span></div>`);
+    });
+    on("found", ({ count }) => {
+      found = count;
+      if (!count) return;
+      part("found").textContent = `Found ${plural(count, "new post")}.`;
+      setStep("filtering");
+    });
+    on("kept", ({ posts: kept, filtered }) => {
+      part("found").textContent = describe(kept.length, filtered);
+      for (const post of kept) {
+        posts.set(post.post_id, post);
+        part("posts").insertAdjacentHTML("beforeend", postCard(post));
+      }
+      setStep("");
+    });
+    on("scoring", ({ count }) => {
+      scored = count;
+      thinkingSince = Date.now();
+      part("thinking").hidden = false;
+      part("thinking").open = true;
+      part("thinking").classList.add("active");
+    });
+    on("reasoning", ({ text }) => {
+      part("reasoning").textContent += text;
+      part("reasoning").scrollTop = part("reasoning").scrollHeight;
+    });
+    on("score", (sentiment) => {
+      part("thinking").classList.remove("active");
+      part("thinking").open = false;
+      part("thinking-label").textContent = `Thought for ${plural(Math.round((Date.now() - thinkingSince) / 1000), "second")}`;
+      showResult(sentiment);
+      showScore(sentiment.score);
+    });
+    on("wait", ({ seconds }) => {
+      endRound();
+      card = addRound(round + 1);
+      startCountdown(seconds);
+    });
+    on("done", () => {
+      endRound();
+      stop();
+    });
+    on("failure", ({ message }) => stop(`Couldn't finish this round: ${message}`));
+    events.onerror = () => stop("Lost the connection to the server.");
+  };
+
+  function addRound(number) {
+    const el = $("round").content.firstElementChild.cloneNode(true);
+    el.querySelector(".round-label").textContent = `Round ${number} of ${rounds}`;
+    el.querySelector("summary").onclick = (event) => {
+      if (!el.querySelector(".reasoning").textContent) event.preventDefault();
+    };
+    $("rounds").prepend(el);
+    return el;
+  }
+
+  function setStep(step) {
+    part("status").textContent = step ? `· ${step}` : "";
+    card.classList.toggle("active", Boolean(step));
+  }
+
+  function describe(kept, filtered) {
+    const stays = latest === undefined ? "." : `, so the score stays at ${formatScore(latest)}.`;
+    if (!found) return round === 1 ? "No posts found." : `No new posts since the last search${stays}`;
+    const summary = `Found ${plural(found, "new post")}`;
+    if (!kept) return `${summary}, but ${found === 1 ? "it's" : "they're all"} noise${stays}`;
+    if (!filtered) return `${summary}, all worth scoring.`;
+    return `${summary} and filtered out ${filtered} as noise.`;
+  }
+
+  function showResult({ score, reasoning, key_posts }) {
+    part("result").hidden = false;
+    part("result-score").innerHTML = `<b>${formatScore(score)}</b>based on ${plural(scored, "post")}`;
+    part("explanation").textContent = reasoning;
+    part("key-posts").innerHTML = key_posts
+      .filter(({ post_id }) => posts.has(post_id))
+      .map(({ post_id, note }) => `<li><a href="https://x.com/i/status/${post_id}" target="_blank" rel="noopener"><span class="author">@${escapeHtml(posts.get(post_id).username)}</span><span class="note">${escapeHtml(note)}</span></a></li>`)
+      .join("");
+  }
+
+  function showScore(score) {
+    latest = score;
+    const position = (score + 1) * 50;
+    $("score").textContent = formatScore(score);
+    $("score").classList.remove("empty");
+    $("marker").hidden = false;
+    $("marker").style.left = `${position}%`;
+    $("fill").style.left = `${Math.min(position, 50)}%`;
+    $("fill").style.width = `${Math.abs(position - 50)}%`;
+    const slots = [...$("history").children];
+    slots.forEach((slot, i) => slot.classList.toggle("latest", i === round - 1));
+    slots[round - 1].querySelector("b").textContent = formatScore(score);
+    slots[round - 1].querySelector("i").style.cssText = `${score < 0 ? "top" : "bottom"}: 50%; height: max(2px, ${Math.abs(score) * 50}%)`;
+  }
+
+  function startCountdown(seconds) {
+    const deadline = Date.now() + seconds * 1000;
+    const text = part("countdown");
+    const tick = () => {
+      text.textContent = `Next search in ${plural(Math.max(1, Math.ceil((deadline - Date.now()) / 1000)), "second")}`;
+    };
+    tick();
+    timer = setInterval(tick, 1000);
+    text.hidden = false;
+    part("countdown-bar").hidden = false;
+    part("countdown-bar").firstElementChild.style.animationDuration = `${seconds}s`;
+  }
+
+  function endRound() {
+    setStep("");
+    const slot = $("history").children[round - 1];
+    if (slot.querySelector("b").textContent) return;
+    slot.classList.add("skipped");
+    slot.querySelector("b").textContent = "–";
+  }
+
+  function stop(message) {
+    events?.close();
+    events = undefined;
+    clearInterval(timer);
+    setRunning(false);
+    if (!card) {
+      if (message) alert(message);
+      return;
+    }
+    setStep("");
+    part("thinking").classList.remove("active");
+    part("countdown-bar").hidden = true;
+    if (!message) return;
+    part("countdown").hidden = true;
+    part("message").textContent = message;
+    part("message").hidden = false;
+  }
+
+  function setRunning(running) {
+    $("go").className = `pill ${running ? "pill-secondary" : "pill-primary"}`;
+    $("go").innerHTML = running ? "Stop" : `Start tracking ${ICONS.chevron}`;
+  }
+
+  function reset(topic) {
+    posts.clear();
+    card = undefined;
+    round = rounds = 0;
+    latest = undefined;
+    $("rounds").innerHTML = "";
+    $("history").innerHTML = "";
+    $("topic-label").textContent = `${topic} sentiment`;
+    $("score").textContent = "Waiting for the first score";
+    $("score").classList.add("empty");
+    $("marker").hidden = true;
+    $("fill").style.width = "0";
+    $("sentiment").hidden = false;
+  }
+
+  function postCard({ post_id, username, text, created_at }) {
+    return `<a class="post" href="https://x.com/i/status/${post_id}" target="_blank" rel="noopener"><span class="author">@${escapeHtml(username)}<span class="time">${ago(created_at)}</span>${ICONS.link}</span><p>${escapeHtml(text)}</p></a>`;
+  }
+
+  function ago(time) {
+    const minutes = Math.round((Date.now() - Date.parse(time)) / 60000);
+    if (Number.isNaN(minutes)) return "";
+    return minutes < 60 ? AGO.format(-Math.max(minutes, 1), "minute") : AGO.format(-Math.round(minutes / 60), "hour");
+  }
+
+  function formatScore(score) {
+    const rounded = Math.round(score * 10) / 10;
+    return `${rounded > 0 ? "+" : rounded < 0 ? "−" : ""}${Math.abs(rounded).toFixed(1)}`;
+  }
+
+  function plural(count, word) {
+    return `${count} ${word}${count === 1 ? "" : "s"}`;
+  }
+
+  function escapeHtml(text) {
+    return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+</script>
+</body>
+</html>

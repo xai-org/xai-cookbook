@@ -29,7 +29,7 @@ Every example is a folder under [`examples/`](examples/) with a README that expl
 | [Mobile Voice Apps](examples/voice-agent-mobile/) | Native iOS and Android apps for real-time voice conversations with Grok, plus text-to-speech on iOS. | Intermediate | [Swift](examples/voice-agent-mobile/swift/) · [Kotlin](examples/voice-agent-mobile/kotlin/) |
 | [Phone Voice Agent](examples/voice-agent-phone/) | A voice agent you can call on the phone, using Twilio. | Intermediate | [TypeScript](examples/voice-agent-phone/xai/) |
 | [Web Voice Agent](examples/voice-agent-web/) | A React client with swappable Python and Node.js backends that talk to the Voice Agent API over WebSocket. | Intermediate | [TypeScript](examples/voice-agent-web/) · [Python](examples/voice-agent-web/xai/backend-python/) |
-| [𝕏 Sentiment Tracker](examples/x-sentiment-tracker/) | Track sentiment about any topic from live 𝕏 posts with Grok's X Search tool, and watch the searches and Grok's reasoning stream into your terminal. | Intermediate | [TypeScript](examples/x-sentiment-tracker/typescript/) |
+| [𝕏 Sentiment Tracker](examples/x-sentiment-tracker/) | Track sentiment about any topic from live 𝕏 posts with Grok's X Search tool, and watch the searches and Grok's reasoning stream into a small web app. | Intermediate | [TypeScript](examples/x-sentiment-tracker/typescript/) |
 | [WebRTC Voice Agent](examples/voice-agent-webrtc/) | A low-latency browser voice agent that uses WebRTC between the browser and a server, which connects to xAI over WebSocket. | Advanced | [TypeScript](examples/voice-agent-webrtc/) |
 <!-- catalog:end -->
 
