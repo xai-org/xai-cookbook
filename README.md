@@ -25,7 +25,7 @@ Every example is a folder under [`examples/`](examples/) with a README that expl
 | Example | What you'll learn | Level | Code |
 | --- | --- | --- | --- |
 | [Mobile Voice Apps](examples/voice-agent-mobile/) | Native iOS and Android apps for real-time voice conversations with Grok, plus text-to-speech on iOS. | Intermediate | [Swift](examples/voice-agent-mobile/swift/) · [Kotlin](examples/voice-agent-mobile/kotlin/) |
-| [Phone Voice Agent](examples/voice-agent-phone/) | A voice agent you can call on the phone, using Twilio. | Intermediate | [TypeScript](examples/voice-agent-phone/xai/) |
+| [Phone Voice Agent](examples/voice-agent-phone/) | A voice agent you can call on the phone, using Twilio or Plivo. | Intermediate | [TypeScript](examples/voice-agent-phone/xai/) |
 | [Web Voice Agent](examples/voice-agent-web/) | A React client with swappable Python and Node.js backends that talk to the Voice Agent API over WebSocket. | Intermediate | [TypeScript](examples/voice-agent-web/) · [Python](examples/voice-agent-web/xai/backend-python/) |
 | [WebRTC Voice Agent](examples/voice-agent-webrtc/) | A low-latency browser voice agent that uses WebRTC between the browser and a server, which connects to xAI over WebSocket. | Advanced | [TypeScript](examples/voice-agent-webrtc/) |
 <!-- catalog:end -->
