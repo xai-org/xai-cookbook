@@ -28,6 +28,7 @@ Every example is a folder under [`examples/`](examples/) with a README that expl
 | [Podcast from a Link](examples/podcast-from-a-link/) | Turn an article or a PDF into a two-host podcast episode, and watch it being written and recorded live in a small web app. | Beginner | [TypeScript](examples/podcast-from-a-link/typescript/) |
 | [Mobile Voice Apps](examples/voice-agent-mobile/) | Native iOS and Android apps for real-time voice conversations with Grok, plus text-to-speech on iOS. | Intermediate | [Swift](examples/voice-agent-mobile/swift/) · [Kotlin](examples/voice-agent-mobile/kotlin/) |
 | [Phone Voice Agent](examples/voice-agent-phone/) | A voice agent you can call on the phone, using Twilio. | Intermediate | [TypeScript](examples/voice-agent-phone/xai/) |
+| [Product Photo to Video Ad](examples/product-video-ad/) | Turn one product photo into a vertical video ad with a voiceover, and watch Grok write the brief, place the product in three scenes, pick the best one, and animate it in a small web app. | Intermediate | [TypeScript](examples/product-video-ad/typescript/) |
 | [Web Voice Agent](examples/voice-agent-web/) | A React client with swappable Python and Node.js backends that talk to the Voice Agent API over WebSocket. | Intermediate | [TypeScript](examples/voice-agent-web/) · [Python](examples/voice-agent-web/xai/backend-python/) |
 | [WebRTC Voice Agent](examples/voice-agent-webrtc/) | A low-latency browser voice agent that uses WebRTC between the browser and a server, which connects to xAI over WebSocket. | Advanced | [TypeScript](examples/voice-agent-webrtc/) |
 <!-- catalog:end -->
@@ -44,7 +45,7 @@ npm install
 npm start -- https://en.wikipedia.org/wiki/Voyager_Golden_Record
 ```
 
-Each app's README lists the arguments it takes.
+Each app's README lists the arguments it takes. Apps that generate images or video cost more to run, and their READMEs say how much.
 
 ## Run the notebooks
 
