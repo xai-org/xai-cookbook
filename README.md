@@ -18,6 +18,7 @@ Every example is a folder under [`examples/`](examples/) with a README that expl
 
 | Example | What you'll learn | Level | Code |
 | --- | --- | --- | --- |
+| [Deterministic Guardrails for Grok Tool Calls](examples/deterministic_tool_call_guardrails/) | Wrap a Grok function-calling loop in four zero-token, fail-closed checks: argument validation, an action-tier gate for irreversible tools, output verification, and a grounding check. | Intermediate | [Python](examples/deterministic_tool_call_guardrails/python/) |
 | [Real-Time Sentiment Analysis on 𝕏](examples/x-sentiment-analysis/) | Pull the latest posts from 𝕏 with Grok's X Search tool, filter out the noise with a quick pass, and score sentiment with a deeper one. | Advanced | [Python](examples/x-sentiment-analysis/python/) |
 
 ### Apps
