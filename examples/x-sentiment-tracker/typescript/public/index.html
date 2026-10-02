@@ -34,17 +34,13 @@
   @keyframes pulse { to { background-color: var(--secondary-hover); } }
   @keyframes appear { from { opacity: 0; transform: translateY(4px); } }
 
-  .site { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 12px; height: 60px; padding: 0 24px; background: rgb(255 255 255 / 0.85); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+  .site { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 12px; height: 60px; padding: 0 20px; background: rgb(255 255 255 / 0.85); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
   .wordmark { flex: none; font-size: 17px; font-weight: 700; letter-spacing: -0.03em; text-decoration: none; }
   .crumbs { display: flex; align-items: center; gap: 8px; min-width: 0; color: var(--muted); white-space: nowrap; }
   .crumbs svg { width: 12px; height: 12px; color: var(--faint); }
-  .crumbs strong { overflow: hidden; text-overflow: ellipsis; font-weight: 500; color: var(--fg); }
+  .crumbs h1 { margin: 0; overflow: hidden; text-overflow: ellipsis; font-size: inherit; line-height: inherit; font-weight: 500; color: var(--fg); }
   .site .pill { flex: none; margin-left: auto; }
-  .hero { display: grid; justify-items: center; gap: 14px; padding: 36px 24px 32px; text-align: center; }
-  .kicker { display: inline-flex; align-items: center; gap: 8px; height: 28px; padding: 0 12px 0 4px; border-radius: 9999px; box-shadow: inset 0 0 0 1px var(--line); font-size: 12px; font-weight: 500; color: var(--muted); }
-  .kicker b { padding: 0 8px; border-radius: 9999px; background: var(--accent-soft); color: var(--accent); font-weight: 500; line-height: 20px; }
-  .hero h1 { margin: 0; font-size: 44px; line-height: 1.08; font-weight: 450; letter-spacing: -0.02em; }
-  .hero p { max-width: 640px; margin: 0; font-size: 16px; line-height: 26px; color: var(--muted); }
+  .models { flex: none; height: 26px; padding: 0 10px; border-radius: 9999px; box-shadow: inset 0 0 0 1px var(--line); font-size: 12px; font-weight: 500; line-height: 26px; color: var(--muted); }
   .pill { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 40px; padding: 0 18px; border-radius: 9999px; font-size: 14px; font-weight: 500; white-space: nowrap; text-decoration: none; }
   .pill-sm { height: 32px; padding: 0 14px; font-size: 13px; }
   .pill-primary { background: var(--fg); color: #fff; }
@@ -56,17 +52,16 @@
   .field { min-width: 0; height: 40px; padding: 0 18px; border: 1px solid var(--border); border-radius: 9999px; background: var(--bg); color: var(--fg); font: inherit; outline: none; }
   .field:focus { border-color: var(--fg); }
   .field::placeholder { color: var(--faint); }
-  .surface { max-width: 1280px; margin: 0 auto 48px; padding: 8px; border-radius: 24px; background: var(--card); }
+  .surface { display: flex; flex-direction: column; gap: 8px; height: calc(100vh - 72px); min-height: 560px; margin: 0 12px 12px; padding: 8px; border-radius: 20px; background: var(--card); }
   .panel { min-width: 0; padding: 20px 22px; border-radius: 16px; background: var(--bg); }
   .label { margin: 0; font-size: 13px; font-weight: 500; color: var(--muted); }
-  @media (max-width: 1304px) {
-    .surface { margin: 0 12px 32px; }
+  @media (max-width: 900px) {
+    .models { display: none; }
   }
   @media (max-width: 640px) {
     .site { padding: 0 16px; }
     .crumbs > span, .crumbs > svg { display: none; }
-    .hero { padding: 28px 20px 24px; }
-    .hero h1 { font-size: 34px; }
+    .surface { margin: 0 8px 8px; }
   }
 
   /* 𝕏 Sentiment Tracker */
@@ -84,7 +79,9 @@
   .range { display: inline-flex; align-items: center; height: 40px; padding: 0 16px; border-radius: 9999px; background: var(--secondary); color: var(--muted); font-weight: 500; }
   #go.stop { background: var(--secondary); color: var(--fg); }
 
-  .dashboard { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 8px; margin-top: 8px; }
+  .surface { height: auto; min-height: calc(100vh - 72px); }
+  .dashboard { flex: 1; display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); align-content: start; gap: 8px; }
+  .dashboard:has(> .start:not([hidden])) { align-content: stretch; }
   .dashboard .panel { animation: appear 0.3s ease-out; }
   .span-12 { grid-column: span 12; }
   .span-8 { grid-column: span 8; }
@@ -94,8 +91,9 @@
   .panel-head .spacer { flex: 1; }
   .skeleton { border-radius: 6px; background: var(--secondary); animation: pulse 1s ease-in-out infinite alternate; }
 
-  .start { grid-column: span 12; display: grid; justify-items: center; gap: 14px; padding: 56px 24px; text-align: center; }
-  .start p { margin: 0; color: var(--muted); }
+  .start { grid-column: span 12; display: grid; place-content: center; justify-items: center; gap: 16px; padding: 56px 24px; text-align: center; }
+  .start h2 { margin: 0; font-size: 40px; line-height: 1.1; font-weight: 450; letter-spacing: -0.02em; }
+  .start p { max-width: 560px; margin: 0 0 8px; font-size: 16px; line-height: 26px; color: var(--muted); }
   .topics { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
 
   .query { display: flex; align-items: center; gap: 8px; margin: -4px 0 14px; font: 12px/18px var(--mono); color: var(--muted); overflow-wrap: anywhere; }
@@ -184,15 +182,11 @@
 <body>
 <header class="site">
   <a class="wordmark" href="https://x.ai" target="_blank" rel="noopener">SpaceXAI</a>
-  <nav class="crumbs"><span>Cookbook</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg><strong>𝕏 Sentiment Tracker</strong></nav>
+  <nav class="crumbs"><span>Cookbook</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg><h1>𝕏 Sentiment Tracker</h1></nav>
+  <span class="models">grok-4.7 with X Search</span>
   <a class="pill pill-secondary pill-sm" href="https://github.com/xai-org/xai-cookbook/tree/main/examples/x-sentiment-tracker" target="_blank" rel="noopener">View code</a>
 </header>
 
-<section class="hero">
-  <span class="kicker"><b>Cookbook</b>grok-4.7 with X Search</span>
-  <h1>𝕏 Sentiment Tracker</h1>
-  <p>Grok searches 𝕏 for popular posts about a topic from the last 10 days, filters out the noise, and scores each post from −1 (negative) to +1 (positive).</p>
-</section>
 
 <main class="surface">
   <form id="form" class="toolbar">
@@ -206,13 +200,13 @@
 
   <div class="dashboard">
     <section class="panel start" id="start">
-      <p class="label">Pick a topic, or type your own</p>
+      <h2>See how 𝕏 feels about a topic</h2>
+      <p>Grok searches 𝕏 for popular posts about it from the last 10 days, filters out the noise, and scores each post from −1 (negative) to +1 (positive). A run takes a minute or two.</p>
       <div class="topics">
-        <button type="button" class="pill pill-secondary pill-sm">SpaceX</button>
-        <button type="button" class="pill pill-secondary pill-sm">Starship</button>
-        <button type="button" class="pill pill-secondary pill-sm">Starlink</button>
+        <button type="button" class="pill pill-secondary">SpaceX</button>
+        <button type="button" class="pill pill-secondary">Starship</button>
+        <button type="button" class="pill pill-secondary">Starlink</button>
       </div>
-      <p>A run searches each of the last 10 days and scores up to 100 popular posts. It takes a minute or two.</p>
     </section>
 
     <section class="panel span-12" id="activity" hidden>
