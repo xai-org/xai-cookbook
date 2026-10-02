@@ -26,6 +26,7 @@ Every example is a folder under [`examples/`](examples/) with a README that expl
 | Example | What you'll learn | Level | Code |
 | --- | --- | --- | --- |
 | [Podcast from a Link](examples/podcast-from-a-link/) | Turn an article or a PDF into a two-host podcast episode, and watch it being written and recorded live in a small web app. | Beginner | [TypeScript](examples/podcast-from-a-link/typescript/) |
+| [Screenshot to React Component](examples/screenshot-to-component/) | Turn a screenshot of a UI into a React component styled with Tailwind, and watch the code being written and the component running next to the screenshot in a small web app. | Beginner | [TypeScript](examples/screenshot-to-component/typescript/) |
 | [Mobile Voice Apps](examples/voice-agent-mobile/) | Native iOS and Android apps for real-time voice conversations with Grok, plus text-to-speech on iOS. | Intermediate | [Swift](examples/voice-agent-mobile/swift/) · [Kotlin](examples/voice-agent-mobile/kotlin/) |
 | [Phone Voice Agent](examples/voice-agent-phone/) | A voice agent you can call on the phone, using Twilio. | Intermediate | [TypeScript](examples/voice-agent-phone/xai/) |
 | [Web Voice Agent](examples/voice-agent-web/) | A React client with swappable Python and Node.js backends that talk to the Voice Agent API over WebSocket. | Intermediate | [TypeScript](examples/voice-agent-web/) · [Python](examples/voice-agent-web/xai/backend-python/) |
