@@ -51,44 +51,50 @@
   .examples .pill { height: 30px; padding: 0 12px; font-size: 13px; }
 
   .stage { display: grid; gap: 16px; margin-top: 48px; }
-  .card { background: var(--card); border-radius: 16px; padding: 20px 22px; }
+  .card { background: var(--card); border-radius: 16px; padding: 20px 22px; animation: appear 0.3s ease-out; }
   .card-label { display: flex; align-items: center; gap: 8px; margin: 0 0 12px; font-size: 13px; font-weight: 500; color: var(--muted); }
-  .thinking summary { margin: 0; list-style: none; cursor: pointer; }
-  .thinking summary::-webkit-details-marker { display: none; }
-  .thinking:has(#reasoning:empty) summary { cursor: default; }
-  .chevron { width: 14px; height: 14px; margin-left: auto; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.2s; }
-  .thinking[open] .chevron { transform: rotate(180deg); }
-  .thinking:has(#reasoning:empty) .chevron { display: none; }
-  #reasoning { margin-top: 12px; max-height: 200px; overflow: auto; white-space: pre-wrap; font: 12px/20px var(--mono); color: var(--muted); }
-  #reasoning:empty { display: none; }
+  .number { display: grid; place-items: center; flex: none; width: 20px; height: 20px; border: 1.5px solid var(--faint); border-radius: 50%; font-size: 11px; line-height: 1; }
+  .active .number { border-color: var(--accent); color: var(--accent); }
+  .done .number { border-color: var(--primary); background: var(--primary); color: var(--on-primary); }
+  .status { color: var(--faint); font-variant-numeric: tabular-nums; }
+  .note { margin: -4px 0 16px; max-width: 720px; font-size: 13px; line-height: 20px; color: var(--muted); }
   .dots { display: none; gap: 4px; }
-  .card.active .dots { display: inline-flex; }
+  .card.active > .card-label .dots { display: inline-flex; }
   .dots i { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); animation: blink 1.2s infinite both; }
   .dots i:nth-child(2) { animation-delay: 0.2s; }
   .dots i:nth-child(3) { animation-delay: 0.4s; }
   @keyframes blink { 0%, 80%, 100% { opacity: 0.25; } 40% { opacity: 1; } }
-
-  #title { margin: 0; font-size: 24px; line-height: 32px; font-weight: 450; letter-spacing: -0.01em; }
-  #style { margin: 4px 0 0; max-width: 720px; color: var(--muted); }
-  #movie { display: block; width: 100%; aspect-ratio: 16 / 9; margin-top: 20px; border-radius: 10px; background: var(--fg); }
-  #movie[hidden] { display: none; }
-  #note { margin: 16px 0 0; font-size: 13px; color: var(--muted); }
-  #note:empty { display: none; }
-
-  .shots { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
-  .shots:empty { display: none; }
-  .shot { animation: appear 0.3s ease-out; }
-  .state { font-variant-numeric: tabular-nums; }
-  .state:empty { display: none; }
-  .frame { aspect-ratio: 16 / 9; border-radius: 10px; background: var(--secondary); overflow: hidden; }
-  .frame img, .frame video { display: block; width: 100%; height: 100%; object-fit: cover; }
-  .frame img { animation: fade 0.4s ease-out; }
-  .scene { margin: 14px 0 0; }
-  .line { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; margin-top: 14px; }
   @keyframes appear { from { opacity: 0; transform: translateY(4px); } }
   @keyframes fade { from { opacity: 0; } }
+
+  .thinking:has(#reasoning:empty) { display: none; }
+  .thinking summary { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); list-style: none; cursor: pointer; }
+  .thinking summary::-webkit-details-marker { display: none; }
+  .chevron { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.2s; }
+  .thinking[open] .chevron { transform: rotate(180deg); }
+  #reasoning { margin-top: 8px; max-height: 200px; overflow: auto; white-space: pre-wrap; font: 12px/20px var(--mono); color: var(--muted); }
+  .thinking + #board { margin-top: 16px; }
+  #title { margin: 0; font-size: 24px; line-height: 32px; font-weight: 450; letter-spacing: -0.01em; }
+  #style { margin: 4px 0 0; max-width: 720px; color: var(--muted); }
+  .plan-shots { display: grid; gap: 14px; margin: 20px 0 0; padding: 0; list-style: none; counter-reset: shot; }
+  .plan-shots li { display: grid; grid-template-columns: 20px minmax(0, 1fr); column-gap: 12px; counter-increment: shot; animation: appear 0.3s ease-out; }
+  .plan-shots li::before { content: counter(shot); grid-row: span 3; font-weight: 500; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .plan-shots p { margin: 0; max-width: 760px; }
+  .plan-shots .motion { font-size: 13px; line-height: 20px; color: var(--muted); }
+  .plan-shots .narration { margin-top: 2px; font-style: italic; }
+
+  .frames { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+  .slot { margin: 0; }
+  .slot figcaption { margin-top: 6px; font-size: 12px; line-height: 16px; color: var(--muted); }
+  .frame { aspect-ratio: 16 / 9; border-radius: 10px; background: var(--secondary); overflow: hidden; }
+  .frame.drawing { animation: pulse 1s ease-in-out infinite alternate; }
+  @keyframes pulse { to { background: var(--secondary-hover); } }
+  .frame img, .frame video { display: block; width: 100%; height: 100%; object-fit: cover; animation: fade 0.4s ease-out; }
+
+  .clips { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 16px; }
+  .clip-label { display: flex; align-items: center; gap: 6px; margin: 0 0 6px; font-size: 13px; font-weight: 500; color: var(--muted); }
+  .line { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; margin-top: 10px; }
   .speaker { display: flex; align-items: center; gap: 6px; padding: 0 6px; font-size: 12px; line-height: 16px; color: var(--muted); }
-  .status { color: var(--faint); }
   .bubble { display: flex; align-items: baseline; gap: 8px; max-width: 100%; padding: 9px 15px; border: 1px solid transparent; border-radius: 18px 18px 18px 6px; background: var(--bubble); color: inherit; font-size: 14px; line-height: 22px; text-align: left; transition: background 0.2s, color 0.2s; }
   .bubble:disabled { cursor: default; }
   .bubble svg { display: none; flex: none; width: 10px; height: 10px; fill: currentColor; }
@@ -102,9 +108,15 @@
   .eq i:nth-child(3) { animation-delay: 0.3s; }
   @keyframes eq { 0%, 100% { transform: scaleY(0.3); } 50% { transform: scaleY(1); } }
 
+  #movie { display: block; width: 100%; aspect-ratio: 16 / 9; border-radius: 10px; background: var(--fg); }
+  #movie[hidden] { display: none; }
+  #note { margin: 12px 0 0; font-size: 13px; color: var(--muted); }
+  #note:empty { display: none; }
+
   @media (max-width: 860px) {
     h1 { font-size: 36px; }
-    .shots { grid-template-columns: 1fr; }
+    .frames { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .clips { grid-template-columns: minmax(0, 1fr); }
   }
 </style>
 </head>
@@ -124,36 +136,49 @@
   </div>
 
   <div class="stage">
-    <details class="card thinking" id="thinking" open hidden>
-      <summary class="card-label"><span id="status">Thinking</span> <span class="dots"><i></i><i></i><i></i></span><svg class="chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4"/></svg></summary>
-      <div id="reasoning"></div>
-    </details>
+    <section class="card" id="plan" hidden>
+      <p class="card-label"><span class="number">1</span>Plan<span class="status" id="plan-status"></span><span class="dots"><i></i><i></i><i></i></span></p>
+      <details class="thinking" id="thinking" open>
+        <summary>Grok's reasoning<svg class="chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4"/></svg></summary>
+        <div id="reasoning"></div>
+      </details>
+      <div id="board" hidden>
+        <p id="title"></p>
+        <p id="style"></p>
+        <ol class="plan-shots" id="plan-shots"></ol>
+      </div>
+    </section>
+    <section class="card" id="keyframes" hidden>
+      <p class="card-label"><span class="number">2</span>Keyframes<span class="status" id="keyframes-status"></span><span class="dots"><i></i><i></i><i></i></span></p>
+      <p class="note">Keyframe 1 comes from the plan. Keyframes 2 to 4 are edits of keyframe 1, which keeps the subject and the style the same from shot to shot.</p>
+      <div class="frames" id="frames"></div>
+    </section>
+    <section class="card" id="clips" hidden>
+      <p class="card-label"><span class="number">3</span>Shots and narration<span class="status" id="clips-status"></span><span class="dots"><i></i><i></i><i></i></span></p>
+      <p class="note">Each keyframe is animated into an eight-second shot, and its line of narration is recorded at the same time.</p>
+      <div class="clips" id="clip-grid"></div>
+    </section>
     <section class="card" id="film" hidden>
-      <p class="card-label"><span id="phase"></span> <span class="dots"><i></i><i></i><i></i></span></p>
-      <p id="title"></p>
-      <p id="style"></p>
+      <p class="card-label"><span class="number">4</span>Film<span class="status" id="film-status"></span><span class="dots"><i></i><i></i><i></i></span></p>
       <video id="movie" controls hidden></video>
       <p id="note"></p>
     </section>
-    <div class="shots" id="shots"></div>
   </div>
 </main>
 
 <script>
   const $ = (id) => document.getElementById(id);
+  const CARDS = { plan: "plan", draw: "keyframes", animate: "clips", film: "film" };
   const audio = new Audio();
   let shots = [];
   let narrating = null;
   let thinkingSince = 0;
+  let renderingSince = 0;
   let timer = 0;
 
   document.querySelectorAll(".examples button").forEach((button) => {
     button.onclick = () => ($("premise").value = button.dataset.premise);
   });
-
-  $("thinking").querySelector("summary").onclick = (event) => {
-    if (!$("reasoning").textContent) event.preventDefault();
-  };
 
   $("form").onsubmit = (event) => {
     event.preventDefault();
@@ -168,26 +193,31 @@
     };
 
     on("step", ({ step, status }) => {
-      if (step === "plan" && status === "active") thinkingSince = Date.now();
-      if (step === "plan" && status === "done") {
-        const seconds = Math.round((Date.now() - thinkingSince) / 1000);
-        $("thinking").open = false;
-        $("thinking").classList.remove("active");
-        $("status").textContent = `Thought for ${seconds} ${seconds === 1 ? "second" : "seconds"}`;
+      if (status === "active") startStep($(CARDS[step]));
+      if (step === "plan" && status === "active") {
+        thinkingSince = Date.now();
+        $("plan-status").textContent = "· thinking";
       }
-      if (step === "draw") $("phase").textContent = "Drawing the keyframes";
+      if (step === "plan" && status === "done") {
+        $("thinking").open = false;
+        $("plan-status").textContent = `· thought for ${plural(Math.round((Date.now() - thinkingSince) / 1000), "second")}`;
+        endStep($("plan"));
+      }
+      if (step === "draw") {
+        $("keyframes-status").textContent = "· drawing keyframe 1";
+        shots[0].slot.classList.add("drawing");
+      }
       if (step === "animate") {
-        $("phase").textContent = "Rendering the shots";
-        const since = Date.now();
+        renderingSince = Date.now();
         for (const shot of shots) {
-          shot.since = since;
           shot.rendering = true;
+          shot.clipFrame.replaceChildren(image(shot.keyframe, shot.scene));
           shot.line.querySelector(".status").textContent = "· recording…";
         }
         tick();
         timer = setInterval(tick, 1000);
       }
-      if (step === "film") $("phase").textContent = "Joining the shots into one film";
+      if (step === "film") $("film-status").textContent = "· joining the shots";
     });
     on("reasoning", ({ text }) => {
       $("reasoning").textContent += text;
@@ -196,29 +226,30 @@
     on("storyboard", ({ title, style, shots: list }) => {
       $("title").textContent = title;
       $("style").textContent = style;
-      $("film").hidden = false;
+      $("board").hidden = false;
       shots = list.map(addShot);
     });
     on("keyframe", ({ index, url }) => {
       const shot = shots[index];
-      const image = new Image();
-      image.src = url;
-      image.alt = shot.scene;
       shot.keyframe = url;
-      shot.frame.replaceChildren(image);
-      setState(shot, "", false);
-      if (index === 0) shots.slice(1).forEach((other) => setState(other, "Drawing from keyframe 1", true));
+      shot.slot.classList.remove("drawing");
+      shot.slot.replaceChildren(image(url, shot.scene));
+      if (index === 0) {
+        $("keyframes-status").textContent = "· editing keyframes 2 to 4";
+        shots.slice(1).forEach((other) => other.slot.classList.add("drawing"));
+      }
+      if (shots.every((other) => other.keyframe)) $("keyframes-status").textContent = "";
     });
     on("video", ({ index, url }) => {
       const shot = shots[index];
+      shot.rendering = false;
+      shot.state.textContent = `· rendered in ${elapsed(renderingSince)}`;
       const video = document.createElement("video");
       video.src = url;
       video.poster = shot.keyframe;
       video.controls = true;
-      shot.frame.replaceChildren(video);
-      shot.video = url;
-      shot.rendering = false;
-      setState(shot, `Rendered in ${elapsed(shot.since)}`, false);
+      shot.clipFrame.replaceChildren(video);
+      tick();
     });
     on("narration", ({ index, url }) => {
       const shot = shots[index];
@@ -228,8 +259,8 @@
       shot.line.querySelector(".bubble").disabled = false;
     });
     on("done", ({ film, folder, cost }) => {
-      $("film").classList.remove("active");
-      $("phase").textContent = "Film";
+      endStep($("film"));
+      $("film-status").textContent = "";
       if (film) {
         $("movie").poster = shots[0].keyframe;
         $("movie").src = film;
@@ -237,6 +268,7 @@
       }
       const saved = `Saved to ${folder}/. The images and videos cost $${cost.toFixed(2)}.`;
       $("note").textContent = film ? saved : `ffmpeg isn't installed, so the shots weren't joined into one film. ${saved}`;
+      $("film").scrollIntoView({ behavior: "smooth", block: "nearest" });
       finish();
     });
     on("failure", ({ message }) => {
@@ -250,40 +282,74 @@
     };
   };
 
-  function addShot({ scene, narration }, index) {
-    const el = document.createElement("article");
-    el.className = "card shot";
-    el.innerHTML = `
-      <p class="card-label">Shot ${index + 1}<span class="state"></span><span class="dots"><i></i><i></i><i></i></span></p>
+  // Each step starts once the one before it is done, so the new card takes over from the active one.
+  function startStep(card) {
+    document.querySelectorAll(".stage > .card.active").forEach(endStep);
+    card.hidden = false;
+    card.classList.add("active");
+    card.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+
+  function endStep(card) {
+    card.classList.remove("active");
+    card.classList.add("done");
+  }
+
+  function addShot({ scene, motion, narration }, index) {
+    const item = document.createElement("li");
+    item.innerHTML = `<p class="scene"></p><p class="motion"></p><p class="narration"></p>`;
+    item.querySelector(".scene").textContent = scene;
+    item.querySelector(".motion").textContent = motion;
+    item.querySelector(".narration").textContent = `“${narration}”`;
+    $("plan-shots").append(item);
+
+    const figure = document.createElement("figure");
+    figure.className = "slot";
+    figure.innerHTML = `<div class="frame"></div><figcaption>${index + 1} · ${index ? "edited from keyframe 1" : "generated"}</figcaption>`;
+    $("frames").append(figure);
+
+    const clip = document.createElement("article");
+    clip.innerHTML = `
+      <p class="clip-label">Shot ${index + 1}<span class="status"></span></p>
       <div class="frame"></div>
-      <p class="scene"></p>
       <div class="line">
         <div class="speaker">Narration<span class="status"></span><span class="eq"><i></i><i></i><i></i></span></div>
         <button class="bubble" disabled><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 1.5v13l11-6.5z"/></svg><span></span></button>
       </div>`;
-    el.querySelector(".scene").textContent = scene;
-    el.querySelector(".bubble span").textContent = narration;
-    $("shots").append(el);
-    const shot = { el, scene, frame: el.querySelector(".frame"), line: el.querySelector(".line") };
-    el.querySelector(".bubble").onclick = () => playNarration(shot);
-    setState(shot, index === 0 ? "Drawing the keyframe" : "Waiting for keyframe 1", index === 0);
+    clip.querySelector(".bubble span").textContent = narration;
+    $("clip-grid").append(clip);
+
+    const shot = {
+      scene,
+      slot: figure.querySelector(".frame"),
+      clipFrame: clip.querySelector(".frame"),
+      state: clip.querySelector(".clip-label .status"),
+      line: clip.querySelector(".line"),
+    };
+    clip.querySelector(".bubble").onclick = () => playNarration(shot);
     return shot;
   }
 
-  function setState(shot, text, active) {
-    shot.el.querySelector(".state").textContent = text && `· ${text}`;
-    shot.el.classList.toggle("active", active);
+  function image(url, alt) {
+    const img = new Image();
+    img.src = url;
+    img.alt = alt;
+    return img;
   }
 
   function tick() {
-    for (const shot of shots) {
-      if (shot.rendering) setState(shot, `Rendering ${elapsed(shot.since)}`, true);
-    }
+    const rendering = shots.filter((shot) => shot.rendering);
+    for (const shot of rendering) shot.state.textContent = `· rendering ${elapsed(renderingSince)}`;
+    $("clips-status").textContent = rendering.length ? `· ${shots.length - rendering.length} of ${shots.length} rendered` : "";
   }
 
   function elapsed(since) {
     const seconds = Math.floor((Date.now() - since) / 1000);
     return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+  }
+
+  function plural(count, word) {
+    return `${count} ${word}${count === 1 ? "" : "s"}`;
   }
 
   function playNarration(shot) {
@@ -299,15 +365,17 @@
 
   function stop(message) {
     alert(message);
-    $("thinking").classList.remove("active");
-    $("film").classList.remove("active");
+    clearInterval(timer);
     for (const shot of shots) {
-      if (!shot.video) setState(shot, "", false);
+      shot.slot.classList.remove("drawing");
+      if (shot.rendering) shot.state.textContent = "";
       shot.rendering = false;
       shot.line.querySelector(".status").textContent = "";
     }
-    if (shots.length) $("phase").textContent = "Couldn't make the film";
-    else $("status").textContent = "Couldn't make the film";
+    const active = document.querySelector(".stage > .card.active");
+    if (!active) return;
+    active.classList.remove("active");
+    active.querySelector(".status").textContent = "· couldn't finish";
   }
 
   function reset() {
@@ -315,17 +383,19 @@
     clearInterval(timer);
     shots = [];
     narrating = null;
-    $("shots").replaceChildren();
+    for (const card of document.querySelectorAll(".stage > .card")) {
+      card.hidden = true;
+      card.classList.remove("active", "done");
+      card.querySelector(".status").textContent = "";
+    }
     $("reasoning").textContent = "";
-    $("status").textContent = "Thinking";
-    $("thinking").classList.add("active");
     $("thinking").open = true;
-    $("thinking").hidden = false;
-    $("film").classList.add("active");
-    $("film").hidden = true;
-    $("phase").textContent = "";
+    $("board").hidden = true;
     $("title").textContent = "";
     $("style").textContent = "";
+    $("plan-shots").replaceChildren();
+    $("frames").replaceChildren();
+    $("clip-grid").replaceChildren();
     $("movie").hidden = true;
     $("movie").removeAttribute("src");
     $("movie").removeAttribute("poster");
