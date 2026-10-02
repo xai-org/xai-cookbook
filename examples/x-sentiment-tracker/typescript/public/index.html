@@ -104,6 +104,8 @@
   .day .count { font-weight: 500; color: var(--faint); font-variant-numeric: tabular-nums; white-space: nowrap; }
   .day.searching { animation: pulse 1s ease-in-out infinite alternate; }
   .day.done .count { color: var(--fg); }
+  .day.failed { cursor: help; }
+  .day.failed .count { color: var(--negative); }
 
   .scoring { margin: 0; color: var(--muted); }
   #score { margin: 0; font-size: 60px; line-height: 60px; font-weight: 450; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
@@ -345,11 +347,13 @@
       chip.classList.add("searching");
       chip.querySelector(".count").textContent = "searching";
     });
-    on("searched", ({ day, count }) => {
+    on("searched", ({ day, count, error }) => {
       const chip = dayChip(day);
       chip.classList.remove("searching");
       chip.classList.add("done");
+      chip.classList.toggle("failed", count === null);
       chip.querySelector(".count").textContent = count === null ? "failed" : plural(count, "post");
+      if (error) chip.title = `The search failed twice: ${error}`;
       const total = [...$("days").querySelectorAll(".day.done .count")].reduce((sum, item) => sum + (parseInt(item.textContent, 10) || 0), 0);
       $("found-count").textContent = total;
     });

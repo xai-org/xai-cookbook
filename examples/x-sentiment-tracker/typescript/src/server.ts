@@ -29,7 +29,10 @@ async function scoreTopic(topic: string, res: ServerResponse): Promise<void> {
       {
         searching: (query, days) => emit("searching", { query, days }),
         search: (day) => emit("search", { day }),
-        searched: (day, posts) => emit("searched", { day, count: posts ? posts.length : null }),
+        searched: (day, posts, error) => {
+          if (error) console.error(`Couldn't search X for ${day}: ${error.message}`);
+          emit("searched", { day, count: posts ? posts.length : null, error: error?.message });
+        },
         found: (posts) => emit("found", { count: posts.length }),
         kept: (posts, found) => emit("kept", { posts, filtered: found.length - posts.length }),
         scoring: (posts) => emit("scoring", { count: posts.length }),

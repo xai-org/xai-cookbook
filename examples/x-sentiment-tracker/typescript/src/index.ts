@@ -5,7 +5,7 @@ const topic = process.argv.slice(2).join(" ") || DEFAULT_TOPIC;
 
 const sentiment = await analyze(topic, {
   searching: (query, days) => console.log(styleText("bold", `Searching X for ${query}, one search per day for the last ${days.length} days`)),
-  searched: (day, posts) => console.log(styleText("dim", `  ${day}: ${posts ? plural(posts.length, "post") : "the search failed"}`)),
+  searched: (day, posts, error) => console.log(styleText("dim", `  ${day}: ${posts ? plural(posts.length, "post") : `the search failed: ${error?.message}`}`)),
   kept: (kept, found) => {
     console.log(`${plural(found.length, "post")}, ${kept.length} worth scoring`);
     for (const post of kept.slice(0, 10)) console.log(styleText("dim", `  @${post.username}: ${post.text.replace(/\s+/g, " ").slice(0, 110)}`));

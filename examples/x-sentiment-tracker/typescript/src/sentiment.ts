@@ -1,3 +1,4 @@
+import { setTimeout as sleep } from "node:timers/promises";
 import { xAI } from "@xai-official/sdk";
 import { xSearch } from "@xai-official/sdk/tools";
 
@@ -20,8 +21,8 @@ export type Sentiment = {
 export type AnalyzeEvents = {
   searching?: (query: string, days: string[]) => void;
   search?: (day: string, input: string) => void;
-  // Gets undefined instead of posts when that day's search failed.
-  searched?: (day: string, posts: Post[] | undefined) => void;
+  // Gets the error instead of posts when that day's search failed twice.
+  searched?: (day: string, posts: Post[] | undefined, error?: Error) => void;
   found?: (posts: Post[]) => void;
   kept?: (posts: Post[], found: Post[]) => void;
   scoring?: (posts: Post[]) => void;
@@ -96,13 +97,24 @@ export async function analyze(topic: string, on: AnalyzeEvents = {}, signal?: Ab
   on.searching?.(query, days);
   const results = await Promise.all(
     days.map(async (day) => {
-      // One failed search shouldn't sink the other nine, so a day that fails is reported and skipped.
-      const posts = await findPosts(query, day, on, signal).catch((error) => {
-        if (signal?.aborted) throw error;
-        return undefined;
-      });
-      on.searched?.(day, posts);
-      return posts ?? [];
+      // A search can fail now and then, for example when the API is busy, so a day that fails gets a
+      // second try a few seconds later. If that fails too, the day is reported with the error and
+      // skipped, so it doesn't sink the other nine.
+      for (let attempt = 1; ; attempt++) {
+        try {
+          const posts = await findPosts(query, day, on, signal);
+          on.searched?.(day, posts);
+          return posts;
+        } catch (error) {
+          if (signal?.aborted) throw error;
+          if (attempt === 1) {
+            await sleep(3000, undefined, { signal });
+            continue;
+          }
+          on.searched?.(day, undefined, error instanceof Error ? error : new Error(String(error)));
+          return [];
+        }
+      }
     }),
   );
   const found = [...new Map(results.flat().map((post) => [post.post_id, post])).values()];
