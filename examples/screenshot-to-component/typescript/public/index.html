@@ -33,17 +33,13 @@
   @keyframes blink { 50% { opacity: 0.3; } }
   @keyframes fade { from { opacity: 0; } }
 
-  .site { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 12px; height: 60px; padding: 0 24px; background: rgb(255 255 255 / 0.85); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+  .site { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 12px; height: 60px; padding: 0 20px; background: rgb(255 255 255 / 0.85); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
   .wordmark { flex: none; font-size: 17px; font-weight: 700; letter-spacing: -0.03em; text-decoration: none; }
   .crumbs { display: flex; align-items: center; gap: 8px; min-width: 0; color: var(--muted); white-space: nowrap; }
   .crumbs svg { width: 12px; height: 12px; color: var(--faint); }
-  .crumbs strong { overflow: hidden; text-overflow: ellipsis; font-weight: 500; color: var(--fg); }
+  .crumbs h1 { margin: 0; overflow: hidden; text-overflow: ellipsis; font-size: inherit; line-height: inherit; font-weight: 500; color: var(--fg); }
   .site .pill { flex: none; margin-left: auto; }
-  .hero { display: grid; justify-items: center; gap: 14px; padding: 36px 24px 32px; text-align: center; }
-  .kicker { display: inline-flex; align-items: center; gap: 8px; height: 28px; padding: 0 12px 0 4px; border-radius: 9999px; box-shadow: inset 0 0 0 1px var(--line); font-size: 12px; font-weight: 500; color: var(--muted); }
-  .kicker b { padding: 0 8px; border-radius: 9999px; background: var(--accent-soft); color: var(--accent); font-weight: 500; line-height: 20px; }
-  .hero h1 { margin: 0; font-size: 44px; line-height: 1.08; font-weight: 450; letter-spacing: -0.02em; }
-  .hero p { max-width: 640px; margin: 0; font-size: 16px; line-height: 26px; color: var(--muted); }
+  .models { flex: none; height: 26px; padding: 0 10px; border-radius: 9999px; box-shadow: inset 0 0 0 1px var(--line); font-size: 12px; font-weight: 500; line-height: 26px; color: var(--muted); }
   .pill { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 40px; padding: 0 18px; border-radius: 9999px; font-size: 14px; font-weight: 500; white-space: nowrap; text-decoration: none; }
   .pill-sm { height: 32px; padding: 0 14px; font-size: 13px; }
   .pill-primary { background: var(--fg); color: #fff; }
@@ -52,17 +48,16 @@
   .pill-secondary:hover { background: var(--secondary-hover); }
   .pill:disabled { opacity: 0.4; cursor: default; }
   .pill svg { width: 14px; height: 14px; }
-  .surface { max-width: 1280px; margin: 0 auto 48px; padding: 8px; border-radius: 24px; background: var(--card); }
+  .surface { display: flex; flex-direction: column; gap: 8px; height: calc(100vh - 72px); min-height: 560px; margin: 0 12px 12px; padding: 8px; border-radius: 20px; background: var(--card); }
   .panel { min-width: 0; padding: 20px 22px; border-radius: 16px; background: var(--bg); }
   .label { margin: 0; font-size: 13px; font-weight: 500; color: var(--muted); }
-  @media (max-width: 1304px) {
-    .surface { margin: 0 12px 32px; }
+  @media (max-width: 900px) {
+    .models { display: none; }
   }
   @media (max-width: 640px) {
     .site { padding: 0 16px; }
     .crumbs > span, .crumbs > svg { display: none; }
-    .hero { padding: 28px 20px 24px; }
-    .hero h1 { font-size: 34px; }
+    .surface { margin: 0 8px 8px; }
   }
 
   /* Screenshot to React Component */
@@ -86,7 +81,7 @@
   .file span { overflow: hidden; text-overflow: ellipsis; }
   .hint { color: var(--faint); }
 
-  .workspace { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 8px; height: max(600px, calc(100vh - 148px)); margin-top: 8px; }
+  .workspace { flex: 1; display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 8px; min-height: 0; }
   .main { display: grid; grid-template-rows: minmax(0, 1fr) minmax(200px, 36%); gap: 8px; min-height: 0; }
   .stage { display: grid; grid-template-rows: auto minmax(0, 1fr); min-height: 0; padding: 0; }
   .viewbar { display: flex; align-items: center; gap: 12px; padding: 12px 16px; }
@@ -100,8 +95,8 @@
   .canvas.dragging .dropzone { border-color: var(--accent); background: var(--accent-soft); }
   .dropzone { display: grid; place-content: center; justify-items: center; gap: 8px; height: 100%; min-height: 260px; padding: 24px; border: 1.5px dashed var(--border); border-radius: 12px; text-align: center; color: var(--muted); }
   .dropzone svg { width: 28px; height: 28px; margin-bottom: 4px; color: var(--faint); }
-  .dropzone p { max-width: 460px; margin: 0; }
-  .drop-title { font-size: 20px; line-height: 28px; font-weight: 500; letter-spacing: -0.01em; color: var(--fg); }
+  .dropzone p { max-width: 540px; margin: 0; }
+  .drop-title { font-size: 28px; line-height: 34px; font-weight: 450; letter-spacing: -0.02em; color: var(--fg); }
   .drop-actions { display: flex; gap: 8px; margin-top: 12px; }
   .panes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; }
   .pane-label { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; font-size: 13px; font-weight: 500; color: var(--muted); }
@@ -166,7 +161,8 @@
   .round-note { margin: 8px 0 0; color: var(--warn); }
 
   @media (max-width: 1000px) {
-    .workspace { grid-template-columns: minmax(0, 1fr); height: auto; }
+    .surface { height: auto; }
+    .workspace { grid-template-columns: minmax(0, 1fr); }
     .main { grid-template-rows: auto 420px; }
     .panes { grid-template-columns: minmax(0, 1fr); }
   }
@@ -175,15 +171,11 @@
 <body>
 <header class="site">
   <a class="wordmark" href="https://x.ai" target="_blank" rel="noopener">SpaceXAI</a>
-  <nav class="crumbs"><span>Cookbook</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg><strong>Screenshot to React Component</strong></nav>
+  <nav class="crumbs"><span>Cookbook</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg><h1>Screenshot to React Component</h1></nav>
+  <span class="models">grok-4.7 with image understanding</span>
   <a class="pill pill-secondary pill-sm" href="https://github.com/xai-org/xai-cookbook/tree/main/examples/screenshot-to-component" target="_blank" rel="noopener">View code</a>
 </header>
 
-<section class="hero">
-  <span class="kicker"><b>Cookbook</b>grok-4.7 with image understanding</span>
-  <h1>Screenshot to React Component</h1>
-  <p>Grok writes a React component styled with Tailwind from a screenshot. Then the page screenshots the component, and Grok compares the two and fixes what doesn't line up.</p>
-</section>
 
 <main class="surface">
   <form id="form" class="toolbar">
@@ -213,7 +205,7 @@
           <div class="dropzone" id="dropzone">
             <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 15l5-5 4 4 3-3 6 6"/><circle cx="15.5" cy="8.5" r="1.5"/></svg>
             <p class="drop-title">Drop a screenshot of a user interface</p>
-            <p>Or paste one, or open a file. Grok recreates it as a component, then keeps comparing and fixing until it lines up.</p>
+            <p>Or paste one, or open a file. Grok writes a React component styled with Tailwind that recreates it. Then the page screenshots the component, and Grok compares the two and fixes what doesn't line up.</p>
             <div class="drop-actions">
               <label class="pill pill-secondary" for="file">Open a screenshot</label>
               <button type="button" class="pill pill-primary sample">Try the sample</button>
@@ -259,7 +251,7 @@
         <p class="label">Rounds</p>
         <button type="button" id="again" class="pill pill-secondary pill-sm" hidden>Compare again</button>
       </div>
-      <p class="rail-intro" id="rail-intro">After the first round, the page screenshots the component, and Grok compares it with yours and fixes what doesn't line up. Each round shows up here with its score.</p>
+      <p class="rail-intro" id="rail-intro">Each round shows up here with how closely the component lines up with the screenshot. The page keeps the best one.</p>
       <ol class="rounds" id="rounds"></ol>
     </aside>
   </div>
