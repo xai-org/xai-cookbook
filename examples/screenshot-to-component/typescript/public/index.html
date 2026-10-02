@@ -7,163 +7,225 @@
 <title>Screenshot to React Component</title>
 <style>
   :root {
-    --bg: #fff;
-    --fg: #0a0a0a;
-    --muted: rgb(10 10 10 / 0.6);
-    --faint: rgb(10 10 10 / 0.3);
-    --card: #f9f8f6;
-    --secondary: #f2f1ef;
-    --secondary-hover: #e9e8e5;
-    --border: rgb(10 10 10 / 0.15);
-    --rule: rgb(213 217 226 / 0.55);
-    --primary: #0a0a0a;
-    --primary-hover: #202329;
-    --on-primary: #f9f8f6;
-    --accent: #ff6308;
+    --bg: #f4f5f7;
+    --surface: #fff;
+    --line: #e2e4e9;
+    --fg: #111318;
+    --muted: #5c6270;
+    --faint: #9aa0ab;
+    --accent: #4f46e5;
+    --accent-soft: #eef0ff;
+    --good: #15803d;
+    --good-soft: #e8f6ee;
+    --bad: #b42318;
+    --bad-soft: #fdeceb;
+    --warn: #a15c07;
+    --editor: #0f1117;
+    --editor-line: #1f2330;
+    --editor-fg: #e6e8ee;
+    --editor-faint: #565d6e;
     --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
     --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   }
 
   * { box-sizing: border-box; }
   [hidden] { display: none !important; }
-  body { margin: 0; font: 14px/24px var(--sans); background: var(--bg); color: var(--fg); -webkit-font-smoothing: antialiased; }
-  main { max-width: 1120px; margin: 0 auto; padding: 72px 24px; }
-  .eyebrow { margin: 0; font-size: 14px; }
-  h1 { margin: 8px 0 0; font-size: 48px; line-height: 1.1; font-weight: 450; letter-spacing: -0.01em; }
-  .lede { margin: 12px 0 32px; max-width: 620px; font-size: 16px; line-height: 26px; color: var(--muted); }
+  body { margin: 0; font: 13px/20px var(--sans); background: var(--bg); color: var(--fg); -webkit-font-smoothing: antialiased; }
+  button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
+  label.button { cursor: pointer; }
+  svg { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  @keyframes blink { 50% { opacity: 0.3; } }
+  @keyframes fade { from { opacity: 0; } }
 
-  button { font: inherit; border: 0; cursor: pointer; }
-  .pill { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 40px; padding: 0 18px; border-radius: 9999px; font-size: 14px; font-weight: 500; white-space: nowrap; text-decoration: none; }
-  .pill-primary { background: var(--primary); color: var(--on-primary); }
-  .pill-primary:hover { background: var(--primary-hover); }
-  .pill-primary:disabled, .pill-secondary:disabled { opacity: 0.4; cursor: default; }
-  .pill-secondary { background: var(--secondary); color: var(--fg); }
-  .pill-secondary:hover { background: var(--secondary-hover); }
-  .pill svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  .app { display: grid; grid-template-rows: auto minmax(0, 1fr); height: 100vh; min-height: 680px; }
 
-  form { display: flex; gap: 8px; max-width: 720px; }
-  .picker { flex: 1; display: flex; align-items: center; min-width: 0; height: 40px; padding: 0 18px; border: 1px solid var(--border); border-radius: 9999px; background: var(--bg); color: var(--faint); cursor: pointer; }
-  .picker:hover, .picker:focus-within, .picker.dragging { border-color: var(--fg); }
-  .picker:has(:disabled) { cursor: default; border-color: var(--border); }
-  .picker.chosen { color: var(--fg); }
-  .picker input { position: absolute; width: 1px; height: 1px; opacity: 0; }
-  #file-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .examples { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; font-size: 13px; color: var(--muted); }
-  .examples .pill { height: 30px; padding: 0 12px; font-size: 13px; }
+  .topbar { display: flex; align-items: center; gap: 16px; padding: 10px 16px; border-bottom: 1px solid var(--line); background: var(--surface); }
+  .brand { display: flex; align-items: center; gap: 10px; white-space: nowrap; }
+  .brand .logo { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 7px; background: var(--fg); color: #fff; }
+  .brand .logo svg { width: 16px; height: 16px; }
+  .brand strong { display: block; font-weight: 600; line-height: 16px; }
+  .brand span { display: block; font-size: 11px; line-height: 14px; color: var(--faint); }
+  .actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+  .button { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface); font-weight: 500; white-space: nowrap; }
+  .button:hover { border-color: var(--faint); }
+  .button.primary { border-color: var(--accent); background: var(--accent); color: #fff; }
+  .button:disabled, label.button.disabled { opacity: 0.45; cursor: default; }
+  .button svg { width: 14px; height: 14px; }
+  .file { max-width: 260px; }
+  .file input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+  .file span { overflow: hidden; text-overflow: ellipsis; }
 
-  .stage { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; margin-top: 48px; }
-  .card { position: relative; background: var(--card); border-radius: 16px; padding: 20px 22px; animation: appear 0.3s ease-out; }
-  @keyframes appear { from { opacity: 0; transform: translateY(4px); } }
-  .card-label { display: flex; align-items: center; gap: 8px; margin: 0 0 12px; font-size: 13px; font-weight: 500; color: var(--muted); }
-  .dots { display: none; gap: 4px; }
-  .card.active .dots { display: inline-flex; }
-  .dots i { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); animation: blink 1.2s infinite both; }
-  .dots i:nth-child(2) { animation-delay: 0.2s; }
-  .dots i:nth-child(3) { animation-delay: 0.4s; }
-  @keyframes blink { 0%, 80%, 100% { opacity: 0.25; } 40% { opacity: 1; } }
+  .workspace { display: grid; grid-template-columns: minmax(0, 1fr) 320px; min-height: 0; }
+  .main { display: grid; grid-template-rows: auto minmax(0, 1fr) minmax(220px, 36vh); min-height: 0; }
+  .viewbar { display: flex; align-items: center; gap: 12px; padding: 10px 16px; }
+  .segmented { display: inline-flex; padding: 2px; border-radius: 8px; background: #e7e9ee; }
+  .segmented button { height: 26px; padding: 0 12px; border-radius: 6px; font-weight: 500; color: var(--muted); }
+  .segmented button.active { background: var(--surface); color: var(--fg); }
+  .segmented button:disabled { opacity: 0.45; cursor: default; }
+  .badge { display: inline-flex; align-items: center; gap: 6px; height: 26px; margin-left: auto; padding: 0 10px; border-radius: 13px; background: var(--accent-soft); color: var(--accent); font-weight: 600; font-variant-numeric: tabular-nums; }
 
-  .compare { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
-  #shot, .frame { display: block; width: 100%; border-radius: 8px; background: var(--bg); box-shadow: 0 0 0 1px var(--rule); }
+  .canvas { position: relative; min-height: 0; overflow: auto; padding: 0 16px 16px; }
+  .canvas.dragging .dropzone { border-color: var(--accent); background: var(--accent-soft); }
+  .dropzone { display: grid; place-content: center; justify-items: center; gap: 6px; height: 100%; min-height: 280px; padding: 24px; border: 1.5px dashed #c9cdd5; border-radius: 12px; text-align: center; color: var(--muted); }
+  .dropzone svg { width: 28px; height: 28px; margin-bottom: 6px; color: var(--faint); }
+  .dropzone p { max-width: 460px; margin: 0; }
+  .drop-title { font-size: 16px; line-height: 24px; font-weight: 600; color: var(--fg); }
+  .drop-actions { display: flex; gap: 8px; margin-top: 12px; }
+  .panes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; }
+  .pane-label { display: flex; align-items: center; gap: 6px; margin: 0 0 6px; font-size: 12px; font-weight: 500; color: var(--muted); }
+  .pane-label .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: blink 1s ease-in-out infinite; }
+  #shot, .frame { display: block; width: 100%; border-radius: 8px; background: var(--surface); box-shadow: 0 0 0 1px var(--line); }
   .frame { position: relative; aspect-ratio: 16 / 9; overflow: hidden; }
-  #preview { position: absolute; top: 0; left: 0; border: 0; transform-origin: 0 0; }
-  #placeholder { position: absolute; inset: 0; display: grid; place-items: center; margin: 0; padding: 0 24px; text-align: center; font-size: 13px; color: var(--faint); }
+  #preview { position: absolute; top: 0; left: 0; border: 0; transform-origin: 0 0; animation: fade 0.3s ease-out; }
+  #placeholder { position: absolute; inset: 0; display: grid; place-items: center; margin: 0; padding: 0 24px; text-align: center; color: var(--faint); }
+  .outlines { max-width: 960px; margin: 0 auto; }
+  .outlines img { display: block; width: 100%; border-radius: 8px; background: #fff; box-shadow: 0 0 0 1px var(--line); }
+  .outlines figcaption { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-top: 10px; color: var(--muted); }
+  .outlines figcaption i { display: inline-block; width: 10px; height: 10px; margin-right: 6px; border-radius: 2px; vertical-align: -1px; }
+
+  .editor-panel { display: grid; grid-template-rows: auto minmax(0, 1fr); min-height: 0; margin: 0 16px 16px; overflow: hidden; border-radius: 10px; background: var(--editor); color: var(--editor-fg); }
+  .editor-tabs { display: flex; align-items: center; gap: 8px; padding: 0 8px 0 0; border-bottom: 1px solid var(--editor-line); }
+  .tab { display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 14px; border-right: 1px solid var(--editor-line); font: 12px var(--mono); color: var(--editor-fg); }
+  .tab .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: blink 1s ease-in-out infinite; }
+  #copy { height: 26px; margin-left: auto; padding: 0 10px; border-radius: 6px; color: var(--editor-fg); background: var(--editor-line); }
   @property --fade-top { syntax: "<length>"; inherits: false; initial-value: 0px; }
   @property --fade-bottom { syntax: "<length>"; inherits: false; initial-value: 0px; }
-  #code {
-    margin: 0; height: min(480px, 60vh); overflow: auto; font: 12px/20px var(--mono); tab-size: 2; color: #1f2328;
+  .editor {
+    display: flex; min-height: 0; overflow: auto; padding: 10px 0;
     -webkit-mask-image: linear-gradient(to bottom, transparent, #000 var(--fade-top), #000 calc(100% - var(--fade-bottom)), transparent);
     mask-image: linear-gradient(to bottom, transparent, #000 var(--fade-top), #000 calc(100% - var(--fade-bottom)), transparent);
     transition: --fade-top 0.2s, --fade-bottom 0.2s;
   }
-  #code.thinking { white-space: pre-wrap; color: var(--muted); }
-  #code.fade-top { --fade-top: 48px; }
-  #code.fade-bottom { --fade-bottom: 48px; }
-  #code .token.comment { color: #6e7781; }
-  #code .token.keyword { color: #cf222e; }
-  #code .token.string, #code .token.attr-value, #code .token.template-string { color: #0a3069; }
-  #code .token.tag { color: #116329; }
-  #code .token.attr-name, #code .token.number, #code .token.boolean { color: #0550ae; }
-  #code .token.function { color: #8250df; }
-  #code .token.class-name, #code .token.builtin { color: #953800; }
-  #code .token.punctuation, #code .token.operator, #code .token.plain-text { color: #1f2328; }
+  .editor.fade-top { --fade-top: 40px; }
+  .editor.fade-bottom { --fade-bottom: 40px; }
+  .editor pre { margin: 0; font: 12px/20px var(--mono); tab-size: 2; }
+  .gutter { flex: none; min-width: 44px; padding: 0 12px 0 8px; text-align: right; color: var(--editor-faint); user-select: none; }
+  #code { flex: 1; padding-right: 16px; }
+  .editor.thinking .gutter { display: none; }
+  .editor.thinking #code { padding-left: 16px; white-space: pre-wrap; color: var(--editor-faint); }
+  #code .token.comment { color: #8b949e; }
+  #code .token.keyword { color: #ff7b72; }
+  #code .token.string, #code .token.attr-value, #code .token.template-string { color: #a5d6ff; }
+  #code .token.tag { color: #7ee787; }
+  #code .token.attr-name, #code .token.number, #code .token.boolean { color: #79c0ff; }
+  #code .token.function { color: #d2a8ff; }
+  #code .token.class-name, #code .token.builtin { color: #ffa657; }
+  #code .token.punctuation, #code .token.operator { color: #c9d1d9; }
   #code .token.attr-value .token.punctuation { color: inherit; }
-  #copy { position: absolute; top: 16px; right: 18px; height: 30px; padding: 0 12px; font-size: 13px; }
-  #round { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; align-items: start; overflow: hidden; }
-  .round-text { display: grid; gap: 10px; }
-  .round-text > * { margin: 0; }
-  #round-status, #match { font-size: 14px; }
-  #layout { font-size: 14px; color: var(--muted); }
-  #changes { display: grid; gap: 4px; padding-left: 18px; font-size: 14px; color: var(--muted); }
-  #changes:empty { display: none; }
-  #again { justify-self: start; height: 32px; padding: 0 14px; font-size: 13px; }
-  #outlines { margin: 0; }
-  #overlay { display: block; width: 100%; height: 100%; }
-  #outlines figcaption { margin-top: 8px; font-size: 13px; line-height: 20px; color: var(--muted); }
 
-  @media (max-width: 1100px) {
-    .compare, #round { grid-template-columns: minmax(0, 1fr); }
+  .rail { display: flex; flex-direction: column; min-height: 0; overflow: auto; padding: 14px 16px; border-left: 1px solid var(--line); background: var(--surface); }
+  .rail-head { display: flex; align-items: center; justify-content: space-between; min-height: 32px; margin-bottom: 10px; }
+  .label { margin: 0; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--faint); }
+  .rail-intro { margin: 0; color: var(--muted); }
+  .rounds { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+  .round { padding: 12px; border: 1px solid var(--line); border-radius: 10px; animation: fade 0.3s ease-out; }
+  .round-head { display: flex; align-items: center; gap: 8px; }
+  .round-name { font-weight: 600; }
+  .round.working .round-name::before { content: ""; display: inline-block; width: 7px; height: 7px; margin-right: 8px; border-radius: 50%; background: var(--accent); animation: blink 1s ease-in-out infinite; }
+  .score { margin-left: auto; padding: 0 8px; border-radius: 10px; background: var(--bg); font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .score:empty { display: none; }
+  .round.kept .score { background: var(--good-soft); color: var(--good); }
+  .round.undone .score { background: var(--bad-soft); color: var(--bad); }
+  .round-status { margin: 4px 0 0; color: var(--muted); }
+  .fixes { display: grid; gap: 2px; margin: 8px 0 0; padding-left: 18px; }
+  .fixes:empty { display: none; }
+  .round.undone .fixes { color: var(--faint); text-decoration: line-through; }
+  .round-note { margin: 8px 0 0; color: var(--warn); }
+
+  @media (max-width: 1000px) {
+    .app { height: auto; }
+    .workspace { grid-template-columns: minmax(0, 1fr); }
+    .main { grid-template-rows: auto auto 420px; }
+    .rail { border-left: 0; border-top: 1px solid var(--line); }
+    .panes { grid-template-columns: minmax(0, 1fr); }
   }
-  @media (max-width: 860px) {
-    h1 { font-size: 36px; }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .card { animation: none; }
+  @media (max-width: 640px) {
+    .topbar { flex-wrap: wrap; }
+    .actions { margin-left: 0; }
   }
 </style>
 </head>
 <body>
-<main>
-  <p class="eyebrow">SpaceXAI Cookbook</p>
-  <h1>Screenshot to React Component</h1>
-  <p class="lede">Choose a screenshot of a user interface. Grok writes a React component styled with Tailwind that recreates it, and the page shows the component running next to the screenshot. Then the page takes a screenshot of the component, and Grok compares the two and fixes what doesn't match.</p>
-  <form id="form">
-    <label class="picker" id="picker">
-      <input id="file" type="file" accept="image/png,image/jpeg,image/webp">
-      <span id="file-name">Choose a screenshot, or drop or paste one here</span>
-    </label>
-    <button id="go" class="pill pill-primary" disabled>Make component <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg></button>
-  </form>
-  <div class="examples">Don't have one?
-    <button type="button" class="pill pill-secondary" id="sample">Try the sample</button>
-  </div>
-
-  <div class="stage">
-    <div class="compare" id="compare" hidden>
-      <section class="card">
-        <p class="card-label">Screenshot</p>
-        <img id="shot" alt="The screenshot you chose">
-      </section>
-      <section class="card" id="result">
-        <p class="card-label"><span id="result-label">Component</span> <span class="dots"><i></i><i></i><i></i></span></p>
-        <div class="frame" id="frame">
-          <p id="placeholder"></p>
-          <iframe id="preview" title="The component Grok wrote" sandbox="allow-scripts" hidden></iframe>
-        </div>
-      </section>
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 4.5 2 8l3.5 3.5M10.5 4.5 14 8l-3.5 3.5"/></svg></span>
+      <div><strong>Screenshot to React Component</strong><span>SpaceXAI Cookbook</span></div>
     </div>
-    <section class="card" id="round" hidden>
-      <div class="round-text">
-        <p class="card-label"><span id="round-label">Round 2</span> <span class="dots"><i></i><i></i><i></i></span></p>
-        <p id="round-status"></p>
-        <ul id="changes"></ul>
-        <p id="match" hidden></p>
-        <p id="layout" hidden></p>
-        <button type="button" id="again" class="pill pill-secondary" hidden>Compare again</button>
-      </div>
-      <figure id="outlines">
-        <div class="frame" id="overlay-frame">
-          <img id="overlay" alt="The outlines of the screenshot and the component, laid over each other" hidden>
+    <form id="form" class="actions">
+      <label class="button file" id="picker">
+        <input id="file" type="file" accept="image/png,image/jpeg,image/webp">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 11.5v2h11v-2M8 2.5v8M4.5 6 8 2.5 11.5 6"/></svg>
+        <span id="file-name">Open a screenshot</span>
+      </label>
+      <button type="button" class="button sample">Try the sample</button>
+      <button id="go" class="button primary" disabled>Make component</button>
+    </form>
+  </header>
+
+  <div class="workspace">
+    <main class="main">
+      <div class="viewbar">
+        <div class="segmented" role="tablist">
+          <button type="button" id="view-split" class="active">Side by side</button>
+          <button type="button" id="view-outlines" disabled>Outlines</button>
         </div>
-        <figcaption>What Grok compares: the screenshot's outlines in blue and the component's in red. Black is where they line up.</figcaption>
-      </figure>
-    </section>
-    <section class="card" id="code-card" hidden>
-      <p class="card-label"><span id="code-label">Code</span> <span class="dots"><i></i><i></i><i></i></span></p>
-      <button type="button" id="copy" class="pill pill-secondary" hidden>Copy code</button>
-      <pre id="code"></pre>
-    </section>
+        <span class="badge" id="badge" hidden></span>
+      </div>
+
+      <div class="canvas" id="canvas">
+        <div class="dropzone" id="dropzone">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 15l5-5 4 4 3-3 6 6"/><circle cx="15.5" cy="8.5" r="1.5"/></svg>
+          <p class="drop-title">Drop a screenshot of a user interface</p>
+          <p>Or paste one, or open a file. Grok writes a React component styled with Tailwind that recreates it, then compares the two and fixes what doesn't match.</p>
+          <div class="drop-actions">
+            <label class="button" for="file">Open a screenshot</label>
+            <button type="button" class="button primary sample">Try the sample</button>
+          </div>
+        </div>
+        <div class="panes" id="panes" hidden>
+          <section>
+            <p class="pane-label">Screenshot</p>
+            <img id="shot" alt="The screenshot you chose">
+          </section>
+          <section>
+            <p class="pane-label"><span class="dot" id="result-dot" hidden></span><span id="result-label">Component</span></p>
+            <div class="frame" id="frame">
+              <p id="placeholder"></p>
+              <iframe id="preview" title="The component Grok wrote" sandbox="allow-scripts" hidden></iframe>
+            </div>
+          </section>
+        </div>
+        <figure class="outlines" id="outlines-view" hidden>
+          <img id="overlay" alt="The outlines of the screenshot and the component, laid over each other">
+          <figcaption>
+            <span><i style="background: #00f"></i>The screenshot</span>
+            <span><i style="background: #f00"></i>The component</span>
+            <span><i style="background: #000"></i>Where they line up</span>
+            <span>This is what Grok compares in each round.</span>
+          </figcaption>
+        </figure>
+      </div>
+
+      <section class="editor-panel">
+        <div class="editor-tabs">
+          <span class="tab"><span class="dot" id="code-dot" hidden></span><span id="code-label">No code yet</span></span>
+          <button type="button" id="copy" hidden>Copy code</button>
+        </div>
+        <div class="editor" id="editor"><pre class="gutter" id="gutter"></pre><pre id="code"></pre></div>
+      </section>
+    </main>
+
+    <aside class="rail">
+      <div class="rail-head">
+        <p class="label">Rounds</p>
+        <button type="button" id="again" class="button" hidden>Compare again</button>
+      </div>
+      <p class="rail-intro" id="rail-intro">After the first round, the page takes a screenshot of the component, and Grok compares it with yours and fixes what doesn't line up. Each round shows up here with its score.</p>
+      <ol class="rounds" id="rounds"></ol>
+    </aside>
   </div>
-</main>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/prismjs@1/prism.min.js" data-manual></script>
 <script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-jsx.min.js"></script>
@@ -195,6 +257,7 @@
   // The preview shows exactly the area the page compares, so it doesn't scroll. Scrolling would also
   // add a scrollbar that narrows the page, which the screenshot of the component doesn't have.
   const NO_SCROLL = "<style>html { overflow: hidden; }</style>";
+  const INPUTS = [$("go"), $("file"), ...document.querySelectorAll(".sample")];
   let screenshot = null;
   let round = 0;
   // The component from the round that just finished, until the page has scored it.
@@ -204,59 +267,63 @@
   let running = false;
   let source = "";
   let codeFrame = 0;
+  // Each round's entry in the rail, by round number.
+  const rounds = new Map();
 
   $("file").onchange = () => {
     choose($("file").files[0]);
     $("file").value = "";
   };
-  $("sample").onclick = async () => {
-    const image = await (await fetch("/sample-screenshot.png")).blob();
-    choose(new File([image], "sample-screenshot.png", { type: image.type }));
-    $("form").requestSubmit();
-  };
+  document.querySelectorAll(".sample").forEach((button) => {
+    button.onclick = async () => {
+      const image = await (await fetch("/sample-screenshot.png")).blob();
+      choose(new File([image], "sample-screenshot.png", { type: image.type }));
+      $("form").requestSubmit();
+    };
+  });
   addEventListener("paste", (event) => choose(event.clipboardData.files[0]));
   addEventListener("dragover", (event) => {
     event.preventDefault();
-    $("picker").classList.add("dragging");
+    $("canvas").classList.add("dragging");
   });
   addEventListener("dragleave", (event) => {
-    if (!event.relatedTarget) $("picker").classList.remove("dragging");
+    if (!event.relatedTarget) $("canvas").classList.remove("dragging");
   });
   addEventListener("drop", (event) => {
     event.preventDefault();
-    $("picker").classList.remove("dragging");
+    $("canvas").classList.remove("dragging");
     choose(event.dataTransfer.files[0]);
   });
+
+  $("view-split").onclick = () => setView("split");
+  $("view-outlines").onclick = () => setView("outlines");
+
+  function setView(view) {
+    $("view-split").classList.toggle("active", view === "split");
+    $("view-outlines").classList.toggle("active", view === "outlines");
+    $("panes").hidden = view !== "split" || !screenshot;
+    $("outlines-view").hidden = view !== "outlines";
+  }
 
   function choose(file) {
     if (!file || running) return;
     if (!IMAGE_TYPES.includes(file.type)) return alert("Choose a PNG, JPEG, or WebP image.");
     screenshot = file;
-    $("file-name").textContent = file.name;
-    $("picker").classList.add("chosen");
-    $("shot").src = URL.createObjectURL(file);
-    $("compare").hidden = false;
-    $("round").hidden = true;
-    $("code-card").hidden = true;
-    $("result-label").textContent = "Component";
-    showPlaceholder("Click Make component to recreate the screenshot.");
-    $("go").disabled = false;
     pending = best = null;
+    $("file-name").textContent = file.name;
+    $("shot").src = URL.createObjectURL(file);
+    $("dropzone").hidden = true;
+    resetRun("Click Make component to recreate the screenshot.");
+    $("go").disabled = false;
   }
 
   $("form").onsubmit = async (event) => {
     event.preventDefault();
     round = 1;
     pending = best = null;
-    source = "";
-    showCode("");
-    $("round").hidden = true;
-    $("match").hidden = true;
-    $("layout").hidden = true;
-    $("overlay").hidden = true;
-    $("result-label").textContent = "Component";
-    showPlaceholder("The component appears here when Grok is done.");
-    start("Uploading the screenshot");
+    resetRun("The component appears here when Grok is done.");
+    start();
+    addRound(1, "Uploading the screenshot");
     try {
       const upload = await fetch("/api/screenshots", { method: "POST", body: screenshot });
       if (!upload.ok) throw new Error(await upload.text());
@@ -271,32 +338,34 @@
     const on = (name, handler) => events.addEventListener(name, (message) => handler(JSON.parse(message.data)));
 
     on("step", ({ step, status }) => {
-      if (step === "think" && status === "active") $("code-label").textContent = "Thinking";
+      if (step === "think" && status === "active") {
+        updateRound(round, { status: round > 1 ? "Comparing the component with the screenshot" : "Thinking" });
+      }
       // In later rounds, the code from the round before stays up until Grok starts rewriting it.
       if (step === "write" && status === "active") {
         source = "";
         showCode("");
-        $("code-label").textContent = "Writing the code";
+        setCodeLabel("Writing the code", true);
+        updateRound(round, { status: "Writing the code" });
       }
     });
-    on("changes", ({ changes }) => showChanges(changes, false));
-    // In the first round there's no code to show yet, so the box shows Grok's reasoning instead.
+    on("changes", ({ changes }) => updateRound(round, { changes, status: `Fixing ${count(changes.length)}` }));
+    // In the first round there's no code to show yet, so the editor shows Grok's reasoning instead.
     on("reasoning", ({ text }) => {
       if (source) return;
-      const box = $("code");
-      box.classList.add("thinking");
-      box.textContent += text;
-      box.scrollTop = box.scrollHeight;
+      $("editor").classList.add("thinking");
+      $("code").textContent += text;
+      $("editor").scrollTop = $("editor").scrollHeight;
       updateFades();
     });
-    on("name", ({ name }) => ($("code-label").textContent = `Writing ${name}.tsx`));
+    on("name", ({ name }) => setCodeLabel(`${name}.tsx`, true));
     on("code", ({ text }) => {
       source += text;
       // The code arrives in many small pieces, so highlight it at most once per frame.
       cancelAnimationFrame(codeFrame);
       codeFrame = requestAnimationFrame(() => {
         showCode(source);
-        $("code").scrollTop = $("code").scrollHeight;
+        $("editor").scrollTop = $("editor").scrollHeight;
         updateFades();
       });
     });
@@ -306,16 +375,10 @@
       pending = { round, component: { name, code }, page };
       show(pending, true);
       stop();
-      $("round").classList.add("active");
-      if (round > 1) {
-        showChanges(changes, true);
-        $("match").textContent = "Taking a screenshot of the new component";
-        return;
-      }
-      $("round-label").textContent = "Round 2";
-      $("round-status").textContent = "Taking a screenshot of the component";
-      $("changes").replaceChildren();
-      reveal($("round"));
+      updateRound(round, {
+        status: "Taking a screenshot of the component",
+        changes: round > 1 ? changes : undefined,
+      });
     });
     on("failure", ({ message }) => {
       events.close();
@@ -333,7 +396,6 @@
     const { naturalWidth: width, naturalHeight: height } = $("shot");
     if (!width) return;
     $("frame").style.aspectRatio = `${width} / ${height}`;
-    $("overlay-frame").style.aspectRatio = `${width} / ${height}`;
     $("preview").style.width = `${width}px`;
     $("preview").style.height = `${height}px`;
     $("preview").style.transform = `scale(${$("frame").clientWidth / width})`;
@@ -351,28 +413,36 @@
       if (event.data.error) throw new Error(event.data.error);
       Object.assign(version, { render: event.data.image, height: event.data.height }, await compare(event.data.image));
     } catch {
-      $("round").classList.remove("active");
-      $("match").hidden = false;
-      $("match").textContent = "Couldn't take a screenshot of the component to compare.";
+      updateRound(version.round, { status: "Couldn't take a screenshot of the component to compare", working: false });
+      $("again").hidden = !best;
       return;
     }
-    $("match").hidden = false;
+    // A page too tall to fit can't center its content, so everything moves at once and most outlines
+    // miss, even where the layout matches.
+    const extra = version.height - $("shot").naturalHeight;
+    updateRound(version.round, {
+      score: version.score,
+      note: extra > 0 ? `Its page is ${extra} px taller than the screenshot, so it scrolls, which can shift everything at once.` : "",
+    });
     if (!best) {
       best = version;
+      updateRound(version.round, { status: "First draft", working: false, outcome: "kept" });
       showOutlines();
-      $("match").textContent = `Outline match: ${percent(best.score)}`;
       return refine();
     }
     const before = best;
     if (version.score > before.score) {
       best = version;
-      $("match").textContent = `Outline match went from ${percent(before.score)} to ${percent(version.score)}.`;
+      updateRound(version.round, { status: `Kept, up from ${percent(before.score)}`, working: false, outcome: "kept" });
     } else {
       show(best, false);
-      $("match").textContent = `Outline match went from ${percent(before.score)} to ${percent(version.score)}, so the page kept the component from ${before.round > 1 ? `round ${before.round}` : "the first round"}.`;
+      updateRound(version.round, {
+        status: `Undone, down from ${percent(before.score)}, so the page kept round ${before.round}`,
+        working: false,
+        outcome: "undone",
+      });
     }
     showOutlines();
-    $("round").classList.remove("active");
     $("again").hidden = false;
   });
   $("again").onclick = () => refine();
@@ -381,12 +451,8 @@
   // outline overlay, and the code.
   async function refine() {
     round += 1;
-    start("Uploading the screenshots");
-    $("round").classList.add("active");
-    $("round-label").textContent = `Round ${round}`;
-    $("round-status").textContent = "Comparing the component with the screenshot";
-    $("changes").replaceChildren();
-    $("match").textContent = `Outline match: ${Math.round(best.score * 100)}%`;
+    start();
+    addRound(round, "Uploading the screenshots");
     try {
       const upload = await fetch("/api/refinements", {
         method: "POST",
@@ -407,21 +473,42 @@
     }
   }
 
-  function showChanges(changes, done) {
-    const count = changes.length === 1 ? "1 difference" : `${changes.length} differences`;
-    $("round-status").textContent = changes.length ? `${done ? "Fixed" : "Fixing"} ${count}:` : "Found nothing to fix.";
-    $("changes").replaceChildren(...changes.map((change) => Object.assign(document.createElement("li"), { textContent: change })));
+  // Each round gets an entry in the rail, newest first, that's updated in place as the round goes.
+  function addRound(number, status) {
+    const entry = document.createElement("li");
+    entry.className = "round";
+    entry.innerHTML = `<div class="round-head"><span class="round-name">Round ${number}</span><span class="score"></span></div><p class="round-status"></p><ul class="fixes"></ul><p class="round-note" hidden></p>`;
+    $("rounds").prepend(entry);
+    $("rail-intro").hidden = true;
+    rounds.set(number, entry);
+    updateRound(number, { status, working: true });
   }
 
-  // Shows a component in the preview and the code box. A new one gets a screenshot taken of it.
+  function updateRound(number, { status, changes, score, note, working, outcome }) {
+    const entry = rounds.get(number);
+    if (!entry) return;
+    if (status !== undefined) entry.querySelector(".round-status").textContent = status;
+    if (changes) {
+      entry.querySelector(".fixes").replaceChildren(...changes.map((change) => Object.assign(document.createElement("li"), { textContent: change })));
+    }
+    if (score !== undefined) entry.querySelector(".score").textContent = percent(score);
+    if (note !== undefined) {
+      entry.querySelector(".round-note").textContent = note;
+      entry.querySelector(".round-note").hidden = !note;
+    }
+    if (working !== undefined) entry.classList.toggle("working", working);
+    if (outcome) entry.classList.add(outcome);
+  }
+
+  // Shows a component in the preview and the editor. A new one gets a screenshot taken of it.
   function show(version, snapshot) {
     const { name, code } = version.component;
     source = code;
     showCode(code);
-    $("code").scrollTop = 0;
+    $("editor").scrollTop = 0;
     updateFades();
     $("copy").hidden = false;
-    $("code-label").textContent = `${name}.tsx`;
+    setCodeLabel(`${name}.tsx`, false);
     $("result-label").textContent = version.round > 1 ? `${name} · round ${version.round}` : name;
     $("preview").srcdoc = version.page.replace("</html>", `${NO_SCROLL}${snapshot ? SNAPSHOT : ""}\n</html>`);
     $("preview").hidden = false;
@@ -430,26 +517,22 @@
 
   function showOutlines() {
     $("overlay").src = best.overlay;
-    $("overlay").hidden = false;
-    // A page too tall to fit can't center its content, so everything moves at once and most outlines
-    // miss, even where the layout matches.
-    const extra = best.height - $("shot").naturalHeight;
-    $("layout").textContent = `The component's page is ${extra} px taller than the screenshot, so it scrolls. That can shift everything at once, which makes most outlines miss.`;
-    $("layout").hidden = !(extra > 0);
+    $("view-outlines").disabled = false;
+    $("badge").textContent = `Round ${best.round} · ${percent(best.score)} match`;
+    $("badge").hidden = false;
+  }
+
+  function setCodeLabel(text, working) {
+    $("code-label").textContent = text;
+    $("code-dot").hidden = !working;
+  }
+
+  function count(number) {
+    return number === 1 ? "1 difference" : `${number} differences`;
   }
 
   function percent(share) {
     return `${Math.round(share * 100)}%`;
-  }
-
-  // Grows a card open from nothing, so the cards below it slide down instead of jumping.
-  function reveal(card) {
-    card.hidden = false;
-    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    card.animate(
-      [{ height: "0px", paddingTop: "0px", paddingBottom: "0px", marginTop: "-16px" }, { height: `${card.offsetHeight}px` }],
-      { duration: 300, easing: "ease-out" },
-    );
   }
 
   // Traces the outlines in the screenshot and in a screenshot of the component. The overlay draws the
@@ -526,19 +609,21 @@
 
   // Prism loads from a CDN. If it didn't load, the code still shows, just without colors.
   function showCode(code) {
-    $("code").classList.remove("thinking");
+    $("editor").classList.remove("thinking");
     if (window.Prism) $("code").innerHTML = Prism.highlight(code, Prism.languages.tsx, "tsx");
     else $("code").textContent = code;
+    const lines = code ? code.split("\n").length : 0;
+    $("gutter").textContent = Array.from({ length: lines }, (_, index) => index + 1).join("\n");
     updateFades();
   }
 
-  // An edge of the code box fades only when there's more code past it.
+  // An edge of the editor fades only when there's more code past it.
   function updateFades() {
-    const box = $("code");
+    const box = $("editor");
     box.classList.toggle("fade-top", box.scrollTop > 0);
     box.classList.toggle("fade-bottom", box.scrollTop + box.clientHeight < box.scrollHeight - 1);
   }
-  $("code").addEventListener("scroll", updateFades);
+  $("editor").addEventListener("scroll", updateFades);
 
   $("copy").onclick = async () => {
     await navigator.clipboard.writeText(source);
@@ -546,42 +631,54 @@
     setTimeout(() => ($("copy").textContent = "Copy code"), 1500);
   };
 
-  function start(status) {
+  function resetRun(placeholder) {
+    source = "";
+    showCode("");
+    setCodeLabel("No code yet", false);
+    $("copy").hidden = true;
+    $("again").hidden = true;
+    $("badge").hidden = true;
+    $("view-outlines").disabled = true;
+    $("rounds").replaceChildren();
+    $("rail-intro").hidden = false;
+    rounds.clear();
+    $("result-label").textContent = "Component";
+    $("placeholder").textContent = placeholder;
+    $("placeholder").hidden = false;
+    $("preview").hidden = true;
+    $("preview").removeAttribute("srcdoc");
+    setView("split");
+  }
+
+  function start() {
     running = true;
-    ["go", "sample", "file"].forEach((id) => ($(id).disabled = true));
+    INPUTS.forEach((input) => (input.disabled = true));
+    $("picker").classList.add("disabled");
     $("again").hidden = true;
     $("copy").hidden = true;
-    $("code-label").textContent = status;
-    $("code-card").hidden = false;
-    $("code-card").classList.add("active");
-    $("result").classList.add("active");
+    $("result-dot").hidden = false;
   }
 
   function stop() {
     running = false;
-    ["go", "sample", "file"].forEach((id) => ($(id).disabled = false));
-    document.querySelectorAll(".card").forEach((card) => card.classList.remove("active"));
+    INPUTS.forEach((input) => (input.disabled = false));
+    $("picker").classList.remove("disabled");
+    $("result-dot").hidden = true;
+    $("code-dot").hidden = true;
   }
 
+  // A round that fails keeps its number in the rail, and the page goes back to the best component.
   function fail(message) {
     alert(message);
     stop();
-    if (round === 1) {
-      $("code-label").textContent = "Couldn't make the component";
-      return;
-    }
-    // Put back the best component, so Compare again can retry this round.
-    round -= 1;
+    updateRound(round, {
+      status: round === 1 ? "Couldn't make the component" : "Didn't finish, so the component is still the best one from before",
+      working: false,
+      outcome: "undone",
+    });
+    if (!best) return setCodeLabel("No code yet", false);
     show(best, false);
-    $("round-status").textContent = "This round didn't finish, so the component is the best one from before.";
     $("again").hidden = false;
-  }
-
-  function showPlaceholder(text) {
-    $("placeholder").textContent = text;
-    $("placeholder").hidden = false;
-    $("preview").hidden = true;
-    $("preview").removeAttribute("srcdoc");
   }
 </script>
 </body>

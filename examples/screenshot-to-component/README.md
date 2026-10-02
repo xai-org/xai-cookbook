@@ -34,7 +34,7 @@ npm install
 npm run web
 ```
 
-Open http://localhost:3000, then choose a screenshot, or drop or paste one, and click **Make component**. To use the sample, click **Try the sample**. The page shows Grok's reasoning, then the code as it's written, and when Grok is done, the component running next to the screenshot. Round 2 starts on its own: the page shows the outlines Grok compares, the differences it fixes, and how much closer the outlines line up afterward. Click **Compare again** for another round. A run takes a minute or two. The preview loads React, Babel, Tailwind, and html-to-image from CDNs, so it needs an internet connection.
+Open http://localhost:3000, then drop, paste, or open a screenshot and click **Make component**, or click **Try the sample**. The page works like a design-to-code tool. The screenshot and the component sit side by side, the code streams into an editor underneath, and each round gets an entry on the right with its score and the differences Grok fixed. Round 2 starts on its own. Switch to **Outlines** to see what Grok compares, and click **Compare again** for another round. A run takes a minute or two. The preview loads React, Babel, Tailwind, and html-to-image from CDNs, so it needs an internet connection.
 
 To make a component from the terminal instead, pass a screenshot:
 
