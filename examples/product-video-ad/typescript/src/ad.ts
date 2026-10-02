@@ -1,8 +1,8 @@
 import { spawnSync } from "node:child_process";
 import { mkdir, writeFile } from "node:fs/promises";
-import { type UnsafeSpeechText, xAI } from "@xai-official/sdk";
+import { SpaceXAI, stripInvalidSpeechTags } from "@xai-official/sdk";
 
-const client = new xAI();
+const client = new SpaceXAI();
 
 const VOICE = "ara";
 
@@ -168,8 +168,9 @@ async function animate(image: Blob, motion: string, signal?: AbortSignal): Promi
 }
 
 async function narrate(text: string, signal?: AbortSignal): Promise<Uint8Array> {
-  // The model writes the voiceover, so the SDK can't check it for speech tags at compile time.
-  const speech = await client.voice.speak({ text: text as UnsafeSpeechText, language: "en", voice_id: VOICE }, { signal });
+  // The model writes the voiceover, so the SDK can't check its speech tags at compile time. Any tag the
+  // voice API wouldn't recognize is removed instead, so it isn't read aloud.
+  const speech = await client.voice.speak({ text: stripInvalidSpeechTags(text), language: "en", voice_id: VOICE }, { signal });
   return speech.bytes();
 }
 
