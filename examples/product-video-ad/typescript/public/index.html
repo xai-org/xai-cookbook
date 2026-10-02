@@ -7,191 +7,221 @@
 <title>Product Photo to Video Ad</title>
 <style>
   :root {
-    --bg: #fff;
-    --fg: #0a0a0a;
-    --muted: rgb(10 10 10 / 0.6);
-    --faint: rgb(10 10 10 / 0.3);
-    --card: #f9f8f6;
-    --secondary: #f2f1ef;
-    --secondary-hover: #e9e8e5;
-    --border: rgb(10 10 10 / 0.15);
-    --rule: rgb(213 217 226 / 0.55);
-    --primary: #0a0a0a;
-    --primary-hover: #202329;
-    --on-primary: #f9f8f6;
-    --bubble: rgb(10 10 10 / 0.06);
-    --track: rgb(10 10 10 / 0.08);
-    --track-ready: rgb(10 10 10 / 0.2);
-    --accent: #ff6308;
+    --bg: #fbf6f2;
+    --surface: #fff;
+    --line: #eee3db;
+    --fg: #1d1517;
+    --muted: #6f625c;
+    --faint: #aa9d95;
+    --accent: #e3336f;
+    --accent-dark: #c41f59;
+    --accent-soft: #fde8ef;
+    --phone: #131014;
     --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
     --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   }
 
   * { box-sizing: border-box; }
-  body { margin: 0; font: 14px/24px var(--sans); background: var(--bg); color: var(--fg); -webkit-font-smoothing: antialiased; }
-  main { max-width: 1120px; margin: 0 auto; padding: 72px 24px; }
-  .eyebrow { margin: 0; font-size: 14px; }
-  h1 { margin: 8px 0 0; font-size: 48px; line-height: 1.1; font-weight: 450; letter-spacing: -0.01em; }
-  .lede { margin: 12px 0 32px; max-width: 620px; font-size: 16px; line-height: 26px; color: var(--muted); }
+  [hidden] { display: none !important; }
+  body { margin: 0; font: 14px/22px var(--sans); background: var(--bg); color: var(--fg); -webkit-font-smoothing: antialiased; }
+  button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
+  svg { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+  @keyframes pulse { to { background-color: #f3e8e1; } }
+  @keyframes blink { 50% { opacity: 0.35; } }
+  @keyframes pop { from { opacity: 0; transform: scale(0.97); } }
 
-  button { font: inherit; border: 0; cursor: pointer; }
-  .pill { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 40px; padding: 0 18px; border-radius: 9999px; font-size: 14px; font-weight: 500; white-space: nowrap; text-decoration: none; }
-  .pill-primary { background: var(--primary); color: var(--on-primary); }
-  .pill-primary:hover { background: var(--primary-hover); }
-  .pill-secondary { background: var(--secondary); color: var(--fg); }
-  .pill-secondary:hover { background: var(--secondary-hover); }
-  .pill:disabled { opacity: 0.4; cursor: default; }
-  .pill svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  .topbar { display: flex; align-items: center; gap: 12px; padding: 14px 24px; }
+  .logo { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 10px; background: var(--accent); color: #fff; }
+  .logo svg { width: 18px; height: 18px; }
+  .topbar strong { display: block; font-size: 15px; line-height: 18px; font-weight: 650; }
+  .topbar span { display: block; font-size: 12px; line-height: 16px; color: var(--faint); }
+  .price { margin-left: auto; padding: 4px 12px; border-radius: 999px; background: var(--surface); color: var(--muted); font-size: 13px; }
 
-  fieldset { display: flex; align-items: center; gap: 20px; max-width: 840px; min-width: 0; margin: 0; padding: 0; border: 0; }
-  .drop { position: relative; flex: none; display: grid; place-items: center; width: 136px; height: 136px; padding: 16px; border: 1px dashed var(--border); border-radius: 16px; background: var(--card); color: var(--muted); font-size: 12px; line-height: 18px; text-align: center; cursor: pointer; overflow: hidden; }
-  .drop:hover, .drop:focus-within, .drop.over { border-color: var(--fg); }
-  .drop * { pointer-events: none; }
+  .studio { display: grid; grid-template-columns: 320px minmax(340px, 1fr) 340px; gap: 20px; align-items: start; max-width: 1360px; margin: 0 auto; padding: 4px 24px 40px; }
+  .panel { display: grid; gap: 18px; padding: 20px; border-radius: 20px; background: var(--surface); }
+  .section-label { margin: 0 0 8px; font-size: 12px; font-weight: 650; letter-spacing: 0.04em; text-transform: uppercase; color: var(--faint); }
+
+  form { display: grid; gap: 12px; }
+  fieldset { display: grid; gap: 12px; margin: 0; padding: 0; border: 0; min-width: 0; }
+  .drop { position: relative; display: grid; place-items: center; aspect-ratio: 4 / 3; overflow: hidden; padding: 16px; border: 1.5px dashed #e2d3c8; border-radius: 16px; background: var(--bg); color: var(--muted); text-align: center; cursor: pointer; }
+  .drop:hover, .drop.over { border-color: var(--accent); background: var(--accent-soft); }
   .drop input { position: absolute; width: 1px; height: 1px; opacity: 0; }
-  .drop img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .drop img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #fff; animation: pop 0.25s ease-out; }
   .drop img:not([src]) { display: none; }
-  .drop.filled { border-style: solid; }
-  .drop.filled span { display: none; }
+  .drop.filled { border-style: solid; border-color: var(--line); }
+  .drop.filled .drop-hint { display: none; }
+  .drop-hint svg { display: block; width: 26px; height: 26px; margin: 0 auto 8px; color: var(--accent); }
   fieldset:disabled .drop { cursor: default; }
-  .fields { flex: 1; min-width: 0; }
-  .row { display: flex; gap: 8px; }
-  .row input { flex: 1; min-width: 0; height: 40px; padding: 0 18px; border: 1px solid var(--border); border-radius: 9999px; background: var(--bg); color: var(--fg); font: inherit; outline: none; }
-  .row input:focus { border-color: var(--fg); }
-  .row input::placeholder { color: var(--faint); }
-  .examples { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 12px; font-size: 13px; color: var(--muted); }
-  .examples .pill { height: 30px; padding: 0 12px; font-size: 13px; }
-  #note { margin: 10px 0 0; font-size: 13px; }
+  textarea { width: 100%; min-height: 76px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--fg); font: inherit; resize: vertical; outline: none; }
+  textarea:focus { border-color: var(--accent); }
+  textarea::placeholder { color: var(--faint); }
+  .buttons { display: flex; gap: 8px; }
+  .make { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 42px; border-radius: 12px; background: var(--accent); color: #fff; font-weight: 650; }
+  .make:hover { background: var(--accent-dark); }
+  .make svg { width: 16px; height: 16px; }
+  .ghost { height: 42px; padding: 0 14px; border: 1px solid var(--line); border-radius: 12px; font-weight: 500; }
+  .ghost:hover { border-color: var(--faint); }
+  fieldset:disabled .make, fieldset:disabled .ghost { opacity: 0.45; cursor: default; }
+  #note { margin: 0; color: var(--accent-dark); }
   #note:empty { display: none; }
 
-  .stage { display: grid; gap: 16px; margin-top: 48px; }
-  .card { background: var(--card); border-radius: 16px; padding: 20px 22px; }
-  .card-label { display: flex; align-items: center; gap: 8px; margin: 0 0 12px; font-size: 13px; font-weight: 500; color: var(--muted); }
-  .dots { display: none; gap: 4px; }
-  .card.active .dots { display: inline-flex; }
-  .dots i { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); animation: blink 1.2s infinite both; }
-  .dots i:nth-child(2) { animation-delay: 0.2s; }
-  .dots i:nth-child(3) { animation-delay: 0.4s; }
-  @keyframes blink { 0%, 80%, 100% { opacity: 0.25; } 40% { opacity: 1; } }
-  @keyframes appear { from { opacity: 0; transform: translateY(4px); } }
+  .brief { padding-top: 18px; border-top: 1px solid var(--line); }
+  #product { margin: 0 0 6px; font-size: 20px; line-height: 26px; font-weight: 650; }
+  #tagline { margin: 0; font-size: 16px; line-height: 24px; font-style: italic; color: var(--accent-dark); }
+  .brief dl { display: grid; gap: 2px; margin: 14px 0 0; }
+  .brief dt { font-size: 12px; color: var(--faint); }
+  .brief dd { margin: 0 0 8px; color: var(--muted); }
+  .skeleton { display: grid; gap: 8px; }
+  .skeleton i { height: 12px; border-radius: 6px; background: var(--bg); animation: pulse 1s ease-in-out infinite alternate; }
+  .skeleton i:nth-child(1) { width: 70%; height: 18px; }
+  .skeleton i:nth-child(2) { width: 90%; }
+  .skeleton i:nth-child(3) { width: 55%; }
 
-  #product { margin: 0 0 16px; font-size: 24px; line-height: 32px; font-weight: 450; letter-spacing: -0.01em; }
-  dl { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 8px 16px; max-width: 820px; margin: 0; }
-  dt { color: var(--muted); }
-  dd { margin: 0; }
+  .stage { display: grid; justify-items: center; gap: 18px; padding-top: 4px; }
+  .phone { position: relative; width: min(340px, 100%); aspect-ratio: 9 / 18.5; padding: 12px; border-radius: 48px; background: var(--phone); }
+  .phone-screen { position: relative; height: 100%; overflow: hidden; border-radius: 37px; background: #2a2427; }
+  .phone-screen::after { content: ""; position: absolute; top: 10px; left: 50%; width: 84px; height: 24px; margin-left: -42px; border-radius: 12px; background: var(--phone); }
+  .phone-screen img, .phone-screen video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; animation: pop 0.3s ease-out; }
+  #poster { opacity: 0.45; }
+  .phone-note { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 10px; padding: 24px; background: rgb(0 0 0 / 0.4); text-align: center; color: rgb(255 255 255 / 0.9); }
+  .phone-note svg { width: 30px; height: 30px; }
+  .phone-note strong { font-size: 16px; }
+  .phone-note .clock { font: 600 28px/32px var(--mono); font-variant-numeric: tabular-nums; }
+  .story { position: absolute; top: 44px; left: 14px; right: 14px; height: 3px; border-radius: 2px; background: rgb(255 255 255 / 0.35); }
+  .story i { display: block; width: 0; height: 100%; border-radius: inherit; background: #fff; }
+  .tap { position: absolute; inset: 0; width: 100%; cursor: pointer; }
+  .tap svg { width: 56px; height: 56px; padding: 16px; border-radius: 50%; background: rgb(0 0 0 / 0.45); color: #fff; fill: #fff; stroke: none; }
+  .tap.playing svg { display: none; }
+  .stepper { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin: 0; padding: 0; list-style: none; }
+  .stepper li { display: flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border-radius: 999px; background: var(--surface); color: var(--faint); font-size: 13px; font-weight: 500; }
+  .stepper li i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+  .stepper li.active { background: var(--accent-soft); color: var(--accent-dark); }
+  .stepper li.active i { animation: blink 1s ease-in-out infinite; }
+  .stepper li.done { color: var(--fg); }
+  .stepper li.done i { background: var(--accent); }
+  .actions { display: flex; gap: 8px; }
+  #download { display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 16px; border-radius: 12px; background: var(--fg); color: #fff; font-weight: 600; text-decoration: none; }
+  #download svg { width: 15px; height: 15px; }
+  #error { max-width: 340px; margin: 0; padding: 10px 14px; border-radius: 12px; background: var(--accent-soft); color: var(--accent-dark); text-align: center; }
 
-  #frames { display: grid; grid-template-columns: repeat(3, minmax(0, 220px)); gap: 20px; }
-  figure { margin: 0; }
-  .frame { position: relative; display: grid; place-items: center; aspect-ratio: 9 / 16; border-radius: 12px; background: var(--secondary); transition: opacity 0.3s; }
-  .frame img { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: inherit; object-fit: cover; animation: appear 0.3s ease-out; }
-  .frame img:not([src]) { display: none; }
-  .badge { display: none; position: absolute; top: 10px; left: 10px; padding: 0 10px; border-radius: 9999px; background: var(--primary); color: var(--on-primary); font-size: 12px; line-height: 24px; font-weight: 500; }
-  .picked .badge { display: block; }
-  .picked .frame { box-shadow: 0 0 0 2px var(--card), 0 0 0 4px var(--fg); }
-  .chosen figure:not(.picked) .frame { opacity: 0.45; }
-  figcaption { margin-top: 12px; font-size: 13px; line-height: 20px; color: var(--muted); }
-  #reason { max-width: 700px; margin: 20px 0 0; }
-  #message { margin: 0; }
-  #reason:empty { display: none; }
+  .scenes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  .scene { position: relative; aspect-ratio: 9 / 16; overflow: hidden; border-radius: 12px; background: var(--bg); transition: opacity 0.3s; }
+  .scene.waiting { animation: pulse 1s ease-in-out infinite alternate; }
+  .scene img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; animation: pop 0.3s ease-out; }
+  .scene .n { position: absolute; left: 6px; top: 6px; display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: rgb(255 255 255 / 0.9); font-size: 11px; font-weight: 650; }
+  .scene .pick { position: absolute; left: 6px; right: 6px; bottom: 6px; padding: 2px 0; border-radius: 999px; background: var(--accent); color: #fff; font-size: 11px; font-weight: 650; text-align: center; }
+  .scenes.chosen .scene:not(.picked) { opacity: 0.4; }
+  .scene.picked { outline: 2.5px solid var(--accent); outline-offset: 2px; }
+  #scene-text { margin: 10px 0 0; color: var(--muted); }
+  #reason { margin: 10px 0 0; padding: 12px 14px; border-radius: 12px; background: var(--accent-soft); color: var(--fg); }
+  #reason strong { color: var(--accent-dark); }
+  #voiceover { margin: 0; font-size: 15px; line-height: 23px; }
+  .result { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 14px; margin: 0; padding-top: 16px; border-top: 1px solid var(--line); font-size: 13px; }
+  .result dt { color: var(--faint); }
+  .result dd { margin: 0; }
+  #saved { font-family: var(--mono); font-size: 12px; overflow-wrap: anywhere; }
+  .empty { margin: 0; color: var(--faint); }
 
-  #elapsed { font-variant-numeric: tabular-nums; }
-  .ad { display: flex; gap: 28px; align-items: flex-start; }
-  .screen { position: relative; flex: none; display: grid; place-items: center; width: 300px; aspect-ratio: 9 / 16; border-radius: 12px; background: var(--secondary); overflow: hidden; }
-  .screen img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.4; }
-  .screen img:not([src]) { display: none; }
-  .screen .dots { position: relative; padding: 10px 14px; border-radius: 9999px; background: var(--bg); }
-  .screen video { position: absolute; inset: 0; width: 100%; height: 100%; }
-  .screen video:not([src]) { display: none; }
-  .details { max-width: 480px; }
-  .details dl { grid-template-columns: 96px minmax(0, 1fr); margin-bottom: 20px; }
-  #progress { margin: 0; }
-  #saved { font: 12px/24px var(--mono); }
-  #download { height: 32px; padding: 0 14px; font-size: 13px; }
-
-  @media (max-width: 860px) {
-    h1 { font-size: 36px; }
-    fieldset { flex-direction: column; align-items: flex-start; }
-    .fields { width: 100%; }
-    .ad { flex-direction: column; }
-    .screen { width: min(300px, 100%); }
+  @media (max-width: 1100px) {
+    .studio { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+    .stage { grid-column: 1 / -1; grid-row: 1; }
+  }
+  @media (max-width: 720px) {
+    .studio { grid-template-columns: minmax(0, 1fr); }
   }
 </style>
 </head>
 <body>
-<main>
-  <p class="eyebrow">SpaceXAI Cookbook</p>
-  <h1>Product Photo to Video Ad</h1>
-  <p class="lede">Choose a product photo and say what it is. Grok writes a brief, places the product in three scenes, picks the one that sells it best, and turns it into an eight-second vertical ad with a voiceover.</p>
-  <form id="form">
-    <fieldset id="controls">
-      <label class="drop" id="drop">
-        <input id="file" type="file" accept="image/jpeg,image/png,image/webp" aria-label="Product photo">
-        <img id="preview" alt="The chosen product photo">
-        <span>Drop a JPEG, PNG, or WebP photo here, or click to choose one</span>
-      </label>
-      <div class="fields">
-        <div class="row">
-          <input id="description" required maxlength="500" autocomplete="off" aria-label="What the product is and who it's for" placeholder="What the product is and who it's for">
-          <button id="go" class="pill pill-primary">Make the ad <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg></button>
-        </div>
-        <div class="examples">
-          <button type="button" id="sample" class="pill pill-secondary" data-description="A ceramic travel mug with a bamboo lid that keeps coffee hot for hours">Try the sample</button>
-          A run takes a couple of minutes and costs about $1.35.
+<header class="topbar">
+  <span class="logo"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="4.5" y="1.5" width="7" height="13" rx="1.6"/><path d="M7 5.5 9.5 7.5 7 9.5z"/></svg></span>
+  <div><strong>Product Photo to Video Ad</strong><span>SpaceXAI Cookbook</span></div>
+  <p class="price">About $1.35 and a couple of minutes an ad</p>
+</header>
+
+<div class="studio">
+  <aside class="panel">
+    <form id="form">
+      <p class="section-label">Product</p>
+      <fieldset id="controls">
+        <label class="drop" id="drop">
+          <input id="file" type="file" accept="image/jpeg,image/png,image/webp" aria-label="Product photo">
+          <img id="preview" alt="The chosen product photo">
+          <span class="drop-hint"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 15l5-5 4 4 3-3 6 6"/><circle cx="15.5" cy="8.5" r="1.5"/></svg>Drop a product photo here, or click to choose one</span>
+        </label>
+        <textarea id="description" required maxlength="500" aria-label="What the product is and who it's for" placeholder="What the product is and who it's for"></textarea>
+        <div class="buttons">
+          <button class="make" id="go"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5v3M8 11.5v3M1.5 8h3M11.5 8h3M3.4 3.4l2.1 2.1M10.5 10.5l2.1 2.1M3.4 12.6l2.1-2.1M10.5 5.5l2.1-2.1"/></svg>Make the ad</button>
+          <button type="button" class="ghost" id="sample" data-description="A ceramic travel mug with a bamboo lid that keeps coffee hot for hours">Sample</button>
         </div>
         <p id="note"></p>
-      </div>
-    </fieldset>
-  </form>
-
-  <div class="stage">
-    <section class="card" id="brief" hidden>
-      <p class="card-label"><span class="status"></span> <span class="dots"><i></i><i></i><i></i></span></p>
-      <div id="brief-body">
+      </fieldset>
+    </form>
+    <section class="brief" id="brief" hidden>
+      <p class="section-label">Brief</p>
+      <div class="skeleton" id="brief-skeleton"><i></i><i></i><i></i></div>
+      <div id="brief-body" hidden>
         <p id="product"></p>
+        <p id="tagline"></p>
         <dl>
-          <dt>Tagline</dt><dd id="tagline"></dd>
-          <dt>Voiceover</dt><dd id="voiceover"></dd>
           <dt>Camera move</dt><dd id="motion"></dd>
         </dl>
       </div>
     </section>
-    <section class="card" id="scenes" hidden>
-      <p class="card-label"><span class="status"></span> <span class="dots"><i></i><i></i><i></i></span></p>
-      <div id="frames"></div>
-      <p id="reason"></p>
-    </section>
-    <section class="card" id="ad" hidden>
-      <p class="card-label"><span class="status"></span> <span class="dots"><i></i><i></i><i></i></span> <span id="elapsed"></span></p>
-      <div class="ad">
-        <div class="screen">
-          <img id="poster" alt="">
-          <span class="dots"><i></i><i></i><i></i></span>
-          <video id="video" controls playsinline></video>
+  </aside>
+
+  <main class="stage">
+    <div class="phone">
+      <div class="phone-screen" id="screen">
+        <img id="poster" alt="" hidden>
+        <video id="video" playsinline hidden></video>
+        <div class="story" id="story" hidden><i id="story-bar"></i></div>
+        <div class="phone-note" id="phone-note">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M10.5 9.5 14 12l-3.5 2.5z"/></svg>
+          <strong>Your ad plays here</strong>
+          <span>An eight-second vertical video with a voiceover</span>
         </div>
-        <div class="details">
-          <p id="progress"></p>
-          <div id="result" hidden>
-            <dl>
-              <dt>Rendered in</dt><dd id="rendered"></dd>
-              <dt>Cost</dt><dd id="cost"></dd>
-              <dt>Saved in</dt><dd id="saved"></dd>
-            </dl>
-            <a id="download" class="pill pill-secondary" download>Download MP4</a>
-          </div>
-        </div>
+        <button type="button" class="tap" id="tap" aria-label="Play or pause" hidden><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3v10l8-5z"/></svg></button>
       </div>
+    </div>
+    <ol class="stepper" id="stepper">
+      <li data-step="brief"><i></i>Brief</li>
+      <li data-step="scenes"><i></i>Scenes</li>
+      <li data-step="pick"><i></i>Pick</li>
+      <li data-step="video"><i></i>Video</li>
+    </ol>
+    <div class="actions" id="actions" hidden>
+      <a id="download" download><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.5v8M4.5 7 8 10.5 11.5 7M2.5 13.5h11"/></svg>Download MP4</a>
+    </div>
+    <p id="error" hidden></p>
+  </main>
+
+  <aside class="panel">
+    <section>
+      <p class="section-label">Scenes</p>
+      <p class="empty" id="scenes-empty">Grok places the product in three scenes and picks the one that sells it best.</p>
+      <div class="scenes" id="scenes" hidden></div>
+      <p id="scene-text" hidden></p>
+      <p id="reason" hidden></p>
     </section>
-    <section class="card" id="error" hidden>
-      <p class="card-label">Couldn't make the ad</p>
-      <p id="message"></p>
+    <section id="voice" hidden>
+      <p class="section-label">Voiceover</p>
+      <p id="voiceover"></p>
     </section>
-  </div>
-</main>
+    <dl class="result" id="result" hidden>
+      <dt>Rendered in</dt><dd id="rendered"></dd>
+      <dt>Cost</dt><dd id="cost"></dd>
+      <dt>Saved in</dt><dd id="saved"></dd>
+    </dl>
+  </aside>
+</div>
 
 <script>
   const $ = (id) => document.getElementById(id);
   const TYPES = ["image/jpeg", "image/png", "image/webp"];
+  const video = $("video");
   let photo = null;
   let voice = null;
+  let scenes = [];
   let timer = 0;
   let renderingSince = 0;
 
@@ -229,42 +259,51 @@
     const on = (name, handler) => events.addEventListener(name, (message) => handler(JSON.parse(message.data)));
 
     on("step", ({ step }) => {
-      if (step === "brief") start("brief", "Writing the brief");
-      if (step === "scenes") start("scenes", "Placing the product in each scene");
-      if (step === "pick") start("scenes", "Picking the strongest scene");
+      setStep(step);
+      if (step === "brief") $("brief").hidden = false;
       if (step === "video") {
-        start("ad", "Rendering the video");
         renderingSince = Date.now();
         tick();
         timer = setInterval(tick, 1000);
       }
     });
     on("brief", (brief) => {
-      finish("brief", "Brief");
+      $("brief-skeleton").hidden = true;
       $("brief-body").hidden = false;
       $("product").textContent = brief.product;
-      $("tagline").textContent = brief.tagline;
-      $("voiceover").textContent = brief.voiceover;
+      $("tagline").textContent = `“${brief.tagline}”`;
       $("motion").textContent = brief.motion;
-      $("frames").innerHTML = brief.scenes
-        .map((scene, index) => `<figure><div class="frame"><span class="dots"><i></i><i></i><i></i></span><img alt=""><span class="badge">Grok's pick</span></div><figcaption>${index + 1}. ${escapeHtml(scene)}</figcaption></figure>`)
+      $("voiceover").textContent = brief.voiceover;
+      $("voice").hidden = false;
+      scenes = brief.scenes;
+      $("scenes-empty").hidden = true;
+      $("scenes").hidden = false;
+      $("scenes").innerHTML = scenes
+        .map((scene, index) => `<div class="scene waiting" title="${escapeHtml(scene)}"><span class="n">${index + 1}</span></div>`)
         .join("");
     });
-    on("scene", ({ index, url }) => (frame(index).src = url));
-    on("pick", ({ best, reason }) => {
-      finish("scenes", "Scenes");
-      [...$("frames").children].forEach((figure, index) => figure.classList.toggle("picked", index === best - 1));
-      $("frames").classList.add("chosen");
-      $("reason").innerHTML = `<strong>Why scene ${best}:</strong> ${escapeHtml(reason)}`;
-      $("poster").src = frame(best - 1).src;
-      $("progress").textContent = `Animating scene ${best} and recording the voiceover. This usually takes a minute or two.`;
+    on("scene", ({ index, url }) => {
+      const scene = $("scenes").children[index];
+      scene.classList.remove("waiting");
+      scene.insertAdjacentHTML("afterbegin", `<img src="${url}" alt="">`);
     });
-    on("done", ({ video, voiceover, cost, dir }) => {
+    on("pick", ({ best, reason }) => {
+      [...$("scenes").children].forEach((scene, index) => {
+        scene.classList.toggle("picked", index === best - 1);
+        if (index === best - 1) scene.insertAdjacentHTML("beforeend", `<span class="pick">Grok's pick</span>`);
+      });
+      $("scenes").classList.add("chosen");
+      $("scene-text").textContent = `${best}. ${scenes[best - 1]}`;
+      $("scene-text").hidden = false;
+      $("reason").innerHTML = `<strong>Why scene ${best}:</strong> ${escapeHtml(reason)}`;
+      $("reason").hidden = false;
+      $("poster").src = $("scenes").children[best - 1].querySelector("img")?.src ?? "";
+      $("poster").hidden = false;
+    });
+    on("done", ({ video: url, voiceover, cost, dir }) => {
       events.close();
       clearInterval(timer);
-      finish("ad", "Ad");
-      $("elapsed").textContent = "";
-      $("progress").textContent = "";
+      setStep("done");
       $("rendered").textContent = `${Math.round((Date.now() - renderingSince) / 1000)} seconds`;
       $("cost").textContent = `$${cost.toFixed(2)} for the images and the video`;
       $("saved").textContent = `${dir}/`;
@@ -273,12 +312,18 @@
       // with the video's own sound turned down the way ffmpeg would mix it.
       if (voiceover) {
         voice = new Audio(voiceover);
-        $("video").volume = 0.3;
+        video.volume = 0.3;
       }
-      $("video").src = video;
-      $("video").play().catch(() => {});
-      $("download").href = video;
+      $("phone-note").hidden = true;
+      $("poster").hidden = true;
+      video.src = url;
+      video.hidden = false;
+      $("story").hidden = false;
+      $("tap").hidden = false;
+      video.play().catch(() => {});
+      $("download").href = url;
       $("download").download = `${dir.split("/").pop()}.mp4`;
+      $("actions").hidden = false;
       $("controls").disabled = false;
     });
     on("failure", ({ message }) => {
@@ -291,13 +336,22 @@
     };
   };
 
-  $("video").onplay = () => {
+  // The phone plays the ad like a story: tap to play or pause, with a bar along the top.
+  $("tap").onclick = () => (video.paused ? video.play() : video.pause());
+  video.onplay = () => {
+    $("tap").classList.add("playing");
     if (!voice) return;
-    voice.currentTime = $("video").currentTime;
+    voice.currentTime = video.currentTime;
     voice.play();
   };
-  $("video").onpause = () => voice?.pause();
-  $("video").onseeked = () => voice && (voice.currentTime = $("video").currentTime);
+  video.onpause = () => {
+    $("tap").classList.remove("playing");
+    voice?.pause();
+  };
+  video.onseeked = () => voice && (voice.currentTime = video.currentTime);
+  video.ontimeupdate = () => {
+    $("story-bar").style.width = `${video.duration ? (video.currentTime / video.duration) * 100 : 0}%`;
+  };
 
   function choose(file) {
     if (!file) return;
@@ -309,21 +363,38 @@
     $("drop").classList.add("filled");
   }
 
-  function start(id, status) {
-    $(id).hidden = false;
-    $(id).classList.add("active");
-    $(id).querySelector(".status").textContent = status;
+  // The steps go brief, scenes, pick, video. Each one before the current one is done, and the phone
+  // says what's happening until the ad is ready to play.
+  function setStep(step) {
+    const steps = [...$("stepper").children];
+    const current = steps.findIndex((item) => item.dataset.step === step);
+    steps.forEach((item, index) => {
+      item.classList.toggle("done", step === "done" || index < current);
+      item.classList.toggle("active", index === current);
+    });
+    if (step === "brief") phoneNote("Writing the brief", "Grok looks at the photo and plans the ad.");
+    if (step === "scenes") phoneNote("Placing the product in three scenes", "Each scene is a vertical image with the product in it.");
+    if (step === "pick") phoneNote("Picking the strongest scene", "Grok compares the three and picks the one that sells the product best.");
+    if (step === "video") {
+      phoneNote("Rendering the ad", "Animating the scene and recording the voiceover. This usually takes a minute or two.");
+      $("phone-note").insertAdjacentHTML("beforeend", `<span class="clock" id="clock">0:00</span>`);
+    }
   }
 
-  function finish(id, status) {
-    $(id).classList.remove("active");
-    $(id).querySelector(".status").textContent = status;
+  function phoneNote(title, text) {
+    $("phone-note").innerHTML = `<strong>${title}</strong><span>${text}</span>`;
+    $("phone-note").hidden = false;
+  }
+
+  function tick() {
+    const seconds = Math.floor((Date.now() - renderingSince) / 1000);
+    if ($("clock")) $("clock").textContent = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
   }
 
   function fail(message) {
     clearInterval(timer);
-    document.querySelectorAll(".card.active").forEach((card) => card.classList.remove("active"));
-    $("message").textContent = message;
+    $("stepper").querySelector(".active")?.classList.remove("active");
+    $("error").textContent = `Couldn't make the ad: ${message}`;
     $("error").hidden = false;
     $("controls").disabled = false;
   }
@@ -332,30 +403,34 @@
     clearInterval(timer);
     voice?.pause();
     voice = null;
-    document.querySelectorAll(".card").forEach((card) => {
-      card.hidden = true;
-      card.classList.remove("active");
-    });
+    scenes = [];
+    setStep("");
+    $("brief").hidden = true;
+    $("brief-skeleton").hidden = false;
     $("brief-body").hidden = true;
-    $("frames").innerHTML = "";
-    $("frames").classList.remove("chosen");
-    $("reason").textContent = "";
-    $("poster").removeAttribute("src");
-    $("video").removeAttribute("src");
-    $("video").load();
-    $("video").volume = 1;
-    $("elapsed").textContent = "";
+    $("voice").hidden = true;
+    $("scenes-empty").hidden = false;
+    $("scenes").hidden = true;
+    $("scenes").innerHTML = "";
+    $("scenes").classList.remove("chosen");
+    $("scene-text").hidden = true;
+    $("reason").hidden = true;
     $("result").hidden = true;
+    $("actions").hidden = true;
+    $("error").hidden = true;
+    $("poster").hidden = true;
+    $("poster").removeAttribute("src");
+    video.pause();
+    video.hidden = true;
+    video.removeAttribute("src");
+    video.load();
+    video.volume = 1;
+    $("story").hidden = true;
+    $("story-bar").style.width = "0";
+    $("tap").hidden = true;
+    $("tap").classList.remove("playing");
+    phoneNote("Uploading the photo", "The ad starts with a brief that Grok writes from the photo.");
     note("");
-  }
-
-  function tick() {
-    const seconds = Math.floor((Date.now() - renderingSince) / 1000);
-    $("elapsed").textContent = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
-  }
-
-  function frame(index) {
-    return $("frames").children[index].querySelector("img");
   }
 
   function note(text) {
@@ -363,7 +438,7 @@
   }
 
   function escapeHtml(text) {
-    return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   }
 </script>
 </body>

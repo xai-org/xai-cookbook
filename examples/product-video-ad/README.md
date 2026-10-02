@@ -33,7 +33,7 @@ npm install
 npm run web
 ```
 
-Open http://localhost:3000, choose a product photo or click **Try the sample**, and click **Make the ad**. The page shows the brief as soon as Grok writes it, each scene as it's ready, and the scene Grok picked with its reason. Then it shows how long the video has been rendering and plays the ad when it's done.
+Open http://localhost:3000, choose a product photo or click **Sample**, and click **Make the ad**. The page works like an ad studio. The brief fills in under the photo as soon as Grok writes it, the three scenes appear on the right as they're ready, and Grok's pick is marked with its reason. The ad plays in a phone frame in the middle: it shows how long the video has been rendering, then plays the ad like a story when it's done.
 
 To make an ad from the terminal instead, pass a photo and a description:
 
