@@ -22,7 +22,7 @@ Follow one main subject through all four shots and tell a small story with a beg
 - title: a short title for the film.
 - style: one sentence describing the look every shot shares: medium, color palette, and lighting.
 - shots: exactly four, in order. For each one:
-  - scene: what the frame shows, in one or two sentences. Describe the main subject the same way every time.
+  - scene: what the frame shows, in one or two sentences. Describe the main subject the same way every time. Give each shot its own setting and camera angle or distance, like a wide shot, a close-up, or a view from above, and say which.
   - motion: one sentence on how the camera and the subject move, and what we hear.
   - narration: one sentence of voiceover, at most 14 words, so it fits in the shot.`;
 
@@ -91,14 +91,16 @@ export async function drawKeyframes(
   const firstFrame = toMedia(generated);
   await on.keyframe?.(firstFrame, 0);
 
-  // The other keyframes are edits of the first one, which keeps the subject and style consistent across shots.
+  // The other keyframes are edits of the first one, which keeps the subject and style consistent across
+  // shots. An edit also keeps the composition unless it's told not to, and then the shots look like
+  // versions of one picture.
   const edited = await Promise.all(
     rest.map(async (shot, index) => {
       const result = await client.images.edit(
         {
           model: "grok-imagine-image-2.0",
           image: toBlob(firstFrame),
-          prompt: `Keep the same main subject, art style, and color palette as this image. New scene: ${shot.scene}`,
+          prompt: `Use this image only as a reference for the main subject and the art style. Draw a new scene with a different camera angle and composition: ${shot.scene}`,
           response_format: "b64_json",
         },
         { signal },

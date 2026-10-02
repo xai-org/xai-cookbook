@@ -28,6 +28,7 @@
   }
 
   * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
   body { margin: 0; font: 14px/24px var(--sans); background: var(--bg); color: var(--fg); -webkit-font-smoothing: antialiased; }
   main { max-width: 1120px; margin: 0 auto; padding: 72px 24px; }
   .eyebrow { margin: 0; font-size: 14px; }
@@ -108,14 +109,20 @@
   .eq i:nth-child(3) { animation-delay: 0.3s; }
   @keyframes eq { 0%, 100% { transform: scaleY(0.3); } 50% { transform: scaleY(1); } }
 
-  #movie { display: block; width: 100%; aspect-ratio: 16 / 9; border-radius: 10px; background: var(--fg); }
-  #movie[hidden] { display: none; }
+  #movie { display: block; width: 100%; aspect-ratio: 16 / 9; border-radius: 10px; background: var(--fg); animation: fade 0.4s ease-out; }
+  .chapters { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 16px; }
+  .chapter { display: grid; align-content: start; gap: 4px; padding: 0; background: none; color: inherit; text-align: left; }
+  .chapter .frame { margin-bottom: 4px; outline: 2px solid transparent; outline-offset: 2px; transition: outline-color 0.2s; }
+  .chapter:hover .frame { outline-color: var(--border); }
+  .chapter.current .frame { outline-color: var(--accent); }
+  .chapter-label { font-size: 12px; line-height: 16px; font-weight: 500; color: var(--muted); }
+  .chapter-line { font-size: 13px; line-height: 18px; font-style: italic; }
   #note { margin: 12px 0 0; font-size: 13px; color: var(--muted); }
   #note:empty { display: none; }
 
   @media (max-width: 860px) {
     h1 { font-size: 36px; }
-    .frames { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .frames, .chapters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .clips { grid-template-columns: minmax(0, 1fr); }
   }
 </style>
@@ -150,17 +157,17 @@
     </section>
     <section class="card" id="keyframes" hidden>
       <p class="card-label"><span class="number">2</span>Keyframes<span class="status" id="keyframes-status"></span><span class="dots"><i></i><i></i><i></i></span></p>
-      <p class="note">Keyframe 1 comes from the plan. Keyframes 2 to 4 are edits of keyframe 1, which keeps the subject and the style the same from shot to shot.</p>
+      <p class="note">Keyframe 1 comes from the plan. Keyframes 2 to 4 are edits of keyframe 1 that keep its subject and style but draw a new scene from a new camera angle, so the subject looks the same from shot to shot.</p>
       <div class="frames" id="frames"></div>
     </section>
     <section class="card" id="clips" hidden>
-      <p class="card-label"><span class="number">3</span>Shots and narration<span class="status" id="clips-status"></span><span class="dots"><i></i><i></i><i></i></span></p>
-      <p class="note">Each keyframe is animated into an eight-second shot, and its line of narration is recorded at the same time.</p>
+      <p class="card-label"><span class="number">3</span><span id="clips-title">Shots and narration</span><span class="status" id="clips-status"></span><span class="dots"><i></i><i></i><i></i></span></p>
+      <p class="note" id="clips-note">Each keyframe is animated into an eight-second shot, and its line of narration is recorded at the same time.</p>
       <div class="clips" id="clip-grid"></div>
-    </section>
-    <section class="card" id="film" hidden>
-      <p class="card-label"><span class="number">4</span>Film<span class="status" id="film-status"></span><span class="dots"><i></i><i></i><i></i></span></p>
-      <video id="movie" controls hidden></video>
+      <div id="film" hidden>
+        <video id="movie" controls></video>
+        <div class="chapters" id="chapters"></div>
+      </div>
       <p id="note"></p>
     </section>
   </div>
@@ -168,7 +175,8 @@
 
 <script>
   const $ = (id) => document.getElementById(id);
-  const CARDS = { plan: "plan", draw: "keyframes", animate: "clips", film: "film" };
+  const CARDS = { plan: "plan", draw: "keyframes", animate: "clips" };
+  const CLIPS_NOTE = $("clips-note").textContent;
   const audio = new Audio();
   let shots = [];
   let narrating = null;
@@ -193,7 +201,7 @@
     };
 
     on("step", ({ step, status }) => {
-      if (status === "active") startStep($(CARDS[step]));
+      if (status === "active" && CARDS[step]) startStep($(CARDS[step]));
       if (step === "plan" && status === "active") {
         thinkingSince = Date.now();
         $("plan-status").textContent = "· thinking";
@@ -217,7 +225,7 @@
         tick();
         timer = setInterval(tick, 1000);
       }
-      if (step === "film") $("film-status").textContent = "· joining the shots";
+      if (step === "film") $("clips-status").textContent = "· joining the shots into one film";
     });
     on("reasoning", ({ text }) => {
       $("reasoning").textContent += text;
@@ -259,16 +267,12 @@
       shot.line.querySelector(".bubble").disabled = false;
     });
     on("done", ({ film, folder, cost }) => {
-      endStep($("film"));
-      $("film-status").textContent = "";
-      if (film) {
-        $("movie").poster = shots[0].keyframe;
-        $("movie").src = film;
-        $("movie").hidden = false;
-      }
+      endStep($("clips"));
+      $("clips-status").textContent = "";
+      if (film) showFilm(film);
       const saved = `Saved to ${folder}/. The images and videos cost $${cost.toFixed(2)}.`;
       $("note").textContent = film ? saved : `ffmpeg isn't installed, so the shots weren't joined into one film. ${saved}`;
-      $("film").scrollIntoView({ behavior: "smooth", block: "nearest" });
+      $("clips").scrollIntoView({ behavior: "smooth", block: "nearest" });
       finish();
     });
     on("failure", ({ message }) => {
@@ -321,6 +325,7 @@
 
     const shot = {
       scene,
+      narration,
       slot: figure.querySelector(".frame"),
       clipFrame: clip.querySelector(".frame"),
       state: clip.querySelector(".clip-label .status"),
@@ -329,6 +334,39 @@
     clip.querySelector(".bubble").onclick = () => playNarration(shot);
     return shot;
   }
+
+  // The film is the four shots joined, with each line of narration over its shot, so it takes their
+  // place, and each shot becomes a button that jumps to it.
+  function showFilm(url) {
+    audio.pause();
+    $("clips-title").textContent = "Film";
+    $("clips-note").textContent = "The four shots joined into one film, with each line of narration over its shot.";
+    $("clip-grid").hidden = true;
+    $("movie").poster = shots[0].keyframe;
+    $("movie").src = url;
+    const chapters = shots.map((shot, index) => {
+      const chapter = document.createElement("button");
+      chapter.type = "button";
+      chapter.className = "chapter";
+      chapter.innerHTML = `<span class="frame"></span><span class="chapter-label">Shot ${index + 1}</span><span class="chapter-line"></span>`;
+      chapter.querySelector(".frame").append(image(shot.keyframe, shot.scene));
+      chapter.querySelector(".chapter-line").textContent = shot.narration;
+      chapter.onclick = () => {
+        const movie = $("movie");
+        if (movie.duration) movie.currentTime = (index * movie.duration) / shots.length;
+        movie.play();
+      };
+      return chapter;
+    });
+    $("chapters").replaceChildren(...chapters);
+    $("film").hidden = false;
+  }
+
+  $("movie").ontimeupdate = () => {
+    const movie = $("movie");
+    const playing = Math.min(shots.length - 1, Math.floor((movie.currentTime / movie.duration) * shots.length));
+    document.querySelectorAll(".chapter").forEach((chapter, index) => chapter.classList.toggle("current", index === playing));
+  };
 
   function image(url, alt) {
     const img = new Image();
@@ -396,7 +434,11 @@
     $("plan-shots").replaceChildren();
     $("frames").replaceChildren();
     $("clip-grid").replaceChildren();
-    $("movie").hidden = true;
+    $("clip-grid").hidden = false;
+    $("clips-title").textContent = "Shots and narration";
+    $("clips-note").textContent = CLIPS_NOTE;
+    $("chapters").replaceChildren();
+    $("film").hidden = true;
     $("movie").removeAttribute("src");
     $("movie").removeAttribute("poster");
     $("movie").load();
