@@ -33,7 +33,7 @@ npm install
 npm run web
 ```
 
-Open http://localhost:3000, type a premise or pick one, and click **Make film**. The page shows Grok's reasoning while it plans, then the title, the style, and the four shots. Each shot shows its keyframe as soon as it's drawn and its video as soon as it's rendered. When the shots are joined, the film takes their place, with a button for each shot that jumps to it.
+Open http://localhost:3000, type a premise or pick one, and click **Make film**. The page works like a video editor. The plan fills the panel on the left, with Grok's reasoning while it writes it. Each shot fills its slot on the timeline as its keyframe is drawn and its video renders, and its line of narration fills the voice track below. Click a shot to watch it in the monitor. When the shots are joined, the film plays in the monitor, and clicking the timeline jumps through it.
 
 To make a film from the terminal instead, pass a premise:
 
