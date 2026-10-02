@@ -47,8 +47,8 @@ That saves the episode to `output/` as an MP3, with a Markdown transcript next t
 The shared code is in `src/podcast.ts`:
 
 1. `readSource()` fetches the page and strips the HTML down to text. For a PDF, it uploads the file with `client.files.upload()` and passes it to Grok as an `input_file`. The upload deletes itself after an hour.
-2. `writeScript()` streams the episode from `grok-4.7` with a JSON schema in `text.format`. As the JSON arrives, it reports each finished line right away, along with Grok's reasoning. It uses a low reasoning effort: at the default, Grok drafts the whole script before writing anything, which delays the first line by minutes.
-3. `recordLine()` voices a line with `client.voice.speak()`. The voice API reads unknown speech tags aloud instead of rejecting them, so `cleanTags()` first removes any tag the prompt doesn't allow.
+2. `writeScript()` streams the episode from `grok-4.7` with a JSON schema in `text.format`. As the JSON arrives, the stream's `json` event hands it the script so far, and it reports each line as soon as the next one starts, along with Grok's reasoning. It uses a low reasoning effort: at the default, Grok drafts the whole script before writing anything, which delays the first line by minutes.
+3. `recordLine()` voices a line with `client.voice.speak()`. The voice API reads unknown speech tags aloud instead of rejecting them, so the SDK's `stripInvalidSpeechTags()` first removes any tag the API doesn't know.
 
 `src/server.ts` records each line as soon as it's reported, four at a time, and streams its progress to the page as server-sent events. `public/index.html` is plain HTML and JavaScript that shows those events and plays the clips in order. `src/index.ts` does the same work in the terminal and joins the clips into one MP3.
 
