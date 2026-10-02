@@ -1,26 +1,20 @@
-import { setTimeout as sleep } from "node:timers/promises";
 import { xAI } from "@xai-official/sdk";
 import { xSearch } from "@xai-official/sdk/tools";
 
 const client = new xAI();
 
 export const DEFAULT_TOPIC = "SpaceX";
-export const ROUNDS = 3;
-const INTERVAL_SECONDS = 60;
-const WINDOW = 20;
 
 export type Post = { post_id: string; username: string; text: string; created_at: string };
 export type Sentiment = { score: number; reasoning: string; key_posts: Array<{ post_id: string; note: string }> };
 
-export type TrackEvents = {
-  round?: (round: number, query: string) => void;
+export type AnalyzeEvents = {
+  searching?: (query: string) => void;
   search?: (name: string, input: string) => void;
   found?: (posts: Post[]) => void;
   kept?: (posts: Post[], found: Post[]) => void;
   scoring?: (posts: Post[]) => void;
   reasoning?: (text: string) => void;
-  score?: (sentiment: Sentiment) => void;
-  wait?: (seconds: number) => void;
 };
 
 const POSTS_SCHEMA = {
@@ -71,39 +65,23 @@ const SENTIMENT_SCHEMA = {
   additionalProperties: false,
 };
 
-// Runs the rounds and reports each step as soon as it happens, so callers can show progress while Grok works.
-export async function track(topic: string, on: TrackEvents = {}, signal?: AbortSignal): Promise<void> {
+// Searches X, filters the posts, and scores the ones worth keeping, reporting each step as soon as it
+// happens so callers can show progress while Grok works. Returns nothing if no post was worth scoring.
+export async function analyze(topic: string, on: AnalyzeEvents = {}, signal?: AbortSignal): Promise<Sentiment | undefined> {
   // X's search operators: at least 20 likes, and no reposts or replies. Without a like threshold,
   // the latest posts on most topics are mostly spam.
   const query = `(${topic}) min_faves:20 -is:retweet -is:reply`;
-  const seen = new Set<string>();
-  const highSignal: Post[] = [];
-
-  for (let round = 1; round <= ROUNDS; round++) {
-    on.round?.(round, query);
-    const results = await findPosts(query, on, signal);
-    const fresh = results.filter((post) => !seen.has(post.post_id));
-    fresh.forEach((post) => seen.add(post.post_id));
-    on.found?.(fresh);
-
-    const kept = fresh.length ? await filterPosts(fresh, topic, signal) : [];
-    highSignal.push(...kept);
-    on.kept?.(kept, fresh);
-
-    if (kept.length) {
-      const recent = highSignal.slice(-WINDOW);
-      on.scoring?.(recent);
-      on.score?.(await scoreSentiment(recent, topic, on, signal));
-    }
-
-    if (round < ROUNDS) {
-      on.wait?.(INTERVAL_SECONDS);
-      await sleep(INTERVAL_SECONDS * 1000, undefined, { signal });
-    }
-  }
+  on.searching?.(query);
+  const found = await findPosts(query, on, signal);
+  on.found?.(found);
+  const kept = found.length ? await filterPosts(found, topic, signal) : [];
+  on.kept?.(kept, found);
+  if (!kept.length) return undefined;
+  on.scoring?.(kept);
+  return scoreSentiment(kept, topic, on, signal);
 }
 
-async function findPosts(query: string, on: TrackEvents, signal?: AbortSignal): Promise<Post[]> {
+async function findPosts(query: string, on: AnalyzeEvents, signal?: AbortSignal): Promise<Post[]> {
   const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
   const cited = new Set<string>();
   const stream = await client.responses.create(
@@ -152,7 +130,7 @@ async function filterPosts(posts: Post[], topic: string, signal?: AbortSignal): 
   return posts.filter((post) => post_ids.includes(post.post_id));
 }
 
-async function scoreSentiment(posts: Post[], topic: string, on: TrackEvents, signal?: AbortSignal): Promise<Sentiment> {
+async function scoreSentiment(posts: Post[], topic: string, on: AnalyzeEvents, signal?: AbortSignal): Promise<Sentiment> {
   const stream = await client.responses.create(
     {
       model: "grok-4.7",

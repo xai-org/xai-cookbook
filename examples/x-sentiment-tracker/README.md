@@ -1,6 +1,6 @@
 ---
 title: 𝕏 Sentiment Tracker
-description: Track sentiment about any topic from live 𝕏 posts with Grok's X Search tool, and watch the searches and Grok's reasoning stream into a small web app.
+description: Score the sentiment about any topic from live 𝕏 posts with Grok's X Search tool, and watch the search and Grok's reasoning stream into a small web app.
 type: app
 level: intermediate
 languages: [typescript]
@@ -13,7 +13,7 @@ date: 2026-10-01
 
 # 𝕏 Sentiment Tracker
 
-Give it a topic, like a company, a product, or an event, and it searches 𝕏 for recent posts about it every minute, filters out the noise, and keeps a running sentiment score. It runs as a small web app or in your terminal, and shows each search, the posts it keeps, and Grok's reasoning as they happen. It follows the same approach as the [𝕏 sentiment notebook](../x-sentiment-analysis/).
+Give it a topic, like a company, a product, or an event, and it searches 𝕏 for recent posts about it, filters out the noise, and scores the sentiment. It runs as a small web app or in your terminal, and shows the search, the posts it keeps, and Grok's reasoning as they happen. It follows the same approach as the [𝕏 sentiment notebook](../x-sentiment-analysis/).
 
 ## What you'll learn
 
@@ -33,9 +33,9 @@ npm install
 npm run web
 ```
 
-Open http://localhost:3000, enter a topic, and click **Start tracking**. The page shows each search as it runs, the posts Grok keeps, and its reasoning, then the score on a scale from -1 (negative) to +1 (positive). Click **Stop** or close the page to stop tracking.
+Open http://localhost:3000, enter a topic, and click **Check sentiment**. The page shows the search as it runs, the posts Grok keeps, and its reasoning, then the score on a scale from -1 (negative) to +1 (positive), with the posts that influenced it most. Click **Stop** or close the page to cancel.
 
-To track a topic from the terminal instead, pass it as an argument. It defaults to SpaceX.
+To check a topic from the terminal instead, pass it as an argument. It defaults to SpaceX.
 
 ```bash
 npm start -- SpaceX
@@ -43,15 +43,14 @@ npm start -- SpaceX
 
 The topic goes into the search query as is, so you can use 𝕏's search operators in it, like `Starship OR Starlink`.
 
-It runs three rounds a minute apart. To change that, edit `ROUNDS` and `INTERVAL_SECONDS` at the top of `src/sentiment.ts`. X Search is billed per post it fetches, on top of token costs. Each search fetches about 10 posts, so a run costs around 20 cents.
+A run takes about a minute. X Search is billed per post it fetches, on top of token costs. A run fetches about 10 posts and costs about 10 cents.
 
 ## How it works
 
-The shared code is in `src/sentiment.ts`. `track()` runs the rounds and reports each step through callbacks, so the web app and the terminal app show the same progress in their own way:
+The shared code is in `src/sentiment.ts`. `analyze()` runs these steps and reports each one through callbacks, so the web app and the terminal app show the same progress in their own way:
 
 1. `findPosts()` streams a `grok-4.7` request with `xSearch()` and a JSON schema for the posts. The `server_tool_call` event reports each search as it runs, and the `citation` event collects the posts Grok cites, which is how the app drops any post that X Search didn't return.
-2. `filterPosts()` keeps the posts that say something about sentiment, using a low reasoning effort.
-3. `scoreSentiment()` scores the most recent high-signal posts with the default effort and reports Grok's reasoning as it streams in.
-4. Each round skips posts it has already seen. If it keeps any new posts, it rescores the 20 most recent high-signal posts. Then it waits a minute before the next round.
+2. `filterPosts()` keeps the posts that show how people feel about the topic, using a low reasoning effort.
+3. `scoreSentiment()` scores the posts it kept with the default effort and reports Grok's reasoning as it streams in.
 
-`src/server.ts` runs `track()` for the topic from the page and sends each step to it as a server-sent event. It passes an `AbortSignal` to every request and to the wait between rounds, so closing the page or clicking **Stop** cancels whatever is running. `public/index.html` is plain HTML and JavaScript that shows those events: the searches, the posts Grok kept, its reasoning, and the score, with a chart of the score after each round. `src/index.ts` prints the same steps in the terminal.
+`src/server.ts` runs `analyze()` for the topic from the page and sends each step to it as a server-sent event. It passes an `AbortSignal` to every request, so closing the page or clicking **Stop** cancels whatever is running. `public/index.html` is plain HTML and JavaScript that shows those events: the search, the posts Grok kept, its reasoning, and the score with the posts that influenced it most. `src/index.ts` prints the same steps in the terminal.
