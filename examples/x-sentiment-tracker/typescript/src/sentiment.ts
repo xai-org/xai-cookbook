@@ -1,8 +1,9 @@
-import { setTimeout as sleep } from "node:timers/promises";
-import { xAI } from "@xai-official/sdk";
+import { SpaceXAI } from "@xai-official/sdk";
 import { xSearch } from "@xai-official/sdk/tools";
 
-const client = new xAI();
+// Ten searches start at once, so one now and then fails before Grok answers, for example when the API
+// is busy. retryBeforeOutput tries those again, which is safe because nothing has been streamed yet.
+const client = new SpaceXAI({ retryBeforeOutput: true });
 
 export const DEFAULT_TOPIC = "SpaceX";
 // X Search returns at most 10 posts per search, so the app runs one search for each of the last DAYS days.
@@ -21,7 +22,7 @@ export type Sentiment = {
 export type AnalyzeEvents = {
   searching?: (query: string, days: string[]) => void;
   search?: (day: string, input: string) => void;
-  // Gets the error instead of posts when that day's search failed twice.
+  // Gets the error instead of posts when that day's search failed.
   searched?: (day: string, posts: Post[] | undefined, error?: Error) => void;
   found?: (posts: Post[]) => void;
   kept?: (posts: Post[], found: Post[]) => void;
@@ -97,23 +98,16 @@ export async function analyze(topic: string, on: AnalyzeEvents = {}, signal?: Ab
   on.searching?.(query, days);
   const results = await Promise.all(
     days.map(async (day) => {
-      // A search can fail now and then, for example when the API is busy, so a day that fails gets a
-      // second try a few seconds later. If that fails too, the day is reported with the error and
-      // skipped, so it doesn't sink the other nine.
-      for (let attempt = 1; ; attempt++) {
-        try {
-          const posts = await findPosts(query, day, on, signal);
-          on.searched?.(day, posts);
-          return posts;
-        } catch (error) {
-          if (signal?.aborted) throw error;
-          if (attempt === 1) {
-            await sleep(3000, undefined, { signal });
-            continue;
-          }
-          on.searched?.(day, undefined, error instanceof Error ? error : new Error(String(error)));
-          return [];
-        }
+      // One failed search shouldn't sink the other nine, so a day that still fails after the client's
+      // retries is reported with the error and skipped.
+      try {
+        const posts = await findPosts(query, day, on, signal);
+        on.searched?.(day, posts);
+        return posts;
+      } catch (error) {
+        if (signal?.aborted) throw error;
+        on.searched?.(day, undefined, error instanceof Error ? error : new Error(String(error)));
+        return [];
       }
     }),
   );

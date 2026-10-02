@@ -354,7 +354,7 @@
       chip.classList.add("done");
       chip.classList.toggle("failed", count === null);
       chip.querySelector(".count").textContent = count === null ? "failed" : plural(count, "post");
-      if (error) chip.title = `The search failed twice: ${error}`;
+      if (error) chip.title = `The search failed: ${error}`;
       const total = [...$("days").querySelectorAll(".day.done .count")].reduce((sum, item) => sum + (parseInt(item.textContent, 10) || 0), 0);
       $("found-count").textContent = total;
     });
