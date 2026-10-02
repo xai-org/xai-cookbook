@@ -99,10 +99,11 @@
   .query svg { flex: none; width: 14px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; }
   .days { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 6px; }
   .days:empty { display: none; }
-  .day { display: grid; gap: 2px; padding: 8px 10px; border: 1px solid var(--rule); border-radius: 10px; background: var(--bg); font-size: 12px; line-height: 16px; transition: border-color 0.2s; }
+  .day { display: grid; gap: 2px; padding: 8px 10px; border: 1px solid var(--rule); border-radius: 10px; background: var(--bg); font-size: 12px; line-height: 16px; }
   .day .date { color: var(--muted); }
   .day .count { font-weight: 500; color: var(--faint); font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .day.searching { border-color: var(--accent); }
+  .day.searching { animation: pulse 1s ease-in-out infinite alternate; }
+  @keyframes pulse { to { background: var(--secondary-hover); } }
   .day.done .count { color: var(--fg); }
   .more { justify-self: start; height: 32px; padding: 0 14px; font-size: 13px; }
   .posts:not(.all) .post:nth-child(n + 13) { display: none; }
