@@ -447,8 +447,8 @@
       $("again").hidden = !best;
       return;
     }
-    // A page too tall to fit can't center its content, so everything moves at once and most outlines
-    // miss, even where the layout matches.
+    // A page too tall to fit can't center its content, so everything moves at once and the outlines
+    // drift apart, even where the layout matches.
     const extra = version.height - $("shot").naturalHeight;
     updateRound(version.round, {
       score: version.score,
@@ -566,8 +566,9 @@
   }
 
   // Traces the outlines in the screenshot and in a screenshot of the component. The overlay draws the
-  // screenshot's in blue and the component's in red, so whatever doesn't line up stands out. The score
-  // is the share of outlines that have one from the other image within a few pixels.
+  // screenshot's in blue and the component's in red, so whatever doesn't line up stands out. For the
+  // score, each outline earns credit for how close the nearest outline in the other image is, so
+  // something a few pixels off still counts for most of what it would if it lined up exactly.
   async function compare(render) {
     const images = await Promise.all([screenshot, await (await fetch(render)).blob()].map((blob) => createImageBitmap(blob)));
     const { width, height } = images[0];
@@ -582,7 +583,10 @@
       overlay.data[i * 4 + 3] = 255;
     }
     context.putImageData(overlay, 0, 0);
-    return { overlay: canvas.toDataURL("image/png"), score: (near(a, b, width) + near(b, a, width)) / 2 };
+    // Outlines a fortieth of the width apart, 32 pixels in a 1280-pixel screenshot, earn nothing.
+    const reach = width / 40;
+    const score = (closeness(a, distances(b, width), reach) + closeness(b, distances(a, width), reach)) / 2;
+    return { overlay: canvas.toDataURL("image/png"), score };
   }
 
   // Marks each pixel that's much brighter or darker than the pixels around it.
@@ -606,26 +610,51 @@
     return edges;
   }
 
-  // The share of outline pixels in a that have an outline pixel in b within reach.
-  function near(a, b, width, reach = 4) {
-    const height = a.length / width;
+  // How far each pixel is from the nearest outline pixel. The first pass carries distances down and to
+  // the right from the neighbors it has already visited, and the second carries them back up and left.
+  function distances(edges, width) {
+    const height = edges.length / width;
+    const distance = Float32Array.from(edges, (edge) => (edge ? 0 : Infinity));
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const i = y * width + x;
+        let d = distance[i];
+        if (x > 0) d = Math.min(d, distance[i - 1] + 1);
+        if (y > 0) {
+          d = Math.min(d, distance[i - width] + 1);
+          if (x > 0) d = Math.min(d, distance[i - width - 1] + Math.SQRT2);
+          if (x < width - 1) d = Math.min(d, distance[i - width + 1] + Math.SQRT2);
+        }
+        distance[i] = d;
+      }
+    }
+    for (let y = height - 1; y >= 0; y--) {
+      for (let x = width - 1; x >= 0; x--) {
+        const i = y * width + x;
+        let d = distance[i];
+        if (x < width - 1) d = Math.min(d, distance[i + 1] + 1);
+        if (y < height - 1) {
+          d = Math.min(d, distance[i + width] + 1);
+          if (x < width - 1) d = Math.min(d, distance[i + width + 1] + Math.SQRT2);
+          if (x > 0) d = Math.min(d, distance[i + width - 1] + Math.SQRT2);
+        }
+        distance[i] = d;
+      }
+    }
+    return distance;
+  }
+
+  // The average credit of the outline pixels in a: all of it with an outline from the other image right
+  // there, less the further away the nearest one is, and none from reach on.
+  function closeness(a, distance, reach) {
     let total = 0;
-    let hits = 0;
+    let credit = 0;
     for (let i = 0; i < a.length; i++) {
       if (!a[i]) continue;
       total++;
-      const x = i % width;
-      const y = (i - x) / width;
-      search: for (let ny = Math.max(0, y - reach); ny <= Math.min(height - 1, y + reach); ny++) {
-        for (let nx = Math.max(0, x - reach); nx <= Math.min(width - 1, x + reach); nx++) {
-          if (b[ny * width + nx]) {
-            hits++;
-            break search;
-          }
-        }
-      }
+      credit += Math.max(0, 1 - distance[i] / reach);
     }
-    return total ? hits / total : 0;
+    return total ? credit / total : 0;
   }
 
   function dataUrl(file) {
