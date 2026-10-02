@@ -27,7 +27,9 @@ async function scoreTopic(topic: string, res: ServerResponse): Promise<void> {
     const sentiment = await analyze(
       topic,
       {
-        search: (name, input) => emit("search", { name, input }),
+        searching: (query, days) => emit("searching", { query, days }),
+        search: (day) => emit("search", { day }),
+        searched: (day, posts) => emit("searched", { day, count: posts ? posts.length : null }),
         found: (posts) => emit("found", { count: posts.length }),
         kept: (posts, found) => emit("kept", { posts, filtered: found.length - posts.length }),
         scoring: (posts) => emit("scoring", { count: posts.length }),

@@ -4,13 +4,18 @@ import { xSearch } from "@xai-official/sdk/tools";
 const client = new xAI();
 
 export const DEFAULT_TOPIC = "SpaceX";
+// X Search returns at most 10 posts per search, so the app runs one search for each of the last DAYS days.
+const DAYS = 10;
+const DAY_MS = 86_400_000;
 
 export type Post = { post_id: string; username: string; text: string; created_at: string };
 export type Sentiment = { score: number; reasoning: string; key_posts: Array<{ post_id: string; note: string }> };
 
 export type AnalyzeEvents = {
-  searching?: (query: string) => void;
-  search?: (name: string, input: string) => void;
+  searching?: (query: string, days: string[]) => void;
+  search?: (day: string, input: string) => void;
+  // Gets undefined instead of posts when that day's search failed.
+  searched?: (day: string, posts: Post[] | undefined) => void;
   found?: (posts: Post[]) => void;
   kept?: (posts: Post[], found: Post[]) => void;
   scoring?: (posts: Post[]) => void;
@@ -71,8 +76,20 @@ export async function analyze(topic: string, on: AnalyzeEvents = {}, signal?: Ab
   // X's search operators: at least 20 likes, and no reposts or replies. Without a like threshold,
   // the latest posts on most topics are mostly spam.
   const query = `(${topic}) min_faves:20 -is:retweet -is:reply`;
-  on.searching?.(query);
-  const found = await findPosts(query, on, signal);
+  const days = Array.from({ length: DAYS }, (_, i) => new Date(Date.now() - i * DAY_MS).toISOString().slice(0, 10));
+  on.searching?.(query, days);
+  const results = await Promise.all(
+    days.map(async (day) => {
+      // One failed search shouldn't sink the other nine, so a day that fails is reported and skipped.
+      const posts = await findPosts(query, day, on, signal).catch((error) => {
+        if (signal?.aborted) throw error;
+        return undefined;
+      });
+      on.searched?.(day, posts);
+      return posts ?? [];
+    }),
+  );
+  const found = [...new Map(results.flat().map((post) => [post.post_id, post])).values()];
   on.found?.(found);
   const kept = found.length ? await filterPosts(found, topic, signal) : [];
   on.kept?.(kept, found);
@@ -81,16 +98,17 @@ export async function analyze(topic: string, on: AnalyzeEvents = {}, signal?: Ab
   return scoreSentiment(kept, topic, on, signal);
 }
 
-async function findPosts(query: string, on: AnalyzeEvents, signal?: AbortSignal): Promise<Post[]> {
-  const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+async function findPosts(query: string, day: string, on: AnalyzeEvents, signal?: AbortSignal): Promise<Post[]> {
+  // The search window stops at the start of to_date, so a single day runs from that day to the next.
+  const next = new Date(Date.parse(day) + DAY_MS).toISOString().slice(0, 10);
   const cited = new Set<string>();
   const stream = await client.responses.create(
     {
       model: "grok-4.7",
       reasoning: { effort: "low" },
-      input: `Search X for the latest posts matching this query: ${query}
+      input: `Search X for the most popular posts matching this query: ${query}
 Return up to 10 posts exactly as they appear in the search results. Don't make up or paraphrase posts.`,
-      tools: [xSearch({ from_date: yesterday })],
+      tools: [xSearch({ from_date: day, to_date: next })],
       text: { format: { type: "json_schema", name: "posts", schema: POSTS_SCHEMA } },
       stream: true,
     },
@@ -98,7 +116,7 @@ Return up to 10 posts exactly as they appear in the search results. Don't make u
   );
   const response = await stream
     .on("server_tool_call", (call) => {
-      if (call.type === "custom_tool_call") on.search?.(call.name, call.input ?? "");
+      if (call.type === "custom_tool_call") on.search?.(day, call.input ?? "");
     })
     .on("citation", (citation) => {
       const id = citation.url.match(/\/status\/(\d+)/)?.[1];

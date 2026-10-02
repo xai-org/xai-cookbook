@@ -93,10 +93,18 @@
   #search > .card-label { margin: 0; }
   .found, .message { margin: 0; }
   .found:empty { display: none; }
-  .searches { display: grid; gap: 4px; }
-  .searches:empty { display: none; }
-  .search { display: flex; gap: 8px; font: 12px/20px var(--mono); color: var(--muted); overflow-wrap: anywhere; animation: appear 0.3s ease-out; }
-  .search svg { flex: none; width: 14px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; }
+  .query { display: flex; gap: 8px; font: 12px/20px var(--mono); color: var(--muted); overflow-wrap: anywhere; }
+  .query:empty { display: none; }
+  .query svg { flex: none; width: 14px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; }
+  .days { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 6px; }
+  .days:empty { display: none; }
+  .day { display: grid; gap: 2px; padding: 8px 10px; border: 1px solid var(--rule); border-radius: 10px; background: var(--bg); font-size: 12px; line-height: 16px; transition: border-color 0.2s; }
+  .day .date { color: var(--muted); }
+  .day .count { font-weight: 500; color: var(--faint); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .day.searching { border-color: var(--accent); }
+  .day.done .count { color: var(--fg); }
+  .more { justify-self: start; height: 32px; padding: 0 14px; font-size: 13px; }
+  .posts:not(.all) .post:nth-child(n + 13) { display: none; }
   .posts { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
   .posts:empty { display: none; }
   .post { display: flex; flex-direction: column; gap: 6px; padding: 14px 16px; border: 1px solid var(--rule); border-radius: 12px; background: var(--bg); color: inherit; text-decoration: none; animation: appear 0.3s ease-out; }
@@ -109,6 +117,7 @@
   @media (max-width: 860px) {
     h1 { font-size: 36px; }
     .key-posts a { grid-template-columns: 1fr; gap: 2px; }
+    .days { grid-template-columns: repeat(5, minmax(0, 1fr)); }
   }
 </style>
 </head>
@@ -116,7 +125,7 @@
 <main>
   <p class="eyebrow">SpaceXAI Cookbook</p>
   <h1>𝕏 Sentiment Tracker</h1>
-  <p class="lede">Enter a topic, like a company, a product, or an event. Grok searches 𝕏 for recent posts about it, filters out the noise, and scores the sentiment from −1 (negative) to +1 (positive).</p>
+  <p class="lede">Enter a topic, like a company, a product, or an event. Grok searches 𝕏 for popular posts about it from the last 10 days, filters out the noise, and scores the sentiment from −1 (negative) to +1 (positive).</p>
   <form id="form">
     <input id="topic" required value="SpaceX" aria-label="Topic" placeholder="A company, a product, or an event">
     <button id="go" class="pill pill-primary">Check sentiment <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg></button>
@@ -144,9 +153,11 @@
     </section>
     <section class="card" id="search" hidden>
       <p class="card-label">Search<span class="status" id="step"></span><span class="dots"><i></i><i></i><i></i></span></p>
-      <div class="searches" id="searches"></div>
+      <div class="query" id="query"></div>
+      <div class="days" id="days"></div>
       <p class="found" id="found"></p>
       <div class="posts" id="posts"></div>
+      <button type="button" class="pill pill-secondary more" id="more" hidden></button>
       <p class="message" id="message" hidden></p>
     </section>
     <details class="card thinking" id="thinking" hidden>
@@ -186,9 +197,20 @@
     events = new EventSource(`/api/sentiment?topic=${encodeURIComponent(topic)}`);
     const on = (name, handler) => events.addEventListener(name, (message) => handler(JSON.parse(message.data)));
 
-    on("search", ({ name, input }) => {
-      const query = JSON.parse(input || "{}").query ?? name;
-      $("searches").insertAdjacentHTML("beforeend", `<div class="search">${ICONS.search}<span>${escapeHtml(query)}</span></div>`);
+    on("searching", ({ query, days }) => {
+      $("query").innerHTML = `${ICONS.search}<span>${escapeHtml(query)} · one search per day for the last ${days.length} days</span>`;
+      $("days").innerHTML = days.map((day) => `<div class="day" data-day="${day}"><span class="date">${formatDay(day)}</span><span class="count">waiting</span></div>`).join("");
+    });
+    on("search", ({ day }) => {
+      const chip = dayChip(day);
+      chip.classList.add("searching");
+      chip.querySelector(".count").textContent = "searching";
+    });
+    on("searched", ({ day, count }) => {
+      const chip = dayChip(day);
+      chip.classList.remove("searching");
+      chip.classList.add("done");
+      chip.querySelector(".count").textContent = count === null ? "failed" : plural(count, "post");
     });
     on("found", ({ count }) => {
       if (!count) return;
@@ -200,6 +222,10 @@
       for (const post of kept) {
         posts.set(post.post_id, post);
         $("posts").insertAdjacentHTML("beforeend", postCard(post));
+      }
+      if (kept.length > 12) {
+        $("more").textContent = `Show all ${kept.length} posts`;
+        $("more").hidden = false;
       }
       setStep("");
     });
@@ -222,6 +248,19 @@
     on("failure", ({ message }) => stop(`Couldn't score the sentiment: ${message}`));
     events.onerror = () => stop("Lost the connection to the server.");
   };
+
+  $("more").onclick = () => {
+    $("posts").classList.add("all");
+    $("more").hidden = true;
+  };
+
+  function dayChip(day) {
+    return $("days").querySelector(`[data-day="${day}"]`);
+  }
+
+  function formatDay(day) {
+    return new Date(`${day}T00:00:00Z`).toLocaleDateString("en", { month: "short", day: "numeric", timeZone: "UTC" });
+  }
 
   function setStep(step) {
     $("step").textContent = step ? `· ${step}` : "";
@@ -283,9 +322,12 @@
     $("marker").hidden = true;
     $("fill").style.width = "0";
     $("result").hidden = true;
-    $("searches").innerHTML = "";
+    $("query").innerHTML = "";
+    $("days").innerHTML = "";
     $("found").textContent = "";
     $("posts").innerHTML = "";
+    $("posts").classList.remove("all");
+    $("more").hidden = true;
     $("message").hidden = true;
     $("reasoning").textContent = "";
     $("thinking-label").textContent = "Thinking";
@@ -302,7 +344,9 @@
   function ago(time) {
     const minutes = Math.round((Date.now() - Date.parse(time)) / 60000);
     if (Number.isNaN(minutes)) return "";
-    return minutes < 60 ? AGO.format(-Math.max(minutes, 1), "minute") : AGO.format(-Math.round(minutes / 60), "hour");
+    if (minutes < 60) return AGO.format(-Math.max(minutes, 1), "minute");
+    if (minutes < 48 * 60) return AGO.format(-Math.round(minutes / 60), "hour");
+    return AGO.format(-Math.round(minutes / 1440), "day");
   }
 
   function formatScore(score) {
