@@ -6,100 +6,135 @@
 <meta name="color-scheme" content="light">
 <title>𝕏 Sentiment Tracker</title>
 <style>
+  /* The look every SpaceXAI Cookbook page shares, after x.ai. */
   :root {
-    --bg: #f4f6f8;
-    --surface: #fff;
-    --line: #e3e7eb;
-    --fg: #0f1419;
-    --muted: #536471;
-    --faint: #8b98a5;
-    --skeleton: #eef1f4;
-    --positive: #00a36c;
-    --positive-soft: #e3f6ee;
-    --negative: #e0245e;
-    --negative-soft: #fde7ee;
-    --neutral: #a8b3bd;
+    --bg: #fff;
+    --card: #f9f8f6;
+    --secondary: #f2f1ef;
+    --secondary-hover: #e9e8e5;
+    --tint: rgb(10 10 10 / 0.04);
+    --line: rgb(10 10 10 / 0.08);
+    --border: rgb(10 10 10 / 0.15);
+    --fg: #0a0a0a;
+    --muted: rgb(10 10 10 / 0.6);
+    --faint: rgb(10 10 10 / 0.36);
+    --accent: #ff6308;
+    --accent-soft: rgb(255 99 8 / 0.1);
     --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
     --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   }
 
   * { box-sizing: border-box; }
   [hidden] { display: none !important; }
-  body { margin: 0; font: 14px/20px var(--sans); background: var(--bg); color: var(--fg); -webkit-font-smoothing: antialiased; }
+  body { margin: 0; font: 14px/22px var(--sans); background: var(--bg); color: var(--fg); -webkit-font-smoothing: antialiased; }
   button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
-  svg { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
   a { color: inherit; }
-  @keyframes pulse { to { background-color: var(--line); } }
-  @keyframes fade { from { opacity: 0; transform: translateY(3px); } }
+  svg { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  @keyframes blink { 50% { opacity: 0.3; } }
+  @keyframes pulse { to { background-color: var(--secondary-hover); } }
+  @keyframes appear { from { opacity: 0; transform: translateY(4px); } }
 
-  .topbar { display: flex; align-items: center; gap: 20px; padding: 12px 24px; border-bottom: 1px solid var(--line); background: var(--surface); }
-  .brand { display: flex; align-items: center; gap: 10px; white-space: nowrap; }
-  .brand .logo { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 8px; background: var(--fg); color: #fff; font-size: 17px; font-weight: 700; }
-  .brand strong { display: block; font-weight: 700; line-height: 16px; }
-  .brand span { display: block; font-size: 12px; line-height: 15px; color: var(--faint); }
-  form { flex: 1; display: flex; align-items: center; gap: 8px; max-width: 640px; }
-  .search { flex: 1; position: relative; }
-  .search svg { position: absolute; left: 14px; top: 11px; width: 16px; height: 16px; color: var(--faint); }
-  .search input { width: 100%; height: 38px; padding: 0 14px 0 38px; border: 1px solid var(--line); border-radius: 19px; background: var(--bg); color: var(--fg); font: inherit; outline: none; }
-  .search input:focus { border-color: var(--fg); background: var(--surface); }
-  .range { height: 38px; padding: 0 14px; border: 1px solid var(--line); border-radius: 19px; color: var(--muted); line-height: 36px; white-space: nowrap; }
-  #go { height: 38px; padding: 0 18px; border-radius: 19px; background: var(--fg); color: #fff; font-weight: 700; white-space: nowrap; }
-  #go.stop { background: var(--surface); color: var(--fg); box-shadow: inset 0 0 0 1px var(--line); }
+  .site { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 12px; height: 60px; padding: 0 24px; background: rgb(255 255 255 / 0.85); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+  .wordmark { flex: none; font-size: 17px; font-weight: 700; letter-spacing: -0.03em; text-decoration: none; }
+  .crumbs { display: flex; align-items: center; gap: 8px; min-width: 0; color: var(--muted); white-space: nowrap; }
+  .crumbs svg { width: 12px; height: 12px; color: var(--faint); }
+  .crumbs strong { overflow: hidden; text-overflow: ellipsis; font-weight: 500; color: var(--fg); }
+  .site .pill { flex: none; margin-left: auto; }
+  .hero { display: grid; justify-items: center; gap: 14px; padding: 36px 24px 32px; text-align: center; }
+  .kicker { display: inline-flex; align-items: center; gap: 8px; height: 28px; padding: 0 12px 0 4px; border-radius: 9999px; box-shadow: inset 0 0 0 1px var(--line); font-size: 12px; font-weight: 500; color: var(--muted); }
+  .kicker b { padding: 0 8px; border-radius: 9999px; background: var(--accent-soft); color: var(--accent); font-weight: 500; line-height: 20px; }
+  .hero h1 { margin: 0; font-size: 44px; line-height: 1.08; font-weight: 450; letter-spacing: -0.02em; }
+  .hero p { max-width: 640px; margin: 0; font-size: 16px; line-height: 26px; color: var(--muted); }
+  .pill { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 40px; padding: 0 18px; border-radius: 9999px; font-size: 14px; font-weight: 500; white-space: nowrap; text-decoration: none; }
+  .pill-sm { height: 32px; padding: 0 14px; font-size: 13px; }
+  .pill-primary { background: var(--fg); color: #fff; }
+  .pill-primary:hover { background: #202329; }
+  .pill-secondary { background: var(--secondary); color: var(--fg); }
+  .pill-secondary:hover { background: var(--secondary-hover); }
+  .pill:disabled { opacity: 0.4; cursor: default; }
+  .pill svg { width: 14px; height: 14px; }
+  .field { min-width: 0; height: 40px; padding: 0 18px; border: 1px solid var(--border); border-radius: 9999px; background: var(--bg); color: var(--fg); font: inherit; outline: none; }
+  .field:focus { border-color: var(--fg); }
+  .field::placeholder { color: var(--faint); }
+  .surface { max-width: 1280px; margin: 0 auto 48px; padding: 8px; border-radius: 24px; background: var(--card); }
+  .panel { min-width: 0; padding: 20px 22px; border-radius: 16px; background: var(--bg); }
+  .label { margin: 0; font-size: 13px; font-weight: 500; color: var(--muted); }
+  @media (max-width: 1304px) {
+    .surface { margin: 0 12px 32px; }
+  }
+  @media (max-width: 640px) {
+    .site { padding: 0 16px; }
+    .crumbs > span, .crumbs > svg { display: none; }
+    .hero { padding: 28px 20px 24px; }
+    .hero h1 { font-size: 34px; }
+  }
 
-  .dashboard { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 16px; max-width: 1280px; margin: 0 auto; padding: 20px 24px 40px; }
-  .card { min-width: 0; padding: 18px 20px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); animation: fade 0.3s ease-out; }
+  /* 𝕏 Sentiment Tracker */
+  :root {
+    --positive: #16a34a;
+    --positive-soft: rgb(22 163 74 / 0.1);
+    --negative: #e5484d;
+    --negative-soft: rgb(229 72 77 / 0.1);
+    --neutral: #c9c6c1;
+  }
+  .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px; border-radius: 16px; background: var(--bg); }
+  .search { position: relative; flex: 1; display: flex; min-width: 220px; }
+  .search svg { position: absolute; left: 16px; top: 12px; width: 16px; height: 16px; color: var(--faint); }
+  .search .field { flex: 1; padding-left: 42px; }
+  .range { display: inline-flex; align-items: center; height: 40px; padding: 0 16px; border-radius: 9999px; background: var(--secondary); color: var(--muted); font-weight: 500; }
+  #go.stop { background: var(--secondary); color: var(--fg); }
+
+  .dashboard { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 8px; margin-top: 8px; }
+  .dashboard .panel { animation: appear 0.3s ease-out; }
   .span-12 { grid-column: span 12; }
   .span-8 { grid-column: span 8; }
   .span-4 { grid-column: span 4; }
-  .card-head { display: flex; align-items: center; gap: 8px; margin: 0 0 14px; }
-  .card-title { margin: 0; font-size: 13px; font-weight: 700; }
-  .card-status { color: var(--faint); font-size: 13px; }
-  .card-head .spacer { flex: 1; }
-  .skeleton { border-radius: 6px; background: var(--skeleton); animation: pulse 1s ease-in-out infinite alternate; }
+  .panel-head { display: flex; align-items: center; gap: 8px; margin: 0 0 16px; }
+  .panel-head .status { color: var(--faint); font-size: 13px; }
+  .panel-head .spacer { flex: 1; }
+  .skeleton { border-radius: 6px; background: var(--secondary); animation: pulse 1s ease-in-out infinite alternate; }
 
-  .hero { grid-column: span 12; display: grid; justify-items: center; gap: 10px; padding: 64px 24px; text-align: center; }
-  .hero h1 { margin: 0; font-size: 28px; line-height: 34px; font-weight: 800; letter-spacing: -0.01em; }
-  .hero p { max-width: 520px; margin: 0; color: var(--muted); }
-  .topics { display: flex; gap: 8px; margin-top: 8px; }
-  .topics button { height: 32px; padding: 0 14px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); font-weight: 600; }
-  .topics button:hover { border-color: var(--fg); }
+  .start { grid-column: span 12; display: grid; justify-items: center; gap: 14px; padding: 56px 24px; text-align: center; }
+  .start p { margin: 0; color: var(--muted); }
+  .topics { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
 
-  .query { display: flex; align-items: center; gap: 8px; margin: -6px 0 12px; font: 12px/18px var(--mono); color: var(--muted); overflow-wrap: anywhere; }
+  .query { display: flex; align-items: center; gap: 8px; margin: -4px 0 14px; font: 12px/18px var(--mono); color: var(--muted); overflow-wrap: anywhere; }
   .query svg { flex: none; width: 14px; height: 14px; }
   .days { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 6px; }
-  .day { display: grid; gap: 2px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); font-size: 12px; line-height: 16px; }
+  .day { display: grid; gap: 2px; padding: 9px 11px; border-radius: 12px; background: var(--card); font-size: 12px; line-height: 16px; }
   .day .date { color: var(--muted); }
-  .day .count { font-weight: 600; color: var(--faint); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .day .count { font-weight: 500; color: var(--faint); font-variant-numeric: tabular-nums; white-space: nowrap; }
   .day.searching { animation: pulse 1s ease-in-out infinite alternate; }
   .day.done .count { color: var(--fg); }
 
-  #score { margin: 0; font-size: 48px; line-height: 52px; font-weight: 800; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
-  #mood { margin: 2px 0 16px; font-weight: 600; color: var(--muted); }
-  .gauge { position: relative; height: 8px; border-radius: 4px; background: var(--skeleton); }
-  .gauge::before { content: ""; position: absolute; left: 50%; top: -4px; width: 1px; height: 16px; background: var(--faint); }
-  #fill { position: absolute; top: 0; bottom: 0; left: 50%; width: 0; border-radius: 4px; transition: left 0.6s, width 0.6s; }
-  #marker { position: absolute; top: 50%; left: 50%; width: 18px; height: 18px; margin: -9px 0 0 -9px; border: 3px solid var(--surface); border-radius: 50%; background: var(--fg); transition: left 0.6s; }
+  .scoring { margin: 0; color: var(--muted); }
+  #score { margin: 0; font-size: 60px; line-height: 60px; font-weight: 450; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+  #mood { margin: 6px 0 18px; color: var(--muted); }
+  .gauge { position: relative; height: 6px; border-radius: 3px; background: var(--secondary); }
+  .gauge::before { content: ""; position: absolute; left: 50%; top: -5px; width: 1px; height: 16px; background: var(--faint); }
+  #fill { position: absolute; top: 0; bottom: 0; left: 50%; width: 0; border-radius: 3px; transition: left 0.6s, width 0.6s; }
+  #marker { position: absolute; top: 50%; left: 50%; width: 18px; height: 18px; margin: -9px 0 0 -9px; border: 3px solid var(--bg); border-radius: 50%; background: var(--fg); transition: left 0.6s; }
   .scale { display: flex; justify-content: space-between; margin-top: 8px; font-size: 12px; color: var(--faint); }
-  #based { margin: 14px 0 0; color: var(--muted); }
-  .scoring { color: var(--muted); }
-  #reasoning { max-height: 132px; margin: 10px 0 0; overflow: auto; white-space: pre-wrap; font: 11px/17px var(--mono); color: var(--faint); }
+  #based { margin: 16px 0 0; color: var(--muted); }
+  #reasoning { max-height: 136px; margin: 10px 0 0; overflow: auto; white-space: pre-wrap; font: 11px/17px var(--mono); color: var(--faint); }
   #reasoning:empty { display: none; }
-  details.why-reasoning { margin-top: 12px; }
+  details.why-reasoning { margin-top: 10px; }
   details.why-reasoning summary { color: var(--muted); cursor: pointer; }
+  #reasoning-done { max-height: 200px; margin-top: 8px; overflow: auto; white-space: pre-wrap; font: 11px/17px var(--mono); color: var(--faint); }
 
-  .numbers { display: flex; gap: 28px; }
-  .number strong { display: block; font-size: 32px; line-height: 38px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .numbers { display: flex; gap: 32px; }
+  .number strong { display: block; font-size: 40px; line-height: 44px; font-weight: 450; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
   .number span { color: var(--muted); }
-  .funnel { height: 8px; margin-top: 18px; overflow: hidden; border-radius: 4px; background: var(--skeleton); }
+  .funnel { height: 6px; margin-top: 20px; overflow: hidden; border-radius: 3px; background: var(--secondary); }
   #funnel-bar { height: 100%; width: 0; border-radius: inherit; background: var(--fg); transition: width 0.6s; }
-  #funnel-note { margin: 10px 0 0; color: var(--muted); }
+  #funnel-note { margin: 12px 0 0; color: var(--muted); }
 
-  .split { display: flex; height: 10px; margin: 6px 0 14px; overflow: hidden; border-radius: 5px; background: var(--skeleton); }
+  .split { display: flex; height: 6px; margin: 8px 0 18px; overflow: hidden; border-radius: 3px; background: var(--secondary); }
   .split i { height: 100%; transition: width 0.6s; }
-  .legend { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+  .legend { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
   .legend li { display: flex; align-items: center; gap: 8px; }
-  .legend i { width: 10px; height: 10px; border-radius: 3px; }
-  .legend b { margin-left: auto; font-variant-numeric: tabular-nums; }
+  .legend i { width: 8px; height: 8px; border-radius: 50%; }
+  .legend b { margin-left: auto; font-weight: 500; font-variant-numeric: tabular-nums; }
 
   #chart-card { display: flex; flex-direction: column; }
   .chart { flex: 1; display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 8px; min-height: 230px; }
@@ -107,153 +142,158 @@
   .column .up, .column .down { display: flex; width: 100%; justify-content: center; }
   .column .up { align-items: flex-end; border-bottom: 1px solid var(--line); }
   .column .down { align-items: flex-start; }
-  .column .bar { width: min(36px, 70%); transition: height 0.6s; }
-  .column .up .bar { border-radius: 6px 6px 0 0; background: var(--positive); }
-  .column .down .bar { border-radius: 0 0 6px 6px; background: var(--negative); }
-  .column .up .bar.skeleton { border-radius: 6px; background: var(--skeleton); }
+  .column .bar { width: min(32px, 64%); transition: height 0.6s; }
+  .column .up .bar { border-radius: 8px 8px 2px 2px; background: var(--positive); }
+  .column .down .bar { border-radius: 2px 2px 8px 8px; background: var(--negative); }
+  .column .up .bar.skeleton { border-radius: 8px; background: var(--secondary); }
   .column .date { margin-top: 8px; font-size: 12px; color: var(--muted); }
   .column .posts { font-size: 11px; color: var(--faint); font-variant-numeric: tabular-nums; }
-  .chart-caption { margin: 12px 0 0; font-size: 12px; color: var(--faint); }
 
   .why-waiting { display: grid; gap: 10px; }
   #explanation { margin: 0; }
-  .key-label { margin: 16px 0 6px; font-size: 12px; font-weight: 700; color: var(--muted); }
+  .key-label { margin: 18px 0 4px; font-size: 13px; font-weight: 500; color: var(--muted); }
   .key-posts { display: grid; margin: 0; padding: 0; list-style: none; }
-  .key-posts a { display: grid; gap: 2px; padding: 8px 0; border-top: 1px solid var(--line); text-decoration: none; }
-  .key-posts .author { font-weight: 700; }
+  .key-posts a { display: grid; gap: 2px; padding: 10px 0; border-top: 1px solid var(--line); text-decoration: none; }
+  .key-posts .author { font-weight: 500; }
   .key-posts .note { color: var(--muted); }
 
-  .filters { display: flex; gap: 6px; }
-  .filters button { height: 28px; padding: 0 12px; border-radius: 14px; color: var(--muted); font-size: 13px; font-weight: 600; }
-  .filters button.active { background: var(--fg); color: #fff; }
+  .filters { display: flex; gap: 4px; padding: 3px; border-radius: 9999px; background: var(--secondary); }
+  .filters button { height: 28px; padding: 0 12px; border-radius: 9999px; color: var(--muted); font-size: 13px; font-weight: 500; }
+  .filters button.active { background: var(--bg); color: var(--fg); }
   .filters button:disabled { opacity: 0.4; cursor: default; }
-  .feed { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 12px; }
-  .post { display: flex; flex-direction: column; gap: 8px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 14px; color: inherit; text-decoration: none; animation: fade 0.3s ease-out; }
-  .post:hover { border-color: var(--faint); }
+  .feed { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 8px; }
+  .post { display: flex; flex-direction: column; gap: 8px; padding: 14px 16px; border-radius: 14px; background: var(--card); color: inherit; text-decoration: none; animation: appear 0.3s ease-out; }
+  .post:hover { background: var(--secondary); }
   .post header { display: flex; align-items: center; gap: 6px; }
-  .post .author { overflow: hidden; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+  .post .author { overflow: hidden; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
   .post .time { color: var(--faint); white-space: nowrap; }
-  .post .chip { margin-left: auto; padding: 0 8px; border-radius: 10px; background: var(--skeleton); color: var(--muted); font-size: 12px; font-weight: 700; line-height: 20px; font-variant-numeric: tabular-nums; }
+  .post .chip { margin-left: auto; padding: 0 8px; border-radius: 9999px; background: var(--bg); color: var(--muted); font-size: 12px; font-weight: 500; line-height: 20px; font-variant-numeric: tabular-nums; }
   .post.positive .chip { background: var(--positive-soft); color: var(--positive); }
   .post.negative .chip { background: var(--negative-soft); color: var(--negative); }
   .post p { display: -webkit-box; margin: 0; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 6; font-size: 13px; line-height: 19px; white-space: pre-line; overflow-wrap: anywhere; }
   .feed:not(.all) .post:nth-child(n + 13) { display: none; }
-  #more { margin-top: 12px; height: 32px; padding: 0 14px; border: 1px solid var(--line); border-radius: 16px; font-weight: 600; }
+  #more { margin-top: 12px; }
   #message { grid-column: span 12; margin: 0; padding: 12px 16px; border-radius: 12px; background: var(--negative-soft); color: var(--negative); }
 
   @media (max-width: 960px) {
     .span-8, .span-4 { grid-column: span 12; }
     .days, .chart { grid-template-columns: repeat(5, minmax(0, 1fr)); }
-    .topbar { flex-wrap: wrap; }
-    form { flex-basis: 100%; max-width: none; }
   }
 </style>
 </head>
 <body>
-<header class="topbar">
-  <div class="brand">
-    <span class="logo">𝕏</span>
-    <div><strong>Sentiment Tracker</strong><span>SpaceXAI Cookbook</span></div>
-  </div>
-  <form id="form">
-    <label class="search">
-      <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.5"/><path d="m10.5 10.5 3 3"/></svg>
-      <input id="topic" required value="SpaceX" aria-label="Topic" placeholder="A company, a product, or an event">
-    </label>
-    <span class="range">Last 10 days</span>
-    <button id="go">Analyze</button>
-  </form>
+<header class="site">
+  <a class="wordmark" href="https://x.ai" target="_blank" rel="noopener">SpaceXAI</a>
+  <nav class="crumbs"><span>Cookbook</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg><strong>𝕏 Sentiment Tracker</strong></nav>
+  <a class="pill pill-secondary pill-sm" href="https://github.com/xai-org/xai-cookbook/tree/main/examples/x-sentiment-tracker" target="_blank" rel="noopener">View code</a>
 </header>
 
-<main class="dashboard">
-  <section class="hero" id="hero">
-    <h1>How does 𝕏 feel about it?</h1>
-    <p>Grok searches 𝕏 for popular posts about a topic from the last 10 days, one search per day, filters out the noise, and scores each post from −1 (negative) to +1 (positive).</p>
-    <div class="topics">
-      <button type="button">SpaceX</button>
-      <button type="button">Starship</button>
-      <button type="button">Starlink</button>
-    </div>
-  </section>
+<section class="hero">
+  <span class="kicker"><b>Cookbook</b>grok-4.7 with X Search</span>
+  <h1>𝕏 Sentiment Tracker</h1>
+  <p>Grok searches 𝕏 for popular posts about a topic from the last 10 days, filters out the noise, and scores each post from −1 (negative) to +1 (positive).</p>
+</section>
 
-  <section class="card span-12" id="activity" hidden>
-    <div class="card-head"><p class="card-title">Search</p><span class="card-status" id="step"></span></div>
-    <div class="query" id="query"></div>
-    <div class="days" id="days"></div>
-  </section>
+<main class="surface">
+  <form id="form" class="toolbar">
+    <label class="search">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.5"/><path d="m10.5 10.5 3 3"/></svg>
+      <input id="topic" class="field" required value="SpaceX" aria-label="Topic" placeholder="A company, a product, or an event">
+    </label>
+    <span class="range">Last 10 days</span>
+    <button id="go" class="pill pill-primary">Analyze</button>
+  </form>
 
-  <section class="card span-4" id="score-card" hidden>
-    <div class="card-head"><p class="card-title" id="topic-label">Sentiment</p></div>
-    <div id="score-waiting">
-      <p class="scoring" id="scoring-label">Waiting for the posts</p>
-      <div id="reasoning"></div>
-    </div>
-    <div id="score-done" hidden>
-      <p id="score"></p>
-      <p id="mood"></p>
-      <div class="gauge"><span id="fill"></span><span id="marker"></span></div>
-      <div class="scale"><span>−1</span><span>0</span><span>+1</span></div>
-      <p id="based"></p>
-      <details class="why-reasoning"><summary id="thought"></summary><div id="reasoning-done"></div></details>
-    </div>
-  </section>
-
-  <section class="card span-4" id="posts-card" hidden>
-    <div class="card-head"><p class="card-title">Posts</p></div>
-    <div class="numbers">
-      <div class="number"><strong id="found-count">0</strong><span>found</span></div>
-      <div class="number"><strong id="kept-count">–</strong><span>worth scoring</span></div>
-    </div>
-    <div class="funnel"><div id="funnel-bar"></div></div>
-    <p id="funnel-note">Searching the last 10 days</p>
-  </section>
-
-  <section class="card span-4" id="split-card" hidden>
-    <div class="card-head"><p class="card-title">Split</p></div>
-    <div class="split" id="split"><i style="background: var(--positive)"></i><i style="background: var(--neutral)"></i><i style="background: var(--negative)"></i></div>
-    <ul class="legend" id="legend">
-      <li><i style="background: var(--positive)"></i>Positive<b>–</b></li>
-      <li><i style="background: var(--neutral)"></i>Neutral<b>–</b></li>
-      <li><i style="background: var(--negative)"></i>Negative<b>–</b></li>
-    </ul>
-  </section>
-
-  <section class="card span-8" id="chart-card" hidden>
-    <div class="card-head"><p class="card-title">Sentiment by day</p><span class="card-status">Average score of the posts from each day</span></div>
-    <div class="chart" id="chart"></div>
-  </section>
-
-  <section class="card span-4" id="why-card" hidden>
-    <div class="card-head"><p class="card-title">Why</p></div>
-    <div class="why-waiting" id="why-waiting">
-      <div class="skeleton" style="height: 12px; width: 92%"></div>
-      <div class="skeleton" style="height: 12px; width: 80%"></div>
-      <div class="skeleton" style="height: 12px; width: 86%"></div>
-      <div class="skeleton" style="height: 12px; width: 50%"></div>
-    </div>
-    <div id="why-done" hidden>
-      <p id="explanation"></p>
-      <p class="key-label" id="key-label">Posts that influenced it most</p>
-      <ul class="key-posts" id="key-posts"></ul>
-    </div>
-  </section>
-
-  <section class="card span-12" id="feed-card" hidden>
-    <div class="card-head">
-      <p class="card-title">Posts worth scoring</p>
-      <span class="spacer"></span>
-      <div class="filters" id="filters">
-        <button type="button" class="active" data-filter="all">All</button>
-        <button type="button" data-filter="positive" disabled>Positive</button>
-        <button type="button" data-filter="neutral" disabled>Neutral</button>
-        <button type="button" data-filter="negative" disabled>Negative</button>
+  <div class="dashboard">
+    <section class="panel start" id="start">
+      <p class="label">Pick a topic, or type your own</p>
+      <div class="topics">
+        <button type="button" class="pill pill-secondary pill-sm">SpaceX</button>
+        <button type="button" class="pill pill-secondary pill-sm">Starship</button>
+        <button type="button" class="pill pill-secondary pill-sm">Starlink</button>
       </div>
-    </div>
-    <div class="feed" id="feed"></div>
-    <button type="button" id="more" hidden></button>
-  </section>
+      <p>A run searches each of the last 10 days and scores up to 100 popular posts. It takes a minute or two.</p>
+    </section>
 
-  <p id="message" hidden></p>
+    <section class="panel span-12" id="activity" hidden>
+      <div class="panel-head"><p class="label">Search</p><span class="status" id="step"></span></div>
+      <div class="query" id="query"></div>
+      <div class="days" id="days"></div>
+    </section>
+
+    <section class="panel span-4" id="score-card" hidden>
+      <div class="panel-head"><p class="label" id="topic-label">Sentiment</p></div>
+      <div id="score-waiting">
+        <p class="scoring" id="scoring-label">Waiting for the posts</p>
+        <div id="reasoning"></div>
+      </div>
+      <div id="score-done" hidden>
+        <p id="score"></p>
+        <p id="mood"></p>
+        <div class="gauge"><span id="fill"></span><span id="marker"></span></div>
+        <div class="scale"><span>−1</span><span>0</span><span>+1</span></div>
+        <p id="based"></p>
+        <details class="why-reasoning"><summary id="thought"></summary><div id="reasoning-done"></div></details>
+      </div>
+    </section>
+
+    <section class="panel span-4" id="posts-card" hidden>
+      <div class="panel-head"><p class="label">Posts</p></div>
+      <div class="numbers">
+        <div class="number"><strong id="found-count">0</strong><span>found</span></div>
+        <div class="number"><strong id="kept-count">–</strong><span>worth scoring</span></div>
+      </div>
+      <div class="funnel"><div id="funnel-bar"></div></div>
+      <p id="funnel-note">Searching the last 10 days</p>
+    </section>
+
+    <section class="panel span-4" id="split-card" hidden>
+      <div class="panel-head"><p class="label">Split</p></div>
+      <div class="split" id="split"><i style="background: var(--positive)"></i><i style="background: var(--neutral)"></i><i style="background: var(--negative)"></i></div>
+      <ul class="legend" id="legend">
+        <li><i style="background: var(--positive)"></i>Positive<b>–</b></li>
+        <li><i style="background: var(--neutral)"></i>Neutral<b>–</b></li>
+        <li><i style="background: var(--negative)"></i>Negative<b>–</b></li>
+      </ul>
+    </section>
+
+    <section class="panel span-8" id="chart-card" hidden>
+      <div class="panel-head"><p class="label">Sentiment by day</p><span class="status">Average score of each day's posts</span></div>
+      <div class="chart" id="chart"></div>
+    </section>
+
+    <section class="panel span-4" id="why-card" hidden>
+      <div class="panel-head"><p class="label">Why</p></div>
+      <div class="why-waiting" id="why-waiting">
+        <div class="skeleton" style="height: 12px; width: 92%"></div>
+        <div class="skeleton" style="height: 12px; width: 80%"></div>
+        <div class="skeleton" style="height: 12px; width: 86%"></div>
+        <div class="skeleton" style="height: 12px; width: 50%"></div>
+      </div>
+      <div id="why-done" hidden>
+        <p id="explanation"></p>
+        <p class="key-label" id="key-label">Posts that influenced it most</p>
+        <ul class="key-posts" id="key-posts"></ul>
+      </div>
+    </section>
+
+    <section class="panel span-12" id="feed-card" hidden>
+      <div class="panel-head">
+        <p class="label">Posts worth scoring</p>
+        <span class="spacer"></span>
+        <div class="filters" id="filters">
+          <button type="button" class="active" data-filter="all">All</button>
+          <button type="button" data-filter="positive" disabled>Positive</button>
+          <button type="button" data-filter="neutral" disabled>Neutral</button>
+          <button type="button" data-filter="negative" disabled>Negative</button>
+        </div>
+      </div>
+      <div class="feed" id="feed"></div>
+      <button type="button" id="more" class="pill pill-secondary pill-sm" hidden></button>
+    </section>
+
+    <p id="message" hidden></p>
+  </div>
 </main>
 
 <script>
@@ -492,7 +532,7 @@
     days = [];
     scored = 0;
     filter = "all";
-    $("hero").hidden = true;
+    $("start").hidden = true;
     CARDS.forEach((id) => ($(id).hidden = false));
     $("why-waiting").hidden = false;
     $("why-done").hidden = true;
