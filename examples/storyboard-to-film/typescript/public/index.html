@@ -34,17 +34,13 @@
   @keyframes pulse { to { background-color: var(--secondary-hover); } }
   @keyframes fade { from { opacity: 0; } }
 
-  .site { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 12px; height: 60px; padding: 0 24px; background: rgb(255 255 255 / 0.85); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+  .site { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 12px; height: 60px; padding: 0 20px; background: rgb(255 255 255 / 0.85); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
   .wordmark { flex: none; font-size: 17px; font-weight: 700; letter-spacing: -0.03em; text-decoration: none; }
   .crumbs { display: flex; align-items: center; gap: 8px; min-width: 0; color: var(--muted); white-space: nowrap; }
   .crumbs svg { width: 12px; height: 12px; color: var(--faint); }
-  .crumbs strong { overflow: hidden; text-overflow: ellipsis; font-weight: 500; color: var(--fg); }
+  .crumbs h1 { margin: 0; overflow: hidden; text-overflow: ellipsis; font-size: inherit; line-height: inherit; font-weight: 500; color: var(--fg); }
   .site .pill { flex: none; margin-left: auto; }
-  .hero { display: grid; justify-items: center; gap: 14px; padding: 36px 24px 32px; text-align: center; }
-  .kicker { display: inline-flex; align-items: center; gap: 8px; height: 28px; padding: 0 12px 0 4px; border-radius: 9999px; box-shadow: inset 0 0 0 1px var(--line); font-size: 12px; font-weight: 500; color: var(--muted); }
-  .kicker b { padding: 0 8px; border-radius: 9999px; background: var(--accent-soft); color: var(--accent); font-weight: 500; line-height: 20px; }
-  .hero h1 { margin: 0; font-size: 44px; line-height: 1.08; font-weight: 450; letter-spacing: -0.02em; }
-  .hero p { max-width: 640px; margin: 0; font-size: 16px; line-height: 26px; color: var(--muted); }
+  .models { flex: none; height: 26px; padding: 0 10px; border-radius: 9999px; box-shadow: inset 0 0 0 1px var(--line); font-size: 12px; font-weight: 500; line-height: 26px; color: var(--muted); }
   .pill { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 40px; padding: 0 18px; border-radius: 9999px; font-size: 14px; font-weight: 500; white-space: nowrap; text-decoration: none; }
   .pill-sm { height: 32px; padding: 0 14px; font-size: 13px; }
   .pill-primary { background: var(--fg); color: #fff; }
@@ -56,17 +52,16 @@
   .field { min-width: 0; height: 40px; padding: 0 18px; border: 1px solid var(--border); border-radius: 9999px; background: var(--bg); color: var(--fg); font: inherit; outline: none; }
   .field:focus { border-color: var(--fg); }
   .field::placeholder { color: var(--faint); }
-  .surface { max-width: 1280px; margin: 0 auto 48px; padding: 8px; border-radius: 24px; background: var(--card); }
+  .surface { display: flex; flex-direction: column; gap: 8px; height: calc(100vh - 72px); min-height: 560px; margin: 0 12px 12px; padding: 8px; border-radius: 20px; background: var(--card); }
   .panel { min-width: 0; padding: 20px 22px; border-radius: 16px; background: var(--bg); }
   .label { margin: 0; font-size: 13px; font-weight: 500; color: var(--muted); }
-  @media (max-width: 1304px) {
-    .surface { margin: 0 12px 32px; }
+  @media (max-width: 900px) {
+    .models { display: none; }
   }
   @media (max-width: 640px) {
     .site { padding: 0 16px; }
     .crumbs > span, .crumbs > svg { display: none; }
-    .hero { padding: 28px 20px 24px; }
-    .hero h1 { font-size: 34px; }
+    .surface { margin: 0 8px 8px; }
   }
 
   /* Storyboard to Short Film */
@@ -77,11 +72,11 @@
     --voice-strong: #7c3aed;
   }
   .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px; border-radius: 16px; background: var(--bg); }
-  .toolbar .field { flex: 1; }
+  .toolbar .field { flex: 1 1 260px; }
   #summary { padding: 0 8px; color: var(--faint); font-size: 13px; font-variant-numeric: tabular-nums; }
   #summary:empty { display: none; }
 
-  .workspace { display: grid; grid-template-columns: 320px minmax(0, 1fr); gap: 8px; margin-top: 8px; }
+  .workspace { flex: 1; display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: 8px; min-height: 0; }
   .plan { position: relative; padding: 0; }
   .plan-scroll { position: absolute; inset: 0; overflow: auto; padding: 20px 22px; }
   .plan .label { margin-bottom: 10px; }
@@ -105,12 +100,12 @@
   .shot-list .motion { margin-top: 2px; font-size: 12px; line-height: 18px; color: var(--muted); }
   .shot-list .narration { margin-top: 6px; font-size: 13px; line-height: 20px; color: var(--voice-fg); }
 
-  .stage { display: grid; gap: 12px; padding: 12px; }
-  .monitor { display: grid; place-items: center; height: clamp(300px, 52vh, 540px); container-type: size; }
+  .stage { display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: 12px; min-height: 0; padding: 12px; }
+  .monitor { display: grid; place-items: center; min-height: 0; container-type: size; }
   .screen { position: relative; display: grid; place-items: center; width: min(100cqw, 100cqh * 16 / 9); aspect-ratio: 16 / 9; overflow: hidden; border-radius: 12px; background: #0a0a0a; color: #f2f1ef; }
   .screen video, .screen img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; animation: fade 0.4s ease-out; }
   .screen-note { position: relative; max-width: 440px; margin: 0; padding: 0 24px; text-align: center; color: rgb(242 241 239 / 0.62); }
-  .empty-title { margin: 0 0 6px; font-size: 22px; line-height: 30px; font-weight: 450; letter-spacing: -0.01em; color: #f2f1ef; }
+  .empty-title { margin: 0 0 8px; font-size: 28px; line-height: 34px; font-weight: 450; letter-spacing: -0.01em; color: #f2f1ef; }
   .examples { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 18px; }
   .examples button { height: 32px; padding: 0 14px; border-radius: 9999px; background: rgb(255 255 255 / 0.1); color: #f2f1ef; font-size: 13px; font-weight: 500; }
   .examples button:hover { background: rgb(255 255 255 / 0.16); }
@@ -121,7 +116,7 @@
   #timecode { font: 12px var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
   #caption { flex: 1; min-width: 0; overflow: hidden; color: var(--muted); white-space: nowrap; text-overflow: ellipsis; }
 
-  .timeline { margin-top: 8px; padding: 16px 22px 20px; }
+  .timeline { flex: none; padding: 16px 22px 20px; }
   .steps { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 20px; margin: 0 0 14px; padding: 0; list-style: none; font-size: 13px; color: var(--faint); }
   .steps li { display: flex; align-items: center; gap: 7px; }
   .steps i { width: 7px; height: 7px; border-radius: 50%; border: 1.5px solid currentColor; }
@@ -153,25 +148,28 @@
   #playhead { position: absolute; top: -6px; bottom: -6px; left: 0; width: 2px; margin-left: -1px; border-radius: 1px; background: var(--accent); pointer-events: none; }
 
   @media (max-width: 900px) {
+    .surface { height: auto; }
     .workspace { grid-template-columns: minmax(0, 1fr); }
     .plan { order: 2; }
     .plan-scroll { position: static; max-height: 360px; }
     .monitor { height: 52vw; }
+  }
+  @media (max-width: 640px) {
+    .monitor { height: 60vw; }
+    .screen-note { padding: 0 16px; font-size: 13px; line-height: 19px; }
+    .empty-title { margin-bottom: 4px; font-size: 20px; line-height: 26px; }
+    .examples { margin-top: 10px; }
   }
 </style>
 </head>
 <body>
 <header class="site">
   <a class="wordmark" href="https://x.ai" target="_blank" rel="noopener">SpaceXAI</a>
-  <nav class="crumbs"><span>Cookbook</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg><strong>Storyboard to Short Film</strong></nav>
+  <nav class="crumbs"><span>Cookbook</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg><h1>Storyboard to Short Film</h1></nav>
+  <span class="models">grok-4.7, Grok Imagine, and text to speech</span>
   <a class="pill pill-secondary pill-sm" href="https://github.com/xai-org/xai-cookbook/tree/main/examples/storyboard-to-film" target="_blank" rel="noopener">View code</a>
 </header>
 
-<section class="hero">
-  <span class="kicker"><b>Cookbook</b>grok-4.7, Grok Imagine, and text to speech</span>
-  <h1>Storyboard to Short Film</h1>
-  <p>Grok plans four shots from a one-line premise, draws a keyframe for each, animates them into eight-second clips, and narrates the story.</p>
-</section>
 
 <main class="surface">
   <form id="form" class="toolbar">
@@ -204,7 +202,7 @@
           <img id="screen-image" alt="" hidden>
           <div class="screen-note" id="screen-note">
             <p class="empty-title">Describe a film in one line</p>
-            Type a premise above, or start from one of these. A film takes a few minutes.
+            Grok plans four shots, draws a keyframe for each, animates them into eight-second clips, and narrates the story. Try one of these, or type your own above.
             <div class="examples">
               <button type="button" data-premise="A paper boat's journey through a rainy city at night">Paper boat</button>
               <button type="button" data-premise="A lighthouse keeper's cat on the night of the big storm">Lighthouse cat</button>
