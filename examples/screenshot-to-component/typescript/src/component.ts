@@ -6,6 +6,15 @@ export type Component = { name: string; code: string };
 // A component from a later round, with the differences Grok fixed.
 export type Refinement = Component & { changes: string[] };
 
+// What a later round compares: the screenshot, a screenshot of the component rendered at the same size,
+// and an overlay of the two, plus how tall the component's page is and how tall the screenshot is.
+export type Comparison = {
+  screenshot: Blob;
+  render: Blob;
+  overlay: Blob;
+  height: { page: number; screenshot: number };
+};
+
 export type ComponentEvents = {
   reasoning?: (text: string) => void;
   changes?: (changes: string[]) => void;
@@ -62,7 +71,7 @@ export function writeComponent(screenshot: Blob, on: ComponentEvents = {}, signa
 // Compares a screenshot of the component as it renders with the original, and fixes the differences.
 // The overlay is the two laid over each other, which shows Grok where things don't line up.
 export function refineComponent(
-  images: { screenshot: Blob; render: Blob; overlay: Blob },
+  comparison: Comparison,
   component: Component,
   on: ComponentEvents = {},
   signal?: AbortSignal,
@@ -73,18 +82,25 @@ export function refineComponent(
       role: "user",
       content: [
         { type: "input_text" as const, text: "The original screenshot:" },
-        { type: "input_image" as const, image: images.screenshot, detail: "high" as const },
+        { type: "input_image" as const, image: comparison.screenshot, detail: "high" as const },
         { type: "input_text" as const, text: "Your component, rendered at the same size:" },
-        { type: "input_image" as const, image: images.render, detail: "high" as const },
+        { type: "input_image" as const, image: comparison.render, detail: "high" as const },
         { type: "input_text" as const, text: "The overlay:" },
-        { type: "input_image" as const, image: images.overlay, detail: "high" as const },
-        { type: "input_text" as const, text: `Your component's code:\n\n${component.code}` },
+        { type: "input_image" as const, image: comparison.overlay, detail: "high" as const },
+        { type: "input_text" as const, text: `${describeHeight(comparison.height)}Your component's code:\n\n${component.code}` },
       ],
     },
   ];
   // At the default effort, Grok spends minutes going over every detail of the images before it
   // writes anything. The overlay points it at what to fix, so low effort is enough.
   return streamComponent<Refinement>({ input, schema: REFINE_SCHEMA, reasoning: { effort: "low" } }, on, signal);
+}
+
+// Grok can't tell from the images that the page scrolls. A page too tall to fit also can't center its
+// content, which moves everything at once and looks like many separate differences in the overlay.
+function describeHeight(height: Comparison["height"]): string {
+  if (height.page <= height.screenshot) return "";
+  return `Your component's page is ${height.page} px tall, but the screenshot is ${height.screenshot} px, so the page scrolls and its bottom is cut off. Make it fit.\n\n`;
 }
 
 // Streams a component and reports the code as it's written, so callers can show it before Grok is done.

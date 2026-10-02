@@ -2,7 +2,15 @@ import { randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { type IncomingMessage, type ServerResponse, createServer } from "node:http";
 import { buffer } from "node:stream/consumers";
-import { type Component, type ComponentEvents, type Refinement, componentPage, refineComponent, writeComponent } from "./component.ts";
+import {
+  type Comparison,
+  type Component,
+  type ComponentEvents,
+  type Refinement,
+  componentPage,
+  refineComponent,
+  writeComponent,
+} from "./component.ts";
 
 const PORT = Number(process.env.PORT ?? 3000);
 const PAGE = new URL("../public/index.html", import.meta.url);
@@ -10,7 +18,7 @@ const SAMPLE = new URL("../sample-screenshot.png", import.meta.url);
 const IMAGE_TYPES = ["image/png", "image/jpeg", "image/webp"];
 const MAX_UPLOAD = 10 * 1024 * 1024;
 const screenshots = new Map<string, Blob>();
-const refinements = new Map<string, { images: { screenshot: Blob; render: Blob; overlay: Blob }; component: Component }>();
+const refinements = new Map<string, { comparison: Comparison; component: Component }>();
 
 createServer(async (req, res) => {
   const url = new URL(req.url ?? "/", "http://localhost");
@@ -43,7 +51,8 @@ async function saveScreenshot(req: IncomingMessage, res: ServerResponse): Promis
 }
 
 // For a later round, the page sends the original screenshot, a screenshot of the component as it
-// renders, an overlay of the two, and the component itself, as JSON with the images as data URLs.
+// renders, an overlay of the two, the heights of the component's page and the screenshot, and the
+// component itself, as JSON with the images as data URLs.
 async function saveRefinement(req: IncomingMessage, res: ServerResponse): Promise<void> {
   if (!(Number(req.headers["content-length"]) <= 4 * MAX_UPLOAD)) {
     return reply(res, 413, "text/plain", "The images can be at most 10 MB each.");
@@ -51,12 +60,16 @@ async function saveRefinement(req: IncomingMessage, res: ServerResponse): Promis
   try {
     const body = JSON.parse((await buffer(req)).toString());
     const [screenshot, render, overlay] = [body.screenshot, body.render, body.overlay].map(fromDataUrl);
-    const { name, code } = body;
-    if (!screenshot || !render || !overlay || typeof name !== "string" || typeof code !== "string") {
-      return reply(res, 400, "text/plain", "Send the screenshot, the render, the overlay, and the component.");
+    const { name, code, height } = body;
+    const measured = Number.isFinite(height?.page) && Number.isFinite(height?.screenshot);
+    if (!screenshot || !render || !overlay || !measured || typeof name !== "string" || typeof code !== "string") {
+      return reply(res, 400, "text/plain", "Send the screenshot, the render, the overlay, the heights, and the component.");
     }
     const id = randomUUID();
-    refinements.set(id, { images: { screenshot, render, overlay }, component: { name, code } });
+    refinements.set(id, {
+      comparison: { screenshot, render, overlay, height: { page: height.page, screenshot: height.screenshot } },
+      component: { name, code },
+    });
     reply(res, 200, "application/json", JSON.stringify({ id }));
   } catch {
     if (!res.headersSent) reply(res, 400, "text/plain", "Couldn't read the request.");
@@ -75,7 +88,7 @@ async function refine(id: string, res: ServerResponse): Promise<void> {
   const job = refinements.get(id);
   if (!job) return reply(res, 404, "text/plain", "Not found");
   refinements.delete(id);
-  await streamRound(res, (on, signal) => refineComponent(job.images, job.component, on, signal));
+  await streamRound(res, (on, signal) => refineComponent(job.comparison, job.component, on, signal));
 }
 
 // Runs a round while streaming its progress to the page as server-sent events.

@@ -92,6 +92,7 @@
   .round-text { display: grid; gap: 10px; }
   .round-text > * { margin: 0; }
   #round-status, #match { font-size: 14px; }
+  #layout { font-size: 14px; color: var(--muted); }
   #changes { display: grid; gap: 4px; padding-left: 18px; font-size: 14px; color: var(--muted); }
   #changes:empty { display: none; }
   #again { justify-self: start; height: 32px; padding: 0 14px; font-size: 13px; }
@@ -146,6 +147,7 @@
         <p id="round-status"></p>
         <ul id="changes"></ul>
         <p id="match" hidden></p>
+        <p id="layout" hidden></p>
         <button type="button" id="again" class="pill pill-secondary" hidden>Compare again</button>
       </div>
       <figure id="outlines">
@@ -185,11 +187,14 @@
       await image.decode();
       const canvas = Object.assign(document.createElement("canvas"), { width: innerWidth, height: innerHeight });
       canvas.getContext("2d").drawImage(image, 0, 0);
-      parent.postMessage({ type: "render", image: canvas.toDataURL("image/png") }, "*");
+      parent.postMessage({ type: "render", image: canvas.toDataURL("image/png"), height: document.documentElement.scrollHeight }, "*");
     } catch (error) {
       parent.postMessage({ type: "render", error: String(error) }, "*");
     }
   <\/script>`;
+  // The preview shows exactly the area the page compares, so it doesn't scroll. Scrolling would also
+  // add a scrollbar that narrows the page, which the screenshot of the component doesn't have.
+  const NO_SCROLL = "<style>html { overflow: hidden; }</style>";
   let screenshot = null;
   let round = 0;
   // The component from the round that just finished, until the page has scored it.
@@ -247,6 +252,7 @@
     showCode("");
     $("round").hidden = true;
     $("match").hidden = true;
+    $("layout").hidden = true;
     $("overlay").hidden = true;
     $("result-label").textContent = "Component";
     showPlaceholder("The component appears here when Grok is done.");
@@ -343,14 +349,13 @@
     pending = null;
     try {
       if (event.data.error) throw new Error(event.data.error);
-      Object.assign(version, { render: event.data.image }, await compare(event.data.image));
+      Object.assign(version, { render: event.data.image, height: event.data.height }, await compare(event.data.image));
     } catch {
       $("round").classList.remove("active");
       $("match").hidden = false;
       $("match").textContent = "Couldn't take a screenshot of the component to compare.";
       return;
     }
-    const percent = (score) => `${Math.round(score * 100)}%`;
     $("match").hidden = false;
     if (!best) {
       best = version;
@@ -390,6 +395,7 @@
           screenshot: await dataUrl(screenshot),
           render: best.render,
           overlay: best.overlay,
+          height: { page: best.height, screenshot: $("shot").naturalHeight },
           ...best.component,
         }),
       });
@@ -417,7 +423,7 @@
     $("copy").hidden = false;
     $("code-label").textContent = `${name}.tsx`;
     $("result-label").textContent = version.round > 1 ? `${name} · round ${version.round}` : name;
-    $("preview").srcdoc = snapshot ? version.page.replace("</html>", `${SNAPSHOT}\n</html>`) : version.page;
+    $("preview").srcdoc = version.page.replace("</html>", `${NO_SCROLL}${snapshot ? SNAPSHOT : ""}\n</html>`);
     $("preview").hidden = false;
     $("placeholder").hidden = true;
   }
@@ -425,6 +431,15 @@
   function showOutlines() {
     $("overlay").src = best.overlay;
     $("overlay").hidden = false;
+    // A page too tall to fit can't center its content, so everything moves at once and most outlines
+    // miss, even where the layout matches.
+    const extra = best.height - $("shot").naturalHeight;
+    $("layout").textContent = `The component's page is ${extra} px taller than the screenshot, so it scrolls. That can shift everything at once, which makes most outlines miss.`;
+    $("layout").hidden = !(extra > 0);
+  }
+
+  function percent(share) {
+    return `${Math.round(share * 100)}%`;
   }
 
   // Grows a card open from nothing, so the cards below it slide down instead of jumping.
