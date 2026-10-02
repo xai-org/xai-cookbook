@@ -32,7 +32,7 @@ npm install
 npm run web
 ```
 
-Open http://localhost:3000, paste a link, and click **Make episode**. The page shows Grok's reasoning while it thinks, then the script as it's written, and plays the episode as the lines are recorded.
+Open http://localhost:3000, paste a link or pick one, and click **Make episode**. The page works like a podcast app. The episode's title goes on its cover as soon as Grok writes it, the conversation fills the transcript line by line, and the episode starts playing as the first lines are recorded, with the line being spoken highlighted. Click a line, or its part of the progress bar, to jump to it.
 
 To make an episode from the terminal instead, pass a link or a path to a PDF:
 
