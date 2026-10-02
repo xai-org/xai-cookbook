@@ -1,6 +1,6 @@
-import { type CreateParams, xAI } from "@xai-official/sdk";
+import { type CreateParams, SpaceXAI } from "@xai-official/sdk";
 
-const client = new xAI();
+const client = new SpaceXAI();
 
 export type Component = { name: string; code: string };
 // A component from a later round, with the differences Grok fixed.
@@ -110,7 +110,6 @@ async function streamComponent<T extends Component>(
   signal?: AbortSignal,
 ): Promise<T> {
   const { schema, ...params } = request;
-  let json = "";
   let listed = false;
   let named = false;
   let written = 0;
@@ -125,25 +124,22 @@ async function streamComponent<T extends Component>(
   );
   const response = await stream
     .on("reasoning", (text) => on.reasoning?.(text))
-    .on("text", (delta) => {
-      json += delta;
-      const changes = !listed && json.match(/"changes"\s*:\s*(\[(?:[^\]"]|"(?:[^"\\]|\\.)*")*\])/);
-      if (changes) {
+    // The JSON so far, with the string or list that's still being written closed off. Grok writes the
+    // fields in the schema's order, so a field is finished once the next one has started.
+    .on("json", (value) => {
+      const partial = value as Partial<Refinement>;
+      if (!listed && partial.changes && partial.name !== undefined) {
         listed = true;
-        on.changes?.(JSON.parse(changes[1]));
+        on.changes?.(partial.changes);
       }
-      const name = !named && json.match(/"name"\s*:\s*("(?:[^"\\]|\\.)*")/);
-      if (name) {
+      if (!named && partial.name !== undefined && partial.code !== undefined) {
         named = true;
-        on.name?.(JSON.parse(name[1]));
+        on.name?.(partial.name);
       }
-      // The code is still an open JSON string, so decode it up to the last complete character,
-      // leaving out an escape sequence like \n or \u00e9 that's been cut off.
-      const code = json.match(/"code"\s*:\s*"((?:[^"\\]|\\u[\da-fA-F]{4}|\\[^u])*)/);
-      const text: string = code ? JSON.parse(`"${code[1]}"`) : "";
-      if (text.length > written) {
-        on.code?.(text.slice(written));
-        written = text.length;
+      const code = partial.code ?? "";
+      if (code.length > written) {
+        on.code?.(code.slice(written));
+        written = code.length;
       }
     })
     .done();
