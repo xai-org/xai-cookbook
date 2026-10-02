@@ -6,92 +6,126 @@
 <meta name="color-scheme" content="light">
 <title>Screenshot to React Component</title>
 <style>
+  /* The look every SpaceXAI Cookbook page shares, after x.ai. */
   :root {
-    --bg: #f4f5f7;
-    --surface: #fff;
-    --line: #e2e4e9;
-    --fg: #111318;
-    --muted: #5c6270;
-    --faint: #9aa0ab;
-    --accent: #4f46e5;
-    --accent-soft: #eef0ff;
-    --good: #15803d;
-    --good-soft: #e8f6ee;
-    --bad: #b42318;
-    --bad-soft: #fdeceb;
-    --warn: #a15c07;
-    --editor: #0f1117;
-    --editor-line: #1f2330;
-    --editor-fg: #e6e8ee;
-    --editor-faint: #565d6e;
+    --bg: #fff;
+    --card: #f9f8f6;
+    --secondary: #f2f1ef;
+    --secondary-hover: #e9e8e5;
+    --tint: rgb(10 10 10 / 0.04);
+    --line: rgb(10 10 10 / 0.08);
+    --border: rgb(10 10 10 / 0.15);
+    --fg: #0a0a0a;
+    --muted: rgb(10 10 10 / 0.6);
+    --faint: rgb(10 10 10 / 0.36);
+    --accent: #ff6308;
+    --accent-soft: rgb(255 99 8 / 0.1);
     --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
     --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   }
 
   * { box-sizing: border-box; }
   [hidden] { display: none !important; }
-  body { margin: 0; font: 13px/20px var(--sans); background: var(--bg); color: var(--fg); -webkit-font-smoothing: antialiased; }
+  body { margin: 0; font: 14px/22px var(--sans); background: var(--bg); color: var(--fg); -webkit-font-smoothing: antialiased; }
   button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
-  label.button { cursor: pointer; }
+  a { color: inherit; }
   svg { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
   @keyframes blink { 50% { opacity: 0.3; } }
   @keyframes fade { from { opacity: 0; } }
 
-  .app { display: grid; grid-template-rows: auto minmax(0, 1fr); height: 100vh; min-height: 680px; }
+  .site { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 12px; height: 60px; padding: 0 24px; background: rgb(255 255 255 / 0.85); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+  .wordmark { flex: none; font-size: 17px; font-weight: 700; letter-spacing: -0.03em; text-decoration: none; }
+  .crumbs { display: flex; align-items: center; gap: 8px; min-width: 0; color: var(--muted); white-space: nowrap; }
+  .crumbs svg { width: 12px; height: 12px; color: var(--faint); }
+  .crumbs strong { overflow: hidden; text-overflow: ellipsis; font-weight: 500; color: var(--fg); }
+  .site .pill { flex: none; margin-left: auto; }
+  .hero { display: grid; justify-items: center; gap: 14px; padding: 36px 24px 32px; text-align: center; }
+  .kicker { display: inline-flex; align-items: center; gap: 8px; height: 28px; padding: 0 12px 0 4px; border-radius: 9999px; box-shadow: inset 0 0 0 1px var(--line); font-size: 12px; font-weight: 500; color: var(--muted); }
+  .kicker b { padding: 0 8px; border-radius: 9999px; background: var(--accent-soft); color: var(--accent); font-weight: 500; line-height: 20px; }
+  .hero h1 { margin: 0; font-size: 44px; line-height: 1.08; font-weight: 450; letter-spacing: -0.02em; }
+  .hero p { max-width: 640px; margin: 0; font-size: 16px; line-height: 26px; color: var(--muted); }
+  .pill { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 40px; padding: 0 18px; border-radius: 9999px; font-size: 14px; font-weight: 500; white-space: nowrap; text-decoration: none; }
+  .pill-sm { height: 32px; padding: 0 14px; font-size: 13px; }
+  .pill-primary { background: var(--fg); color: #fff; }
+  .pill-primary:hover { background: #202329; }
+  .pill-secondary { background: var(--secondary); color: var(--fg); }
+  .pill-secondary:hover { background: var(--secondary-hover); }
+  .pill:disabled { opacity: 0.4; cursor: default; }
+  .pill svg { width: 14px; height: 14px; }
+  .surface { max-width: 1280px; margin: 0 auto 48px; padding: 8px; border-radius: 24px; background: var(--card); }
+  .panel { min-width: 0; padding: 20px 22px; border-radius: 16px; background: var(--bg); }
+  .label { margin: 0; font-size: 13px; font-weight: 500; color: var(--muted); }
+  @media (max-width: 1304px) {
+    .surface { margin: 0 12px 32px; }
+  }
+  @media (max-width: 640px) {
+    .site { padding: 0 16px; }
+    .crumbs > span, .crumbs > svg { display: none; }
+    .hero { padding: 28px 20px 24px; }
+    .hero h1 { font-size: 34px; }
+  }
 
-  .topbar { display: flex; align-items: center; gap: 16px; padding: 10px 16px; border-bottom: 1px solid var(--line); background: var(--surface); }
-  .brand { display: flex; align-items: center; gap: 10px; white-space: nowrap; }
-  .brand .logo { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 7px; background: var(--fg); color: #fff; }
-  .brand .logo svg { width: 16px; height: 16px; }
-  .brand strong { display: block; font-weight: 600; line-height: 16px; }
-  .brand span { display: block; font-size: 11px; line-height: 14px; color: var(--faint); }
-  .actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
-  .button { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface); font-weight: 500; white-space: nowrap; }
-  .button:hover { border-color: var(--faint); }
-  .button.primary { border-color: var(--accent); background: var(--accent); color: #fff; }
-  .button:disabled, label.button.disabled { opacity: 0.45; cursor: default; }
-  .button svg { width: 14px; height: 14px; }
-  .file { max-width: 260px; }
+  /* Screenshot to React Component */
+  :root {
+    --good: #16a34a;
+    --good-soft: rgb(22 163 74 / 0.1);
+    --bad: #e5484d;
+    --bad-soft: rgb(229 72 77 / 0.1);
+    --warn: #b45309;
+    --ink: #0a0a0a;
+    --ink-line: rgb(255 255 255 / 0.08);
+    --ink-fg: #f2f1ef;
+    --ink-faint: rgb(242 241 239 / 0.36);
+  }
+  .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px; border-radius: 16px; background: var(--bg); }
+  .toolbar .spacer { flex: 1; }
+  label.pill { cursor: pointer; }
+  label.pill.disabled { opacity: 0.4; cursor: default; }
+  .file { max-width: 300px; }
   .file input { position: absolute; width: 1px; height: 1px; opacity: 0; }
   .file span { overflow: hidden; text-overflow: ellipsis; }
+  .hint { color: var(--faint); }
 
-  .workspace { display: grid; grid-template-columns: minmax(0, 1fr) 320px; min-height: 0; }
-  .main { display: grid; grid-template-rows: auto minmax(0, 1fr) minmax(220px, 36vh); min-height: 0; }
-  .viewbar { display: flex; align-items: center; gap: 12px; padding: 10px 16px; }
-  .segmented { display: inline-flex; padding: 2px; border-radius: 8px; background: #e7e9ee; }
-  .segmented button { height: 26px; padding: 0 12px; border-radius: 6px; font-weight: 500; color: var(--muted); }
-  .segmented button.active { background: var(--surface); color: var(--fg); }
-  .segmented button:disabled { opacity: 0.45; cursor: default; }
-  .badge { display: inline-flex; align-items: center; gap: 6px; height: 26px; margin-left: auto; padding: 0 10px; border-radius: 13px; background: var(--accent-soft); color: var(--accent); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .workspace { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 8px; height: max(600px, calc(100vh - 148px)); margin-top: 8px; }
+  .main { display: grid; grid-template-rows: minmax(0, 1fr) minmax(200px, 36%); gap: 8px; min-height: 0; }
+  .stage { display: grid; grid-template-rows: auto minmax(0, 1fr); min-height: 0; padding: 0; }
+  .viewbar { display: flex; align-items: center; gap: 12px; padding: 12px 16px; }
+  .segmented { display: inline-flex; gap: 2px; padding: 3px; border-radius: 9999px; background: var(--secondary); }
+  .segmented button { height: 28px; padding: 0 14px; border-radius: 9999px; font-size: 13px; font-weight: 500; color: var(--muted); }
+  .segmented button.active { background: var(--bg); color: var(--fg); box-shadow: 0 1px 2px rgb(10 10 10 / 0.08); }
+  .segmented button:disabled { opacity: 0.4; cursor: default; }
+  .badge { display: inline-flex; align-items: center; height: 28px; margin-left: auto; padding: 0 12px; border-radius: 9999px; background: var(--good-soft); color: var(--good); font-size: 13px; font-weight: 500; font-variant-numeric: tabular-nums; }
 
   .canvas { position: relative; min-height: 0; overflow: auto; padding: 0 16px 16px; }
   .canvas.dragging .dropzone { border-color: var(--accent); background: var(--accent-soft); }
-  .dropzone { display: grid; place-content: center; justify-items: center; gap: 6px; height: 100%; min-height: 280px; padding: 24px; border: 1.5px dashed #c9cdd5; border-radius: 12px; text-align: center; color: var(--muted); }
-  .dropzone svg { width: 28px; height: 28px; margin-bottom: 6px; color: var(--faint); }
+  .dropzone { display: grid; place-content: center; justify-items: center; gap: 8px; height: 100%; min-height: 260px; padding: 24px; border: 1.5px dashed var(--border); border-radius: 12px; text-align: center; color: var(--muted); }
+  .dropzone svg { width: 28px; height: 28px; margin-bottom: 4px; color: var(--faint); }
   .dropzone p { max-width: 460px; margin: 0; }
-  .drop-title { font-size: 16px; line-height: 24px; font-weight: 600; color: var(--fg); }
+  .drop-title { font-size: 20px; line-height: 28px; font-weight: 500; letter-spacing: -0.01em; color: var(--fg); }
   .drop-actions { display: flex; gap: 8px; margin-top: 12px; }
   .panes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; }
-  .pane-label { display: flex; align-items: center; gap: 6px; margin: 0 0 6px; font-size: 12px; font-weight: 500; color: var(--muted); }
-  .pane-label .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: blink 1s ease-in-out infinite; }
-  #shot, .frame { display: block; width: 100%; border-radius: 8px; background: var(--surface); box-shadow: 0 0 0 1px var(--line); }
+  .pane-label { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; font-size: 13px; font-weight: 500; color: var(--muted); }
+  .pane-label .dot, .tab .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: blink 1s ease-in-out infinite; }
+  #shot, .frame { display: block; width: 100%; border-radius: 10px; background: #fff; box-shadow: 0 0 0 1px var(--line); }
   .frame { position: relative; aspect-ratio: 16 / 9; overflow: hidden; }
   #preview { position: absolute; top: 0; left: 0; border: 0; transform-origin: 0 0; animation: fade 0.3s ease-out; }
   #placeholder { position: absolute; inset: 0; display: grid; place-items: center; margin: 0; padding: 0 24px; text-align: center; color: var(--faint); }
   .outlines { max-width: 960px; margin: 0 auto; }
-  .outlines img { display: block; width: 100%; border-radius: 8px; background: #fff; box-shadow: 0 0 0 1px var(--line); }
+  .outlines img { display: block; width: 100%; border-radius: 10px; background: #fff; box-shadow: 0 0 0 1px var(--line); }
   .outlines figcaption { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-top: 10px; color: var(--muted); }
   .outlines figcaption i { display: inline-block; width: 10px; height: 10px; margin-right: 6px; border-radius: 2px; vertical-align: -1px; }
 
-  .editor-panel { display: grid; grid-template-rows: auto minmax(0, 1fr); min-height: 0; margin: 0 16px 16px; overflow: hidden; border-radius: 10px; background: var(--editor); color: var(--editor-fg); }
-  .editor-tabs { display: flex; align-items: center; gap: 8px; padding: 0 8px 0 0; border-bottom: 1px solid var(--editor-line); }
-  .tab { display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 14px; border-right: 1px solid var(--editor-line); font: 12px var(--mono); color: var(--editor-fg); }
-  .tab .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: blink 1s ease-in-out infinite; }
-  #copy { height: 26px; margin-left: auto; padding: 0 10px; border-radius: 6px; color: var(--editor-fg); background: var(--editor-line); }
+  .editor-panel { display: grid; grid-template-rows: auto minmax(0, 1fr); min-height: 0; overflow: hidden; border-radius: 16px; background: var(--ink); color: var(--ink-fg); }
+  .editor-bar { display: flex; align-items: center; gap: 16px; height: 44px; padding: 0 10px 0 16px; border-bottom: 1px solid var(--ink-line); }
+  .lights { display: flex; gap: 7px; }
+  .lights i { width: 11px; height: 11px; border-radius: 50%; }
+  .tab { display: inline-flex; align-items: center; gap: 8px; font: 12px var(--mono); color: var(--ink-fg); }
+  #copy { height: 28px; margin-left: auto; padding: 0 12px; border-radius: 9999px; background: rgb(255 255 255 / 0.1); color: var(--ink-fg); font-size: 12px; font-weight: 500; }
+  #copy:hover { background: rgb(255 255 255 / 0.16); }
   @property --fade-top { syntax: "<length>"; inherits: false; initial-value: 0px; }
   @property --fade-bottom { syntax: "<length>"; inherits: false; initial-value: 0px; }
   .editor {
-    display: flex; min-height: 0; overflow: auto; padding: 10px 0;
+    display: flex; min-height: 0; overflow: auto; padding: 12px 0;
     -webkit-mask-image: linear-gradient(to bottom, transparent, #000 var(--fade-top), #000 calc(100% - var(--fade-bottom)), transparent);
     mask-image: linear-gradient(to bottom, transparent, #000 var(--fade-top), #000 calc(100% - var(--fade-bottom)), transparent);
     transition: --fade-top 0.2s, --fade-bottom 0.2s;
@@ -99,12 +133,12 @@
   .editor.fade-top { --fade-top: 40px; }
   .editor.fade-bottom { --fade-bottom: 40px; }
   .editor pre { margin: 0; font: 12px/20px var(--mono); tab-size: 2; }
-  .gutter { flex: none; min-width: 44px; padding: 0 12px 0 8px; text-align: right; color: var(--editor-faint); user-select: none; }
+  .gutter { flex: none; min-width: 48px; padding: 0 14px 0 8px; text-align: right; color: var(--ink-faint); user-select: none; }
   #code { flex: 1; padding-right: 16px; }
   .editor.thinking .gutter { display: none; }
-  .editor.thinking #code { padding-left: 16px; white-space: pre-wrap; color: var(--editor-faint); }
+  .editor.thinking #code { padding-left: 16px; white-space: pre-wrap; color: var(--ink-faint); }
   #code .token.comment { color: #8b949e; }
-  #code .token.keyword { color: #ff7b72; }
+  #code .token.keyword { color: #ff8a4c; }
   #code .token.string, #code .token.attr-value, #code .token.template-string { color: #a5d6ff; }
   #code .token.tag { color: #7ee787; }
   #code .token.attr-name, #code .token.number, #code .token.boolean { color: #79c0ff; }
@@ -113,119 +147,123 @@
   #code .token.punctuation, #code .token.operator { color: #c9d1d9; }
   #code .token.attr-value .token.punctuation { color: inherit; }
 
-  .rail { display: flex; flex-direction: column; min-height: 0; overflow: auto; padding: 14px 16px; border-left: 1px solid var(--line); background: var(--surface); }
-  .rail-head { display: flex; align-items: center; justify-content: space-between; min-height: 32px; margin-bottom: 10px; }
-  .label { margin: 0; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--faint); }
+  .rail { display: flex; flex-direction: column; min-height: 0; overflow: auto; padding: 16px; }
+  .rail-head { display: flex; align-items: center; justify-content: space-between; min-height: 32px; margin-bottom: 12px; }
   .rail-intro { margin: 0; color: var(--muted); }
-  .rounds { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
-  .round { padding: 12px; border: 1px solid var(--line); border-radius: 10px; animation: fade 0.3s ease-out; }
+  .rounds { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+  .round { padding: 12px 14px; border-radius: 12px; background: var(--card); animation: fade 0.3s ease-out; }
   .round-head { display: flex; align-items: center; gap: 8px; }
-  .round-name { font-weight: 600; }
-  .round.working .round-name::before { content: ""; display: inline-block; width: 7px; height: 7px; margin-right: 8px; border-radius: 50%; background: var(--accent); animation: blink 1s ease-in-out infinite; }
-  .score { margin-left: auto; padding: 0 8px; border-radius: 10px; background: var(--bg); font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .round-name { font-weight: 500; }
+  .round.working .round-name::before { content: ""; display: inline-block; width: 6px; height: 6px; margin: 0 8px 2px 0; border-radius: 50%; background: var(--accent); animation: blink 1s ease-in-out infinite; }
+  .score { margin-left: auto; padding: 0 8px; border-radius: 9999px; background: var(--bg); font-size: 12px; font-weight: 500; line-height: 20px; font-variant-numeric: tabular-nums; }
   .score:empty { display: none; }
   .round.kept .score { background: var(--good-soft); color: var(--good); }
   .round.undone .score { background: var(--bad-soft); color: var(--bad); }
   .round-status { margin: 4px 0 0; color: var(--muted); }
-  .fixes { display: grid; gap: 2px; margin: 8px 0 0; padding-left: 18px; }
+  .fixes { display: grid; gap: 2px; margin: 8px 0 0; padding-left: 18px; font-size: 13px; line-height: 20px; }
   .fixes:empty { display: none; }
   .round.undone .fixes { color: var(--faint); text-decoration: line-through; }
   .round-note { margin: 8px 0 0; color: var(--warn); }
 
   @media (max-width: 1000px) {
-    .app { height: auto; }
-    .workspace { grid-template-columns: minmax(0, 1fr); }
-    .main { grid-template-rows: auto auto 420px; }
-    .rail { border-left: 0; border-top: 1px solid var(--line); }
+    .workspace { grid-template-columns: minmax(0, 1fr); height: auto; }
+    .main { grid-template-rows: auto 420px; }
     .panes { grid-template-columns: minmax(0, 1fr); }
-  }
-  @media (max-width: 640px) {
-    .topbar { flex-wrap: wrap; }
-    .actions { margin-left: 0; }
   }
 </style>
 </head>
 <body>
-<div class="app">
-  <header class="topbar">
-    <div class="brand">
-      <span class="logo"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 4.5 2 8l3.5 3.5M10.5 4.5 14 8l-3.5 3.5"/></svg></span>
-      <div><strong>Screenshot to React Component</strong><span>SpaceXAI Cookbook</span></div>
-    </div>
-    <form id="form" class="actions">
-      <label class="button file" id="picker">
-        <input id="file" type="file" accept="image/png,image/jpeg,image/webp">
-        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 11.5v2h11v-2M8 2.5v8M4.5 6 8 2.5 11.5 6"/></svg>
-        <span id="file-name">Open a screenshot</span>
-      </label>
-      <button type="button" class="button sample">Try the sample</button>
-      <button id="go" class="button primary" disabled>Make component</button>
-    </form>
-  </header>
+<header class="site">
+  <a class="wordmark" href="https://x.ai" target="_blank" rel="noopener">SpaceXAI</a>
+  <nav class="crumbs"><span>Cookbook</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg><strong>Screenshot to React Component</strong></nav>
+  <a class="pill pill-secondary pill-sm" href="https://github.com/xai-org/xai-cookbook/tree/main/examples/screenshot-to-component" target="_blank" rel="noopener">View code</a>
+</header>
+
+<section class="hero">
+  <span class="kicker"><b>Cookbook</b>grok-4.7 with image understanding</span>
+  <h1>Screenshot to React Component</h1>
+  <p>Grok writes a React component styled with Tailwind from a screenshot. Then the page screenshots the component, and Grok compares the two and fixes what doesn't line up.</p>
+</section>
+
+<main class="surface">
+  <form id="form" class="toolbar">
+    <label class="pill pill-secondary file" id="picker">
+      <input id="file" type="file" accept="image/png,image/jpeg,image/webp">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 11.5v2h11v-2M8 2.5v8M4.5 6 8 2.5 11.5 6"/></svg>
+      <span id="file-name">Open a screenshot</span>
+    </label>
+    <button type="button" class="pill pill-secondary sample">Try the sample</button>
+    <span class="hint">or paste one</span>
+    <span class="spacer"></span>
+    <button id="go" class="pill pill-primary" disabled>Make component</button>
+  </form>
 
   <div class="workspace">
-    <main class="main">
-      <div class="viewbar">
-        <div class="segmented" role="tablist">
-          <button type="button" id="view-split" class="active">Side by side</button>
-          <button type="button" id="view-outlines" disabled>Outlines</button>
-        </div>
-        <span class="badge" id="badge" hidden></span>
-      </div>
-
-      <div class="canvas" id="canvas">
-        <div class="dropzone" id="dropzone">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 15l5-5 4 4 3-3 6 6"/><circle cx="15.5" cy="8.5" r="1.5"/></svg>
-          <p class="drop-title">Drop a screenshot of a user interface</p>
-          <p>Or paste one, or open a file. Grok writes a React component styled with Tailwind that recreates it, then compares the two and fixes what doesn't match.</p>
-          <div class="drop-actions">
-            <label class="button" for="file">Open a screenshot</label>
-            <button type="button" class="button primary sample">Try the sample</button>
+    <div class="main">
+      <section class="panel stage">
+        <div class="viewbar">
+          <div class="segmented" role="tablist">
+            <button type="button" id="view-split" class="active">Side by side</button>
+            <button type="button" id="view-outlines" disabled>Outlines</button>
           </div>
+          <span class="badge" id="badge" hidden></span>
         </div>
-        <div class="panes" id="panes" hidden>
-          <section>
-            <p class="pane-label">Screenshot</p>
-            <img id="shot" alt="The screenshot you chose">
-          </section>
-          <section>
-            <p class="pane-label"><span class="dot" id="result-dot" hidden></span><span id="result-label">Component</span></p>
-            <div class="frame" id="frame">
-              <p id="placeholder"></p>
-              <iframe id="preview" title="The component Grok wrote" sandbox="allow-scripts" hidden></iframe>
+
+        <div class="canvas" id="canvas">
+          <div class="dropzone" id="dropzone">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 15l5-5 4 4 3-3 6 6"/><circle cx="15.5" cy="8.5" r="1.5"/></svg>
+            <p class="drop-title">Drop a screenshot of a user interface</p>
+            <p>Or paste one, or open a file. Grok recreates it as a component, then keeps comparing and fixing until it lines up.</p>
+            <div class="drop-actions">
+              <label class="pill pill-secondary" for="file">Open a screenshot</label>
+              <button type="button" class="pill pill-primary sample">Try the sample</button>
             </div>
-          </section>
+          </div>
+          <div class="panes" id="panes" hidden>
+            <section>
+              <p class="pane-label">Screenshot</p>
+              <img id="shot" alt="The screenshot you chose">
+            </section>
+            <section>
+              <p class="pane-label"><span class="dot" id="result-dot" hidden></span><span id="result-label">Component</span></p>
+              <div class="frame" id="frame">
+                <p id="placeholder"></p>
+                <iframe id="preview" title="The component Grok wrote" sandbox="allow-scripts" hidden></iframe>
+              </div>
+            </section>
+          </div>
+          <figure class="outlines" id="outlines-view" hidden>
+            <img id="overlay" alt="The outlines of the screenshot and the component, laid over each other">
+            <figcaption>
+              <span><i style="background: #00f"></i>The screenshot</span>
+              <span><i style="background: #f00"></i>The component</span>
+              <span><i style="background: #000"></i>Where they line up</span>
+              <span>This is what Grok compares in each round.</span>
+            </figcaption>
+          </figure>
         </div>
-        <figure class="outlines" id="outlines-view" hidden>
-          <img id="overlay" alt="The outlines of the screenshot and the component, laid over each other">
-          <figcaption>
-            <span><i style="background: #00f"></i>The screenshot</span>
-            <span><i style="background: #f00"></i>The component</span>
-            <span><i style="background: #000"></i>Where they line up</span>
-            <span>This is what Grok compares in each round.</span>
-          </figcaption>
-        </figure>
-      </div>
+      </section>
 
       <section class="editor-panel">
-        <div class="editor-tabs">
+        <div class="editor-bar">
+          <span class="lights" aria-hidden="true"><i style="background: #ff5f57"></i><i style="background: #febc2e"></i><i style="background: #28c840"></i></span>
           <span class="tab"><span class="dot" id="code-dot" hidden></span><span id="code-label">No code yet</span></span>
           <button type="button" id="copy" hidden>Copy code</button>
         </div>
         <div class="editor" id="editor"><pre class="gutter" id="gutter"></pre><pre id="code"></pre></div>
       </section>
-    </main>
+    </div>
 
-    <aside class="rail">
+    <aside class="panel rail">
       <div class="rail-head">
         <p class="label">Rounds</p>
-        <button type="button" id="again" class="button" hidden>Compare again</button>
+        <button type="button" id="again" class="pill pill-secondary pill-sm" hidden>Compare again</button>
       </div>
-      <p class="rail-intro" id="rail-intro">After the first round, the page takes a screenshot of the component, and Grok compares it with yours and fixes what doesn't line up. Each round shows up here with its score.</p>
+      <p class="rail-intro" id="rail-intro">After the first round, the page screenshots the component, and Grok compares it with yours and fixes what doesn't line up. Each round shows up here with its score.</p>
       <ol class="rounds" id="rounds"></ol>
     </aside>
   </div>
-</div>
+</main>
 
 <script src="https://cdn.jsdelivr.net/npm/prismjs@1/prism.min.js" data-manual></script>
 <script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-jsx.min.js"></script>
