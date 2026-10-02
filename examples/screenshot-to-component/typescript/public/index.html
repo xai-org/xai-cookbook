@@ -94,9 +94,20 @@
   #code .token.punctuation, #code .token.operator, #code .token.plain-text { color: #1f2328; }
   #code .token.attr-value .token.punctuation { color: inherit; }
   #copy { position: absolute; top: 16px; right: 18px; height: 30px; padding: 0 12px; font-size: 13px; }
+  #round { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; align-items: start; }
+  #round:has(#outlines[hidden]) { grid-template-columns: minmax(0, 1fr); }
+  .round-text { display: grid; gap: 10px; }
+  .round-text > * { margin: 0; }
+  #round-status, #match { font-size: 14px; }
+  #changes { display: grid; gap: 4px; padding-left: 18px; font-size: 14px; color: var(--muted); }
+  #changes:empty { display: none; }
+  #again { justify-self: start; height: 32px; padding: 0 14px; font-size: 13px; }
+  #outlines { margin: 0; }
+  #overlay { display: block; width: 100%; border-radius: 8px; background: #fff; box-shadow: 0 0 0 1px var(--rule); }
+  #outlines figcaption { margin-top: 8px; font-size: 13px; line-height: 20px; color: var(--muted); }
 
   @media (max-width: 1100px) {
-    .compare { grid-template-columns: minmax(0, 1fr); }
+    .compare, #round { grid-template-columns: minmax(0, 1fr); }
   }
   @media (max-width: 860px) {
     h1 { font-size: 36px; }
@@ -107,7 +118,7 @@
 <main>
   <p class="eyebrow">SpaceXAI Cookbook</p>
   <h1>Screenshot to React Component</h1>
-  <p class="lede">Choose a screenshot of a user interface. Grok writes a React component styled with Tailwind that recreates it, and the page shows the component running next to the screenshot so you can compare them.</p>
+  <p class="lede">Choose a screenshot of a user interface. Grok writes a React component styled with Tailwind that recreates it, and the page shows the component running next to the screenshot. Then the page takes a screenshot of the component, and Grok compares the two and fixes what doesn't match.</p>
   <form id="form">
     <label class="picker" id="picker">
       <input id="file" type="file" accept="image/png,image/jpeg,image/webp">
@@ -133,6 +144,19 @@
         </div>
       </section>
     </div>
+    <section class="card" id="round" hidden>
+      <div class="round-text">
+        <p class="card-label"><span id="round-label">Round 2</span> <span class="dots"><i></i><i></i><i></i></span></p>
+        <p id="round-status"></p>
+        <ul id="changes"></ul>
+        <p id="match" hidden></p>
+        <button type="button" id="again" class="pill pill-secondary" hidden>Compare again</button>
+      </div>
+      <figure id="outlines" hidden>
+        <img id="overlay" alt="The outlines of the screenshot and the component, laid over each other">
+        <figcaption>What Grok compares: the screenshot's outlines in blue and the component's in red. Black is where they line up.</figcaption>
+      </figure>
+    </section>
     <details class="card thinking" id="thinking" open hidden>
       <summary class="card-label"><span id="status">Uploading the screenshot</span> <span class="dots"><i></i><i></i><i></i></span><svg class="chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4"/></svg></summary>
       <div id="reasoning"></div>
@@ -152,7 +176,32 @@
 <script>
   const $ = (id) => document.getElementById(id);
   const IMAGE_TYPES = ["image/png", "image/jpeg", "image/webp"];
+  // Added to the preview. Once the component has rendered and Tailwind has styled it, this takes a
+  // screenshot of the preview at the screenshot's size and sends it to the page for the next round.
+  const SNAPSHOT = `<script type="module">
+    try {
+      const { toSvg } = await import("https://esm.sh/html-to-image@1.11.13");
+      const root = document.getElementById("root");
+      for (let i = 0; i < 100 && !root.childElementCount; i++) await new Promise((resolve) => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // toPng waits for an animation frame, and the browser skips those while the preview is
+      // scrolled out of view, so this draws the SVG onto a canvas itself.
+      const image = new Image();
+      image.src = await toSvg(document.body, { width: innerWidth, height: innerHeight, backgroundColor: "#fff" });
+      await image.decode();
+      const canvas = Object.assign(document.createElement("canvas"), { width: innerWidth, height: innerHeight });
+      canvas.getContext("2d").drawImage(image, 0, 0);
+      parent.postMessage({ type: "render", image: canvas.toDataURL("image/png") }, "*");
+    } catch (error) {
+      parent.postMessage({ type: "render", error: String(error) }, "*");
+    }
+  <\/script>`;
   let screenshot = null;
+  let round = 0;
+  // The component from the round that just finished, until the page has scored it.
+  let pending = null;
+  // The best-scoring component so far. Each later round starts from it.
+  let best = null;
   let running = false;
   let thinkingSince = 0;
   let source = "";
@@ -193,16 +242,29 @@
     $("picker").classList.add("chosen");
     $("shot").src = URL.createObjectURL(file);
     $("compare").hidden = false;
+    $("round").hidden = true;
     $("thinking").hidden = true;
     $("code-card").hidden = true;
     $("result-label").textContent = "Component";
     showPlaceholder("Click Make component to recreate the screenshot.");
     $("go").disabled = false;
+    pending = best = null;
   }
 
   $("form").onsubmit = async (event) => {
     event.preventDefault();
-    start();
+    round = 1;
+    pending = best = null;
+    source = "";
+    showCode("");
+    $("code-label").textContent = "Code";
+    $("code-card").hidden = true;
+    $("round").hidden = true;
+    $("match").hidden = true;
+    $("outlines").hidden = true;
+    $("result-label").textContent = "Component";
+    showPlaceholder("The component appears here when Grok is done.");
+    start("Uploading the screenshot");
     try {
       const upload = await fetch("/api/screenshots", { method: "POST", body: screenshot });
       if (!upload.ok) throw new Error(await upload.text());
@@ -226,11 +288,16 @@
         $("thinking").classList.remove("active");
         $("status").textContent = `Thought for ${Math.round((Date.now() - thinkingSince) / 1000)} seconds`;
       }
+      // In later rounds, the code from the round before stays up until Grok starts rewriting it.
       if (step === "write" && status === "active") {
+        source = "";
+        showCode("");
+        $("copy").hidden = true;
         $("code-card").hidden = false;
         $("code-card").classList.add("active");
       }
     });
+    on("changes", ({ changes }) => showChanges(changes, false));
     on("reasoning", ({ text }) => {
       $("reasoning").textContent += text;
       $("reasoning").scrollTop = $("reasoning").scrollHeight;
@@ -246,17 +313,22 @@
         updateFades();
       });
     });
-    on("done", ({ name, code, page }) => {
+    on("done", ({ name, code, changes, page }) => {
       events.close();
       cancelAnimationFrame(codeFrame);
-      source = code;
-      showCode(code);
-      $("copy").hidden = false;
-      $("result-label").textContent = name;
-      $("preview").srcdoc = page;
-      $("preview").hidden = false;
-      $("placeholder").hidden = true;
+      pending = { round, component: { name, code }, page };
+      show(pending, true);
       stop();
+      $("round").hidden = false;
+      $("round").classList.add("active");
+      if (round > 1) {
+        showChanges(changes, true);
+        $("match").textContent = "Taking a screenshot of the new component";
+        return;
+      }
+      $("round-label").textContent = "Round 2";
+      $("round-status").textContent = "Taking a screenshot of the component";
+      $("changes").replaceChildren();
     });
     on("failure", ({ message }) => {
       events.close();
@@ -281,6 +353,168 @@
   $("shot").onload = fit;
   new ResizeObserver(fit).observe($("frame"));
 
+  // The preview sends a screenshot of each new component. The page scores it against the original
+  // and keeps whichever component scores best, so a round that makes things worse is undone.
+  addEventListener("message", async (event) => {
+    if (event.source !== $("preview").contentWindow || event.data?.type !== "render" || !pending) return;
+    const version = pending;
+    pending = null;
+    try {
+      if (event.data.error) throw new Error(event.data.error);
+      Object.assign(version, { render: event.data.image }, await compare(event.data.image));
+    } catch {
+      $("round").classList.remove("active");
+      $("match").hidden = false;
+      $("match").textContent = "Couldn't take a screenshot of the component to compare.";
+      return;
+    }
+    const percent = (score) => `${Math.round(score * 100)}%`;
+    $("match").hidden = false;
+    if (!best) {
+      best = version;
+      showOutlines();
+      $("match").textContent = `Outline match: ${percent(best.score)}`;
+      return refine();
+    }
+    const before = best;
+    if (version.score > before.score) {
+      best = version;
+      $("match").textContent = `Outline match went from ${percent(before.score)} to ${percent(version.score)}.`;
+    } else {
+      show(best, false);
+      $("match").textContent = `Outline match went from ${percent(before.score)} to ${percent(version.score)}, so the page kept the component from ${before.round > 1 ? `round ${before.round}` : "the first round"}.`;
+    }
+    showOutlines();
+    $("round").classList.remove("active");
+    $("again").hidden = false;
+  });
+  $("again").onclick = () => refine();
+
+  // Each later round sends Grok the screenshot, a screenshot of the best component so far, the
+  // outline overlay, and the code.
+  async function refine() {
+    round += 1;
+    start("Uploading the screenshots");
+    $("round").classList.add("active");
+    $("round-label").textContent = `Round ${round}`;
+    $("round-status").textContent = "Comparing the component with the screenshot";
+    $("changes").replaceChildren();
+    $("match").textContent = `Outline match: ${Math.round(best.score * 100)}%`;
+    try {
+      const upload = await fetch("/api/refinements", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          screenshot: await dataUrl(screenshot),
+          render: best.render,
+          overlay: best.overlay,
+          ...best.component,
+        }),
+      });
+      if (!upload.ok) throw new Error(await upload.text());
+      const { id } = await upload.json();
+      listen(new EventSource(`/api/refinement?id=${id}`));
+    } catch (error) {
+      fail(error.message);
+    }
+  }
+
+  function showChanges(changes, done) {
+    const count = changes.length === 1 ? "1 difference" : `${changes.length} differences`;
+    $("round-status").textContent = changes.length ? `${done ? "Fixed" : "Fixing"} ${count}:` : "Found nothing to fix.";
+    $("changes").replaceChildren(...changes.map((change) => Object.assign(document.createElement("li"), { textContent: change })));
+  }
+
+  // Shows a component in the preview and the code box. A new one gets a screenshot taken of it.
+  function show(version, snapshot) {
+    const { name, code } = version.component;
+    source = code;
+    showCode(code);
+    $("copy").hidden = false;
+    $("code-label").textContent = `${name}.tsx`;
+    $("result-label").textContent = version.round > 1 ? `${name} · round ${version.round}` : name;
+    $("preview").srcdoc = snapshot ? version.page.replace("</html>", `${SNAPSHOT}\n</html>`) : version.page;
+    $("preview").hidden = false;
+    $("placeholder").hidden = true;
+  }
+
+  function showOutlines() {
+    $("overlay").src = best.overlay;
+    $("outlines").hidden = false;
+  }
+
+  // Traces the outlines in the screenshot and in a screenshot of the component. The overlay draws the
+  // screenshot's in blue and the component's in red, so whatever doesn't line up stands out. The score
+  // is the share of outlines that have one from the other image within a few pixels.
+  async function compare(render) {
+    const images = await Promise.all([screenshot, await (await fetch(render)).blob()].map((blob) => createImageBitmap(blob)));
+    const { width, height } = images[0];
+    const [a, b] = images.map((image) => outline(image, width, height));
+    const canvas = Object.assign(document.createElement("canvas"), { width, height });
+    const context = canvas.getContext("2d");
+    const overlay = context.createImageData(width, height);
+    for (let i = 0; i < a.length; i++) {
+      overlay.data[i * 4] = a[i] ? 0 : 255;
+      overlay.data[i * 4 + 1] = a[i] || b[i] ? 0 : 255;
+      overlay.data[i * 4 + 2] = b[i] ? 0 : 255;
+      overlay.data[i * 4 + 3] = 255;
+    }
+    context.putImageData(overlay, 0, 0);
+    return { overlay: canvas.toDataURL("image/png"), score: (near(a, b, width) + near(b, a, width)) / 2 };
+  }
+
+  // Marks each pixel that's much brighter or darker than the pixels around it.
+  function outline(image, width, height) {
+    const canvas = Object.assign(document.createElement("canvas"), { width, height });
+    const context = canvas.getContext("2d", { willReadFrequently: true });
+    context.drawImage(image, 0, 0, width, height);
+    const { data } = context.getImageData(0, 0, width, height);
+    const light = new Float32Array(width * height);
+    for (let i = 0; i < light.length; i++) light[i] = 0.299 * data[i * 4] + 0.587 * data[i * 4 + 1] + 0.114 * data[i * 4 + 2];
+    const around = [-width - 1, -width, -width + 1, -1, 1, width - 1, width, width + 1];
+    const edges = new Uint8Array(width * height);
+    for (let y = 1; y < height - 1; y++) {
+      for (let x = 1; x < width - 1; x++) {
+        const i = y * width + x;
+        let sum = 0;
+        for (const offset of around) sum += light[i + offset];
+        edges[i] = Math.abs(8 * light[i] - sum) > 24 ? 1 : 0;
+      }
+    }
+    return edges;
+  }
+
+  // The share of outline pixels in a that have an outline pixel in b within reach.
+  function near(a, b, width, reach = 4) {
+    const height = a.length / width;
+    let total = 0;
+    let hits = 0;
+    for (let i = 0; i < a.length; i++) {
+      if (!a[i]) continue;
+      total++;
+      const x = i % width;
+      const y = (i - x) / width;
+      search: for (let ny = Math.max(0, y - reach); ny <= Math.min(height - 1, y + reach); ny++) {
+        for (let nx = Math.max(0, x - reach); nx <= Math.min(width - 1, x + reach); nx++) {
+          if (b[ny * width + nx]) {
+            hits++;
+            break search;
+          }
+        }
+      }
+    }
+    return total ? hits / total : 0;
+  }
+
+  function dataUrl(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(file);
+    });
+  }
+
   // Prism loads from a CDN. If it didn't load, the code still shows, just without colors.
   function showCode(code) {
     if (window.Prism) $("code").innerHTML = Prism.highlight(code, Prism.languages.tsx, "tsx");
@@ -302,19 +536,13 @@
     setTimeout(() => ($("copy").textContent = "Copy code"), 1500);
   };
 
-  function start() {
+  function start(status) {
     running = true;
     ["go", "sample", "file"].forEach((id) => ($(id).disabled = true));
+    $("again").hidden = true;
     $("reasoning").textContent = "";
-    source = "";
-    showCode("");
-    $("code-label").textContent = "Code";
-    $("copy").hidden = true;
-    $("code-card").hidden = true;
     $("result").classList.add("active");
-    $("result-label").textContent = "Component";
-    showPlaceholder("The component appears here when Grok is done.");
-    $("status").textContent = "Uploading the screenshot";
+    $("status").textContent = status;
     $("thinking").classList.add("active");
     $("thinking").open = true;
     $("thinking").hidden = false;
@@ -329,7 +557,16 @@
   function fail(message) {
     alert(message);
     stop();
-    $("status").textContent = "Couldn't make the component";
+    if (round === 1) {
+      $("status").textContent = "Couldn't make the component";
+      return;
+    }
+    // Put back the best component, so Compare again can retry this round.
+    round -= 1;
+    show(best, false);
+    $("status").textContent = "Couldn't improve the component";
+    $("round-status").textContent = "This round didn't finish, so the component is the best one from before.";
+    $("again").hidden = false;
   }
 
   function showPlaceholder(text) {

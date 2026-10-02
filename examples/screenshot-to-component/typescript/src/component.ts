@@ -1,11 +1,14 @@
-import { xAI } from "@xai-official/sdk";
+import { type CreateParams, xAI } from "@xai-official/sdk";
 
 const client = new xAI();
 
 export type Component = { name: string; code: string };
+// A component from a later round, with the differences Grok fixed.
+export type Refinement = Component & { changes: string[] };
 
 export type ComponentEvents = {
   reasoning?: (text: string) => void;
+  changes?: (changes: string[]) => void;
   name?: (name: string) => void;
   code?: (text: string) => void;
 };
@@ -17,35 +20,89 @@ const PROMPT = `You turn screenshots of user interfaces into a single React comp
 - Draw icons with inline SVG or text characters. Don't use external images.
 - Make it responsive, and add hover states to buttons and links.`;
 
+const REFINE_PROMPT = `${PROMPT}
+
+You're improving a component you wrote earlier. You get the original screenshot, a screenshot of your component rendered at the same size, an overlay of the two, and the component's code.
+- The overlay traces the edges in both images: blue is the screenshot, red is your component, and black is where they line up. Wherever a red outline doesn't sit on its blue one, that part of your component is in the wrong place or the wrong size.
+- Fix the layout first: move and resize things until the red outlines would sit on the blue ones. Then compare the screenshots for colors, font weights, borders, and corner radii.
+- List each difference you fix in a few words, then return the full corrected file. Leave anything that already matches as it is.`;
+
+const NAME = { type: "string", pattern: "^[A-Z][A-Za-z0-9]*$", description: "The component's name in PascalCase" };
+const CODE = { type: "string", description: "The full contents of the .tsx file" };
+
 const SCHEMA = {
   type: "object",
-  properties: {
-    name: { type: "string", pattern: "^[A-Z][A-Za-z0-9]*$", description: "The component's name in PascalCase" },
-    code: { type: "string", description: "The full contents of the .tsx file" },
-  },
+  properties: { name: NAME, code: CODE },
   required: ["name", "code"],
   additionalProperties: false,
 };
 
-// Streams the component and reports the code as it's written, so callers can show it before Grok is done.
-export async function writeComponent(screenshot: Blob, on: ComponentEvents = {}, signal?: AbortSignal): Promise<Component> {
+// The changes come first, so Grok spells out the differences before it rewrites the code.
+const REFINE_SCHEMA = {
+  type: "object",
+  properties: { changes: { type: "array", items: { type: "string" } }, name: NAME, code: CODE },
+  required: ["changes", "name", "code"],
+  additionalProperties: false,
+};
+
+export function writeComponent(screenshot: Blob, on: ComponentEvents = {}, signal?: AbortSignal): Promise<Component> {
+  const input = [
+    { role: "system", content: PROMPT },
+    {
+      role: "user",
+      content: [
+        { type: "input_image" as const, image: screenshot, detail: "high" as const },
+        { type: "input_text" as const, text: "Recreate this screenshot as a React component." },
+      ],
+    },
+  ];
+  return streamComponent<Component>({ input, schema: SCHEMA }, on, signal);
+}
+
+// Compares a screenshot of the component as it renders with the original, and fixes the differences.
+// The overlay is the two laid over each other, which shows Grok where things don't line up.
+export function refineComponent(
+  images: { screenshot: Blob; render: Blob; overlay: Blob },
+  component: Component,
+  on: ComponentEvents = {},
+  signal?: AbortSignal,
+): Promise<Refinement> {
+  const input = [
+    { role: "system", content: REFINE_PROMPT },
+    {
+      role: "user",
+      content: [
+        { type: "input_text" as const, text: "The original screenshot:" },
+        { type: "input_image" as const, image: images.screenshot, detail: "high" as const },
+        { type: "input_text" as const, text: "Your component, rendered at the same size:" },
+        { type: "input_image" as const, image: images.render, detail: "high" as const },
+        { type: "input_text" as const, text: "The overlay:" },
+        { type: "input_image" as const, image: images.overlay, detail: "high" as const },
+        { type: "input_text" as const, text: `Your component's code:\n\n${component.code}` },
+      ],
+    },
+  ];
+  // At the default effort, Grok spends minutes going over every detail of the images before it
+  // writes anything. The overlay points it at what to fix, so low effort is enough.
+  return streamComponent<Refinement>({ input, schema: REFINE_SCHEMA, reasoning: { effort: "low" } }, on, signal);
+}
+
+// Streams a component and reports the code as it's written, so callers can show it before Grok is done.
+async function streamComponent<T extends Component>(
+  request: Pick<CreateParams, "input" | "reasoning"> & { schema: object },
+  on: ComponentEvents,
+  signal?: AbortSignal,
+): Promise<T> {
+  const { schema, ...params } = request;
   let json = "";
+  let listed = false;
   let named = false;
   let written = 0;
   const stream = await client.responses.create(
     {
       model: "grok-4.7",
-      input: [
-        { role: "system", content: PROMPT },
-        {
-          role: "user",
-          content: [
-            { type: "input_image", image: screenshot, detail: "high" },
-            { type: "input_text", text: "Recreate this screenshot as a React component." },
-          ],
-        },
-      ],
-      text: { format: { type: "json_schema", name: "component", schema: SCHEMA } },
+      ...params,
+      text: { format: { type: "json_schema", name: "component", schema } },
       stream: true,
     },
     { signal },
@@ -54,6 +111,11 @@ export async function writeComponent(screenshot: Blob, on: ComponentEvents = {},
     .on("reasoning", (text) => on.reasoning?.(text))
     .on("text", (delta) => {
       json += delta;
+      const changes = !listed && json.match(/"changes"\s*:\s*(\[(?:[^\]"]|"(?:[^"\\]|\\.)*")*\])/);
+      if (changes) {
+        listed = true;
+        on.changes?.(JSON.parse(changes[1]));
+      }
       const name = !named && json.match(/"name"\s*:\s*("(?:[^"\\]|\\.)*")/);
       if (name) {
         named = true;
@@ -69,7 +131,7 @@ export async function writeComponent(screenshot: Blob, on: ComponentEvents = {},
       }
     })
     .done();
-  return response.toJson() as Component;
+  return response.toJson() as T;
 }
 
 // A page that renders the component on its own. It compiles the component with Babel in the browser,
