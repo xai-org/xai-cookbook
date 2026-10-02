@@ -1,9 +1,9 @@
 import { execFile } from "node:child_process";
 import { writeFile } from "node:fs/promises";
 import { promisify } from "node:util";
-import { type ImageResponse, type UnsafeSpeechText, xAI } from "@xai-official/sdk";
+import { type ImageResponse, SpaceXAI, stripInvalidSpeechTags } from "@xai-official/sdk";
 
-const client = new xAI();
+const client = new SpaceXAI();
 const run = promisify(execFile);
 
 const NARRATOR = "leo";
@@ -134,9 +134,10 @@ export async function animate(shot: Shot, keyframe: Media, signal?: AbortSignal)
 }
 
 export async function narrate(text: string, signal?: AbortSignal): Promise<Uint8Array> {
-  // The model writes the narration, so the SDK can't check it for speech tags at compile time.
+  // The model writes the narration, so the SDK can't check its speech tags at compile time. Any tag the
+  // voice API wouldn't recognize is removed instead, so it isn't read aloud.
   const speech = await client.voice.speak(
-    { text: text as UnsafeSpeechText, language: "en", voice_id: NARRATOR },
+    { text: stripInvalidSpeechTags(text), language: "en", voice_id: NARRATOR },
     { signal },
   );
   return speech.bytes();
