@@ -74,7 +74,25 @@
   .frame { position: relative; aspect-ratio: 16 / 9; overflow: hidden; }
   #preview { position: absolute; top: 0; left: 0; border: 0; transform-origin: 0 0; }
   #placeholder { position: absolute; inset: 0; display: grid; place-items: center; margin: 0; padding: 0 24px; text-align: center; font-size: 13px; color: var(--faint); }
-  #code { margin: 0; max-height: 480px; overflow: auto; font: 12px/20px var(--mono); tab-size: 2; }
+  @property --fade-top { syntax: "<length>"; inherits: false; initial-value: 0px; }
+  @property --fade-bottom { syntax: "<length>"; inherits: false; initial-value: 0px; }
+  #code {
+    margin: 0; max-height: 480px; overflow: auto; font: 12px/20px var(--mono); tab-size: 2; color: #1f2328;
+    -webkit-mask-image: linear-gradient(to bottom, transparent, #000 var(--fade-top), #000 calc(100% - var(--fade-bottom)), transparent);
+    mask-image: linear-gradient(to bottom, transparent, #000 var(--fade-top), #000 calc(100% - var(--fade-bottom)), transparent);
+    transition: --fade-top 0.2s, --fade-bottom 0.2s;
+  }
+  #code.fade-top { --fade-top: 48px; }
+  #code.fade-bottom { --fade-bottom: 48px; }
+  #code .token.comment { color: #6e7781; }
+  #code .token.keyword { color: #cf222e; }
+  #code .token.string, #code .token.attr-value, #code .token.template-string { color: #0a3069; }
+  #code .token.tag { color: #116329; }
+  #code .token.attr-name, #code .token.number, #code .token.boolean { color: #0550ae; }
+  #code .token.function { color: #8250df; }
+  #code .token.class-name, #code .token.builtin { color: #953800; }
+  #code .token.punctuation, #code .token.operator, #code .token.plain-text { color: #1f2328; }
+  #code .token.attr-value .token.punctuation { color: inherit; }
   #copy { position: absolute; top: 16px; right: 18px; height: 30px; padding: 0 12px; font-size: 13px; }
 
   @media (max-width: 1100px) {
@@ -127,12 +145,18 @@
   </div>
 </main>
 
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1/prism.min.js" data-manual></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-jsx.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-typescript.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-tsx.min.js"></script>
 <script>
   const $ = (id) => document.getElementById(id);
   const IMAGE_TYPES = ["image/png", "image/jpeg", "image/webp"];
   let screenshot = null;
   let running = false;
   let thinkingSince = 0;
+  let source = "";
+  let codeFrame = 0;
 
   $("file").onchange = () => {
     choose($("file").files[0]);
@@ -213,12 +237,20 @@
     });
     on("name", ({ name }) => ($("code-label").textContent = `${name}.tsx`));
     on("code", ({ text }) => {
-      $("code").append(text);
-      $("code").scrollTop = $("code").scrollHeight;
+      source += text;
+      // The code arrives in many small pieces, so highlight it at most once per frame.
+      cancelAnimationFrame(codeFrame);
+      codeFrame = requestAnimationFrame(() => {
+        showCode(source);
+        $("code").scrollTop = $("code").scrollHeight;
+        updateFades();
+      });
     });
     on("done", ({ name, code, page }) => {
       events.close();
-      $("code").textContent = code;
+      cancelAnimationFrame(codeFrame);
+      source = code;
+      showCode(code);
       $("copy").hidden = false;
       $("result-label").textContent = name;
       $("preview").srcdoc = page;
@@ -249,8 +281,23 @@
   $("shot").onload = fit;
   new ResizeObserver(fit).observe($("frame"));
 
+  // Prism loads from a CDN. If it didn't load, the code still shows, just without colors.
+  function showCode(code) {
+    if (window.Prism) $("code").innerHTML = Prism.highlight(code, Prism.languages.tsx, "tsx");
+    else $("code").textContent = code;
+    updateFades();
+  }
+
+  // An edge of the code box fades only when there's more code past it.
+  function updateFades() {
+    const box = $("code");
+    box.classList.toggle("fade-top", box.scrollTop > 0);
+    box.classList.toggle("fade-bottom", box.scrollTop + box.clientHeight < box.scrollHeight - 1);
+  }
+  $("code").addEventListener("scroll", updateFades);
+
   $("copy").onclick = async () => {
-    await navigator.clipboard.writeText($("code").textContent);
+    await navigator.clipboard.writeText(source);
     $("copy").textContent = "Copied";
     setTimeout(() => ($("copy").textContent = "Copy code"), 1500);
   };
@@ -259,7 +306,8 @@
     running = true;
     ["go", "sample", "file"].forEach((id) => ($(id).disabled = true));
     $("reasoning").textContent = "";
-    $("code").textContent = "";
+    source = "";
+    showCode("");
     $("code-label").textContent = "Code";
     $("copy").hidden = true;
     $("code-card").hidden = true;
