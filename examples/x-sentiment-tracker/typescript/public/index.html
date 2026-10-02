@@ -139,6 +139,19 @@
   </div>
 
   <div class="stage">
+    <section class="card" id="search" hidden>
+      <p class="card-label">Search<span class="status" id="step"></span><span class="dots"><i></i><i></i><i></i></span></p>
+      <div class="query" id="query"></div>
+      <div class="days" id="days"></div>
+      <p class="found" id="found"></p>
+      <div class="posts" id="posts"></div>
+      <button type="button" class="pill pill-secondary more" id="more" hidden></button>
+      <p class="message" id="message" hidden></p>
+    </section>
+    <details class="card thinking" id="thinking" hidden>
+      <summary class="card-label"><span id="thinking-label">Thinking</span> <span class="dots"><i></i><i></i><i></i></span><svg class="chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4"/></svg></summary>
+      <div class="reasoning" id="reasoning"></div>
+    </details>
     <section class="card" id="sentiment" hidden>
       <p class="card-label" id="topic-label"></p>
       <div class="now">
@@ -153,19 +166,6 @@
         <ul class="key-posts" id="key-posts"></ul>
       </div>
     </section>
-    <section class="card" id="search" hidden>
-      <p class="card-label">Search<span class="status" id="step"></span><span class="dots"><i></i><i></i><i></i></span></p>
-      <div class="query" id="query"></div>
-      <div class="days" id="days"></div>
-      <p class="found" id="found"></p>
-      <div class="posts" id="posts"></div>
-      <button type="button" class="pill pill-secondary more" id="more" hidden></button>
-      <p class="message" id="message" hidden></p>
-    </section>
-    <details class="card thinking" id="thinking" hidden>
-      <summary class="card-label"><span id="thinking-label">Thinking</span> <span class="dots"><i></i><i></i><i></i></span><svg class="chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4"/></svg></summary>
-      <div class="reasoning" id="reasoning"></div>
-    </details>
   </div>
 </main>
 
@@ -244,7 +244,11 @@
     });
     on("done", ({ sentiment }) => {
       if (sentiment) showSentiment(sentiment);
-      else $("score").textContent = "None of the posts were worth scoring.";
+      else {
+        $("score").textContent = "None of the posts were worth scoring.";
+        $("sentiment").hidden = false;
+      }
+      $("sentiment").scrollIntoView({ behavior: "smooth", block: "nearest" });
       stop();
     });
     on("failure", ({ message }) => stop(`Couldn't score the sentiment: ${message}`));
@@ -285,7 +289,11 @@
     const position = (score + 1) * 50;
     $("score").textContent = formatScore(score);
     $("score").classList.remove("empty");
+    $("sentiment").hidden = false;
     $("marker").hidden = false;
+    // The card was hidden until now, so lay it out first. Otherwise the meter jumps to the score
+    // instead of sliding there from neutral.
+    $("sentiment").getBoundingClientRect();
     $("marker").style.left = `${position}%`;
     $("fill").style.left = `${Math.min(position, 50)}%`;
     $("fill").style.width = `${Math.abs(position - 50)}%`;
@@ -305,7 +313,6 @@
     setStep("");
     $("thinking").classList.remove("active");
     if (!message) return;
-    if ($("score").classList.contains("empty")) $("score").textContent = "No score this time.";
     $("message").textContent = message;
     $("message").hidden = false;
   }
@@ -319,9 +326,11 @@
     posts.clear();
     scored = 0;
     $("topic-label").textContent = `${topic} sentiment`;
-    $("score").textContent = "Waiting for the score";
+    $("score").textContent = "";
     $("score").classList.add("empty");
     $("marker").hidden = true;
+    $("marker").style.left = "50%";
+    $("fill").style.left = "50%";
     $("fill").style.width = "0";
     $("result").hidden = true;
     $("query").innerHTML = "";
@@ -334,7 +343,7 @@
     $("reasoning").textContent = "";
     $("thinking-label").textContent = "Thinking";
     $("thinking").hidden = true;
-    $("sentiment").hidden = false;
+    $("sentiment").hidden = true;
     $("search").hidden = false;
     setStep("searching 𝕏");
   }
