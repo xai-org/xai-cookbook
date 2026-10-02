@@ -7,187 +7,288 @@
 <title>𝕏 Sentiment Tracker</title>
 <style>
   :root {
-    --bg: #fff;
-    --fg: #0a0a0a;
-    --muted: rgb(10 10 10 / 0.6);
-    --faint: rgb(10 10 10 / 0.3);
-    --card: #f9f8f6;
-    --secondary: #f2f1ef;
-    --secondary-hover: #e9e8e5;
-    --border: rgb(10 10 10 / 0.15);
-    --rule: rgb(213 217 226 / 0.55);
-    --primary: #0a0a0a;
-    --primary-hover: #202329;
-    --on-primary: #f9f8f6;
-    --bubble: rgb(10 10 10 / 0.06);
-    --track: rgb(10 10 10 / 0.08);
-    --track-ready: rgb(10 10 10 / 0.2);
-    --accent: #ff6308;
+    --bg: #f4f6f8;
+    --surface: #fff;
+    --line: #e3e7eb;
+    --fg: #0f1419;
+    --muted: #536471;
+    --faint: #8b98a5;
+    --skeleton: #eef1f4;
+    --positive: #00a36c;
+    --positive-soft: #e3f6ee;
+    --negative: #e0245e;
+    --negative-soft: #fde7ee;
+    --neutral: #a8b3bd;
     --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
     --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   }
 
   * { box-sizing: border-box; }
   [hidden] { display: none !important; }
-  body { margin: 0; font: 14px/24px var(--sans); background: var(--bg); color: var(--fg); -webkit-font-smoothing: antialiased; }
-  main { max-width: 1120px; margin: 0 auto; padding: 72px 24px; }
-  .eyebrow { margin: 0; font-size: 14px; }
-  h1 { margin: 8px 0 0; font-size: 48px; line-height: 1.1; font-weight: 450; letter-spacing: -0.01em; }
-  .lede { margin: 12px 0 32px; max-width: 620px; font-size: 16px; line-height: 26px; color: var(--muted); }
+  body { margin: 0; font: 14px/20px var(--sans); background: var(--bg); color: var(--fg); -webkit-font-smoothing: antialiased; }
+  button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
+  svg { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+  a { color: inherit; }
+  @keyframes pulse { to { background-color: var(--line); } }
+  @keyframes fade { from { opacity: 0; transform: translateY(3px); } }
 
-  button { font: inherit; border: 0; cursor: pointer; }
-  .pill { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 40px; padding: 0 18px; border-radius: 9999px; font-size: 14px; font-weight: 500; white-space: nowrap; text-decoration: none; }
-  .pill-primary { background: var(--primary); color: var(--on-primary); }
-  .pill-primary:hover { background: var(--primary-hover); }
-  .pill-secondary { background: var(--secondary); color: var(--fg); }
-  .pill-secondary:hover { background: var(--secondary-hover); }
-  .pill svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  .topbar { display: flex; align-items: center; gap: 20px; padding: 12px 24px; border-bottom: 1px solid var(--line); background: var(--surface); }
+  .brand { display: flex; align-items: center; gap: 10px; white-space: nowrap; }
+  .brand .logo { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 8px; background: var(--fg); color: #fff; font-size: 17px; font-weight: 700; }
+  .brand strong { display: block; font-weight: 700; line-height: 16px; }
+  .brand span { display: block; font-size: 12px; line-height: 15px; color: var(--faint); }
+  form { flex: 1; display: flex; align-items: center; gap: 8px; max-width: 640px; }
+  .search { flex: 1; position: relative; }
+  .search svg { position: absolute; left: 14px; top: 11px; width: 16px; height: 16px; color: var(--faint); }
+  .search input { width: 100%; height: 38px; padding: 0 14px 0 38px; border: 1px solid var(--line); border-radius: 19px; background: var(--bg); color: var(--fg); font: inherit; outline: none; }
+  .search input:focus { border-color: var(--fg); background: var(--surface); }
+  .range { height: 38px; padding: 0 14px; border: 1px solid var(--line); border-radius: 19px; color: var(--muted); line-height: 36px; white-space: nowrap; }
+  #go { height: 38px; padding: 0 18px; border-radius: 19px; background: var(--fg); color: #fff; font-weight: 700; white-space: nowrap; }
+  #go.stop { background: var(--surface); color: var(--fg); box-shadow: inset 0 0 0 1px var(--line); }
 
-  form { display: flex; gap: 8px; max-width: 720px; }
-  input { flex: 1; height: 40px; padding: 0 18px; border: 1px solid var(--border); border-radius: 9999px; background: var(--bg); color: var(--fg); font: inherit; outline: none; }
-  input:focus { border-color: var(--fg); }
-  input::placeholder { color: var(--faint); }
-  .examples { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; font-size: 13px; color: var(--muted); }
-  .examples .pill { height: 30px; padding: 0 12px; font-size: 13px; }
+  .dashboard { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 16px; max-width: 1280px; margin: 0 auto; padding: 20px 24px 40px; }
+  .card { min-width: 0; padding: 18px 20px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); animation: fade 0.3s ease-out; }
+  .span-12 { grid-column: span 12; }
+  .span-8 { grid-column: span 8; }
+  .span-4 { grid-column: span 4; }
+  .card-head { display: flex; align-items: center; gap: 8px; margin: 0 0 14px; }
+  .card-title { margin: 0; font-size: 13px; font-weight: 700; }
+  .card-status { color: var(--faint); font-size: 13px; }
+  .card-head .spacer { flex: 1; }
+  .skeleton { border-radius: 6px; background: var(--skeleton); animation: pulse 1s ease-in-out infinite alternate; }
 
-  .stage { display: grid; gap: 16px; margin-top: 48px; }
-  .card { background: var(--card); border-radius: 16px; padding: 20px 22px; animation: appear 0.3s ease-out; }
-  .card-label { display: flex; align-items: center; gap: 8px; margin: 0 0 12px; font-size: 13px; font-weight: 500; color: var(--muted); }
-  .status { color: var(--faint); }
-  .thinking summary { margin: 0; list-style: none; cursor: pointer; }
-  .thinking summary::-webkit-details-marker { display: none; }
-  .thinking:has(.reasoning:empty) summary { cursor: default; }
-  .chevron { width: 14px; height: 14px; margin-left: auto; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.2s; }
-  .thinking[open] .chevron { transform: rotate(180deg); }
-  .thinking:has(.reasoning:empty) .chevron { display: none; }
-  .reasoning { margin-top: 12px; max-height: 200px; overflow: auto; white-space: pre-wrap; font: 12px/20px var(--mono); color: var(--muted); }
-  .reasoning:empty { display: none; }
-  .dots { display: none; gap: 4px; }
-  .active > .card-label .dots { display: inline-flex; }
-  .dots i { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); animation: blink 1.2s infinite both; }
-  .dots i:nth-child(2) { animation-delay: 0.2s; }
-  .dots i:nth-child(3) { animation-delay: 0.4s; }
-  @keyframes blink { 0%, 80%, 100% { opacity: 0.25; } 40% { opacity: 1; } }
-  @keyframes appear { from { opacity: 0; transform: translateY(4px); } }
+  .hero { grid-column: span 12; display: grid; justify-items: center; gap: 10px; padding: 64px 24px; text-align: center; }
+  .hero h1 { margin: 0; font-size: 28px; line-height: 34px; font-weight: 800; letter-spacing: -0.01em; }
+  .hero p { max-width: 520px; margin: 0; color: var(--muted); }
+  .topics { display: flex; gap: 8px; margin-top: 8px; }
+  .topics button { height: 32px; padding: 0 14px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); font-weight: 600; }
+  .topics button:hover { border-color: var(--fg); }
 
-  .now { max-width: 600px; }
-  #score { margin: 0 0 24px; font-size: 64px; line-height: 64px; font-weight: 450; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
-  #score.empty { font-size: 16px; letter-spacing: 0; color: var(--muted); }
-  .meter { position: relative; height: 6px; border-radius: 3px; background: var(--track); }
-  .meter::before { content: ""; position: absolute; left: 50%; top: -5px; width: 1px; height: 16px; background: var(--faint); }
-  #fill { position: absolute; top: 0; bottom: 0; left: 50%; width: 0; border-radius: 3px; background: var(--fg); transition: left 0.6s, width 0.6s; }
-  #marker { position: absolute; top: 50%; left: 50%; width: 18px; height: 18px; margin: -9px 0 0 -9px; border: 3px solid var(--card); border-radius: 50%; background: var(--fg); transition: left 0.6s; }
-  .scale { display: grid; grid-template-columns: 1fr auto 1fr; margin-top: 12px; font-size: 12px; line-height: 16px; color: var(--muted); }
-  .scale span:last-child { text-align: right; }
-  .result { margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--rule); }
-  .based { margin: 0 0 8px; color: var(--muted); }
-  .explanation { margin: 0; max-width: 760px; }
-  .key-label { margin: 20px 0 4px; }
-  .key-label:has(+ .key-posts:empty) { display: none; }
-  .key-posts { margin: 0; padding: 0; list-style: none; }
-  .key-posts a { display: grid; grid-template-columns: 180px 1fr; gap: 16px; padding: 10px 0; border-top: 1px solid var(--rule); color: inherit; text-decoration: none; }
-  .key-posts .author { overflow: hidden; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
-  .key-posts .note { color: var(--muted); }
-  .key-posts a:hover .note { color: var(--fg); }
-
-  #search { display: grid; gap: 12px; }
-  #search > .card-label { margin: 0; }
-  .found, .message { margin: 0; }
-  .found:empty { display: none; }
-  .query { display: flex; gap: 8px; font: 12px/20px var(--mono); color: var(--muted); overflow-wrap: anywhere; }
-  .query:empty { display: none; }
-  .query svg { flex: none; width: 14px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; }
+  .query { display: flex; align-items: center; gap: 8px; margin: -6px 0 12px; font: 12px/18px var(--mono); color: var(--muted); overflow-wrap: anywhere; }
+  .query svg { flex: none; width: 14px; height: 14px; }
   .days { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 6px; }
-  .days:empty { display: none; }
-  .day { display: grid; gap: 2px; padding: 8px 10px; border: 1px solid var(--rule); border-radius: 10px; background: var(--bg); font-size: 12px; line-height: 16px; }
+  .day { display: grid; gap: 2px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); font-size: 12px; line-height: 16px; }
   .day .date { color: var(--muted); }
-  .day .count { font-weight: 500; color: var(--faint); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .day .count { font-weight: 600; color: var(--faint); font-variant-numeric: tabular-nums; white-space: nowrap; }
   .day.searching { animation: pulse 1s ease-in-out infinite alternate; }
-  @keyframes pulse { to { background: var(--secondary-hover); } }
   .day.done .count { color: var(--fg); }
-  .more { justify-self: start; height: 32px; padding: 0 14px; font-size: 13px; }
-  .posts:not(.all) .post:nth-child(n + 13) { display: none; }
-  .posts { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
-  .posts:empty { display: none; }
-  .post { display: flex; flex-direction: column; gap: 6px; padding: 14px 16px; border: 1px solid var(--rule); border-radius: 12px; background: var(--bg); color: inherit; text-decoration: none; animation: appear 0.3s ease-out; }
-  .post:hover { border-color: var(--border); }
-  .post .author { display: flex; align-items: center; gap: 6px; font-weight: 500; overflow-wrap: anywhere; }
-  .post .time { font-weight: 400; color: var(--faint); white-space: nowrap; }
-  .post svg { flex: none; width: 14px; height: 14px; margin-left: auto; fill: none; stroke: var(--faint); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
-  .post p { display: -webkit-box; margin: 0; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 8; font-size: 13px; line-height: 20px; white-space: pre-line; overflow-wrap: anywhere; }
 
-  @media (max-width: 860px) {
-    h1 { font-size: 36px; }
-    .key-posts a { grid-template-columns: 1fr; gap: 2px; }
-    .days { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  #score { margin: 0; font-size: 48px; line-height: 52px; font-weight: 800; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+  #mood { margin: 2px 0 16px; font-weight: 600; color: var(--muted); }
+  .gauge { position: relative; height: 8px; border-radius: 4px; background: var(--skeleton); }
+  .gauge::before { content: ""; position: absolute; left: 50%; top: -4px; width: 1px; height: 16px; background: var(--faint); }
+  #fill { position: absolute; top: 0; bottom: 0; left: 50%; width: 0; border-radius: 4px; transition: left 0.6s, width 0.6s; }
+  #marker { position: absolute; top: 50%; left: 50%; width: 18px; height: 18px; margin: -9px 0 0 -9px; border: 3px solid var(--surface); border-radius: 50%; background: var(--fg); transition: left 0.6s; }
+  .scale { display: flex; justify-content: space-between; margin-top: 8px; font-size: 12px; color: var(--faint); }
+  #based { margin: 14px 0 0; color: var(--muted); }
+  .scoring { color: var(--muted); }
+  #reasoning { max-height: 132px; margin: 10px 0 0; overflow: auto; white-space: pre-wrap; font: 11px/17px var(--mono); color: var(--faint); }
+  #reasoning:empty { display: none; }
+  details.why-reasoning { margin-top: 12px; }
+  details.why-reasoning summary { color: var(--muted); cursor: pointer; }
+
+  .numbers { display: flex; gap: 28px; }
+  .number strong { display: block; font-size: 32px; line-height: 38px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .number span { color: var(--muted); }
+  .funnel { height: 8px; margin-top: 18px; overflow: hidden; border-radius: 4px; background: var(--skeleton); }
+  #funnel-bar { height: 100%; width: 0; border-radius: inherit; background: var(--fg); transition: width 0.6s; }
+  #funnel-note { margin: 10px 0 0; color: var(--muted); }
+
+  .split { display: flex; height: 10px; margin: 6px 0 14px; overflow: hidden; border-radius: 5px; background: var(--skeleton); }
+  .split i { height: 100%; transition: width 0.6s; }
+  .legend { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+  .legend li { display: flex; align-items: center; gap: 8px; }
+  .legend i { width: 10px; height: 10px; border-radius: 3px; }
+  .legend b { margin-left: auto; font-variant-numeric: tabular-nums; }
+
+  #chart-card { display: flex; flex-direction: column; }
+  .chart { flex: 1; display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 8px; min-height: 230px; }
+  .column { display: grid; grid-template-rows: minmax(70px, 1fr) minmax(70px, 1fr) auto auto; justify-items: center; }
+  .column .up, .column .down { display: flex; width: 100%; justify-content: center; }
+  .column .up { align-items: flex-end; border-bottom: 1px solid var(--line); }
+  .column .down { align-items: flex-start; }
+  .column .bar { width: min(36px, 70%); transition: height 0.6s; }
+  .column .up .bar { border-radius: 6px 6px 0 0; background: var(--positive); }
+  .column .down .bar { border-radius: 0 0 6px 6px; background: var(--negative); }
+  .column .up .bar.skeleton { border-radius: 6px; background: var(--skeleton); }
+  .column .date { margin-top: 8px; font-size: 12px; color: var(--muted); }
+  .column .posts { font-size: 11px; color: var(--faint); font-variant-numeric: tabular-nums; }
+  .chart-caption { margin: 12px 0 0; font-size: 12px; color: var(--faint); }
+
+  .why-waiting { display: grid; gap: 10px; }
+  #explanation { margin: 0; }
+  .key-label { margin: 16px 0 6px; font-size: 12px; font-weight: 700; color: var(--muted); }
+  .key-posts { display: grid; margin: 0; padding: 0; list-style: none; }
+  .key-posts a { display: grid; gap: 2px; padding: 8px 0; border-top: 1px solid var(--line); text-decoration: none; }
+  .key-posts .author { font-weight: 700; }
+  .key-posts .note { color: var(--muted); }
+
+  .filters { display: flex; gap: 6px; }
+  .filters button { height: 28px; padding: 0 12px; border-radius: 14px; color: var(--muted); font-size: 13px; font-weight: 600; }
+  .filters button.active { background: var(--fg); color: #fff; }
+  .filters button:disabled { opacity: 0.4; cursor: default; }
+  .feed { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 12px; }
+  .post { display: flex; flex-direction: column; gap: 8px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 14px; color: inherit; text-decoration: none; animation: fade 0.3s ease-out; }
+  .post:hover { border-color: var(--faint); }
+  .post header { display: flex; align-items: center; gap: 6px; }
+  .post .author { overflow: hidden; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+  .post .time { color: var(--faint); white-space: nowrap; }
+  .post .chip { margin-left: auto; padding: 0 8px; border-radius: 10px; background: var(--skeleton); color: var(--muted); font-size: 12px; font-weight: 700; line-height: 20px; font-variant-numeric: tabular-nums; }
+  .post.positive .chip { background: var(--positive-soft); color: var(--positive); }
+  .post.negative .chip { background: var(--negative-soft); color: var(--negative); }
+  .post p { display: -webkit-box; margin: 0; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 6; font-size: 13px; line-height: 19px; white-space: pre-line; overflow-wrap: anywhere; }
+  .feed:not(.all) .post:nth-child(n + 13) { display: none; }
+  #more { margin-top: 12px; height: 32px; padding: 0 14px; border: 1px solid var(--line); border-radius: 16px; font-weight: 600; }
+  #message { grid-column: span 12; margin: 0; padding: 12px 16px; border-radius: 12px; background: var(--negative-soft); color: var(--negative); }
+
+  @media (max-width: 960px) {
+    .span-8, .span-4 { grid-column: span 12; }
+    .days, .chart { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+    .topbar { flex-wrap: wrap; }
+    form { flex-basis: 100%; max-width: none; }
   }
 </style>
 </head>
 <body>
-<main>
-  <p class="eyebrow">SpaceXAI Cookbook</p>
-  <h1>𝕏 Sentiment Tracker</h1>
-  <p class="lede">Enter a topic, like a company, a product, or an event. Grok searches 𝕏 for popular posts about it from the last 10 days, filters out the noise, and scores the sentiment from −1 (negative) to +1 (positive).</p>
+<header class="topbar">
+  <div class="brand">
+    <span class="logo">𝕏</span>
+    <div><strong>Sentiment Tracker</strong><span>SpaceXAI Cookbook</span></div>
+  </div>
   <form id="form">
-    <input id="topic" required value="SpaceX" aria-label="Topic" placeholder="A company, a product, or an event">
-    <button id="go" class="pill pill-primary">Check sentiment <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg></button>
+    <label class="search">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.5"/><path d="m10.5 10.5 3 3"/></svg>
+      <input id="topic" required value="SpaceX" aria-label="Topic" placeholder="A company, a product, or an event">
+    </label>
+    <span class="range">Last 10 days</span>
+    <button id="go">Analyze</button>
   </form>
-  <div class="examples">Try one:
-    <button type="button" class="pill pill-secondary">SpaceX</button>
-    <button type="button" class="pill pill-secondary">Starship</button>
-    <button type="button" class="pill pill-secondary">Starlink</button>
-  </div>
+</header>
 
-  <div class="stage">
-    <section class="card" id="search" hidden>
-      <p class="card-label">Search<span class="status" id="step"></span><span class="dots"><i></i><i></i><i></i></span></p>
-      <div class="query" id="query"></div>
-      <div class="days" id="days"></div>
-      <p class="found" id="found"></p>
-      <div class="posts" id="posts"></div>
-      <button type="button" class="pill pill-secondary more" id="more" hidden></button>
-      <p class="message" id="message" hidden></p>
-    </section>
-    <details class="card thinking" id="thinking" hidden>
-      <summary class="card-label"><span id="thinking-label">Thinking</span> <span class="dots"><i></i><i></i><i></i></span><svg class="chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4"/></svg></summary>
-      <div class="reasoning" id="reasoning"></div>
-    </details>
-    <section class="card" id="sentiment" hidden>
-      <p class="card-label" id="topic-label"></p>
-      <div class="now">
-        <p id="score"></p>
-        <div class="meter"><span id="fill"></span><span id="marker" hidden></span></div>
-        <div class="scale"><span>−1 Negative</span><span>Neutral</span><span>Positive +1</span></div>
+<main class="dashboard">
+  <section class="hero" id="hero">
+    <h1>How does 𝕏 feel about it?</h1>
+    <p>Grok searches 𝕏 for popular posts about a topic from the last 10 days, one search per day, filters out the noise, and scores each post from −1 (negative) to +1 (positive).</p>
+    <div class="topics">
+      <button type="button">SpaceX</button>
+      <button type="button">Starship</button>
+      <button type="button">Starlink</button>
+    </div>
+  </section>
+
+  <section class="card span-12" id="activity" hidden>
+    <div class="card-head"><p class="card-title">Search</p><span class="card-status" id="step"></span></div>
+    <div class="query" id="query"></div>
+    <div class="days" id="days"></div>
+  </section>
+
+  <section class="card span-4" id="score-card" hidden>
+    <div class="card-head"><p class="card-title" id="topic-label">Sentiment</p></div>
+    <div id="score-waiting">
+      <p class="scoring" id="scoring-label">Waiting for the posts</p>
+      <div id="reasoning"></div>
+    </div>
+    <div id="score-done" hidden>
+      <p id="score"></p>
+      <p id="mood"></p>
+      <div class="gauge"><span id="fill"></span><span id="marker"></span></div>
+      <div class="scale"><span>−1</span><span>0</span><span>+1</span></div>
+      <p id="based"></p>
+      <details class="why-reasoning"><summary id="thought"></summary><div id="reasoning-done"></div></details>
+    </div>
+  </section>
+
+  <section class="card span-4" id="posts-card" hidden>
+    <div class="card-head"><p class="card-title">Posts</p></div>
+    <div class="numbers">
+      <div class="number"><strong id="found-count">0</strong><span>found</span></div>
+      <div class="number"><strong id="kept-count">–</strong><span>worth scoring</span></div>
+    </div>
+    <div class="funnel"><div id="funnel-bar"></div></div>
+    <p id="funnel-note">Searching the last 10 days</p>
+  </section>
+
+  <section class="card span-4" id="split-card" hidden>
+    <div class="card-head"><p class="card-title">Split</p></div>
+    <div class="split" id="split"><i style="background: var(--positive)"></i><i style="background: var(--neutral)"></i><i style="background: var(--negative)"></i></div>
+    <ul class="legend" id="legend">
+      <li><i style="background: var(--positive)"></i>Positive<b>–</b></li>
+      <li><i style="background: var(--neutral)"></i>Neutral<b>–</b></li>
+      <li><i style="background: var(--negative)"></i>Negative<b>–</b></li>
+    </ul>
+  </section>
+
+  <section class="card span-8" id="chart-card" hidden>
+    <div class="card-head"><p class="card-title">Sentiment by day</p><span class="card-status">Average score of the posts from each day</span></div>
+    <div class="chart" id="chart"></div>
+  </section>
+
+  <section class="card span-4" id="why-card" hidden>
+    <div class="card-head"><p class="card-title">Why</p></div>
+    <div class="why-waiting" id="why-waiting">
+      <div class="skeleton" style="height: 12px; width: 92%"></div>
+      <div class="skeleton" style="height: 12px; width: 80%"></div>
+      <div class="skeleton" style="height: 12px; width: 86%"></div>
+      <div class="skeleton" style="height: 12px; width: 50%"></div>
+    </div>
+    <div id="why-done" hidden>
+      <p id="explanation"></p>
+      <p class="key-label" id="key-label">Posts that influenced it most</p>
+      <ul class="key-posts" id="key-posts"></ul>
+    </div>
+  </section>
+
+  <section class="card span-12" id="feed-card" hidden>
+    <div class="card-head">
+      <p class="card-title">Posts worth scoring</p>
+      <span class="spacer"></span>
+      <div class="filters" id="filters">
+        <button type="button" class="active" data-filter="all">All</button>
+        <button type="button" data-filter="positive" disabled>Positive</button>
+        <button type="button" data-filter="neutral" disabled>Neutral</button>
+        <button type="button" data-filter="negative" disabled>Negative</button>
       </div>
-      <div class="result" id="result" hidden>
-        <p class="based" id="based"></p>
-        <p class="explanation" id="explanation"></p>
-        <p class="card-label key-label">Posts that influenced it most</p>
-        <ul class="key-posts" id="key-posts"></ul>
-      </div>
-    </section>
-  </div>
+    </div>
+    <div class="feed" id="feed"></div>
+    <button type="button" id="more" hidden></button>
+  </section>
+
+  <p id="message" hidden></p>
 </main>
 
 <script>
   const $ = (id) => document.getElementById(id);
   const ICONS = {
-    chevron: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg>',
     search: '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.5"/><path d="m10.5 10.5 3 3"/></svg>',
-    link: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 10.5l5-5M6.5 5.5h4v4"/></svg>',
   };
+  // Posts scoring within this much of zero count as neutral in the split and the filters.
+  const NEUTRAL = 0.15;
   const AGO = new Intl.RelativeTimeFormat("en", { style: "narrow" });
+  const CARDS = ["activity", "score-card", "posts-card", "split-card", "chart-card", "why-card", "feed-card"];
   const posts = new Map();
+  const scores = new Map();
+  let days = [];
   let events;
   let scored = 0;
   let thinkingSince = 0;
+  let filter = "all";
 
-  document.querySelectorAll(".examples button").forEach((button) => {
-    button.onclick = () => ($("topic").value = button.textContent);
+  document.querySelectorAll(".topics button").forEach((button) => {
+    button.onclick = () => {
+      $("topic").value = button.textContent;
+      $("form").requestSubmit();
+    };
   });
-
-  $("thinking").querySelector("summary").onclick = (event) => {
-    if (!$("reasoning").textContent) event.preventDefault();
+  document.querySelectorAll("#filters button").forEach((button) => {
+    button.onclick = () => {
+      filter = button.dataset.filter;
+      document.querySelectorAll("#filters button").forEach((other) => other.classList.toggle("active", other === button));
+      renderFeed();
+    };
+  });
+  $("more").onclick = () => {
+    $("feed").classList.add("all");
+    $("more").hidden = true;
   };
 
   $("form").onsubmit = (event) => {
@@ -199,9 +300,11 @@
     events = new EventSource(`/api/sentiment?topic=${encodeURIComponent(topic)}`);
     const on = (name, handler) => events.addEventListener(name, (message) => handler(JSON.parse(message.data)));
 
-    on("searching", ({ query, days }) => {
+    on("searching", ({ query, days: list }) => {
+      days = list;
       $("query").innerHTML = `${ICONS.search}<span>${escapeHtml(query)} · one search per day for the last ${days.length} days</span>`;
       $("days").innerHTML = days.map((day) => `<div class="day" data-day="${day}"><span class="date">${formatDay(day)}</span><span class="count">waiting</span></div>`).join("");
+      renderChart();
     });
     on("search", ({ day }) => {
       const chip = dayChip(day);
@@ -213,30 +316,27 @@
       chip.classList.remove("searching");
       chip.classList.add("done");
       chip.querySelector(".count").textContent = count === null ? "failed" : plural(count, "post");
+      const total = [...$("days").querySelectorAll(".day.done .count")].reduce((sum, item) => sum + (parseInt(item.textContent, 10) || 0), 0);
+      $("found-count").textContent = total;
     });
     on("found", ({ count }) => {
-      if (!count) return;
-      $("found").textContent = `Found ${plural(count, "post")}.`;
-      setStep("filtering");
+      $("found-count").textContent = count;
+      $("funnel-note").textContent = count ? `Filtering out the noise from ${plural(count, "post")}` : "No posts found";
+      setStep(count ? "filtering" : "");
     });
     on("kept", ({ posts: kept, filtered }) => {
-      $("found").textContent = describe(kept.length, filtered);
-      for (const post of kept) {
-        posts.set(post.post_id, post);
-        $("posts").insertAdjacentHTML("beforeend", postCard(post));
-      }
-      if (kept.length > 12) {
-        $("more").textContent = `Show all ${kept.length} posts`;
-        $("more").hidden = false;
-      }
-      setStep("");
+      for (const post of kept) posts.set(post.post_id, post);
+      const found = kept.length + filtered;
+      $("kept-count").textContent = kept.length;
+      $("funnel-bar").style.width = found ? `${(kept.length / found) * 100}%` : "0";
+      $("funnel-note").textContent = describe(kept.length, filtered);
+      renderFeed();
+      setStep(kept.length ? "scoring" : "");
     });
     on("scoring", ({ count }) => {
       scored = count;
       thinkingSince = Date.now();
-      $("thinking").hidden = false;
-      $("thinking").open = true;
-      $("thinking").classList.add("active");
+      $("scoring-label").textContent = `Scoring ${plural(count, "post")}`;
     });
     on("reasoning", ({ text }) => {
       $("reasoning").textContent += text;
@@ -245,20 +345,110 @@
     on("done", ({ sentiment }) => {
       if (sentiment) showSentiment(sentiment);
       else {
-        $("score").textContent = "None of the posts were worth scoring.";
-        $("sentiment").hidden = false;
+        $("scoring-label").textContent = "None of the posts were worth scoring.";
+        $("why-card").hidden = true;
+        $("split-card").hidden = true;
       }
-      $("sentiment").scrollIntoView({ behavior: "smooth", block: "nearest" });
       stop();
     });
     on("failure", ({ message }) => stop(`Couldn't score the sentiment: ${message}`));
     events.onerror = () => stop("Lost the connection to the server.");
   };
 
-  $("more").onclick = () => {
-    $("posts").classList.add("all");
-    $("more").hidden = true;
-  };
+  function showSentiment({ score, reasoning, key_posts, post_scores }) {
+    for (const { post_id, score: value } of post_scores ?? []) if (posts.has(post_id)) scores.set(post_id, value);
+    $("score-waiting").hidden = true;
+    $("score-done").hidden = false;
+    $("score").textContent = formatScore(score);
+    $("score").style.color = score > NEUTRAL ? "var(--positive)" : score < -NEUTRAL ? "var(--negative)" : "var(--fg)";
+    $("mood").textContent = mood(score);
+    $("based").textContent = `Based on ${plural(scored, "post")}`;
+    $("thought").textContent = `Thought for ${plural(Math.round((Date.now() - thinkingSince) / 1000), "second")}`;
+    $("reasoning-done").textContent = $("reasoning").textContent;
+    // The card was laid out while hidden, so lay it out before moving the gauge, or it jumps instead
+    // of sliding there from neutral.
+    $("score-done").getBoundingClientRect();
+    const position = (score + 1) * 50;
+    $("marker").style.left = `${position}%`;
+    $("fill").style.left = `${Math.min(position, 50)}%`;
+    $("fill").style.width = `${Math.abs(position - 50)}%`;
+    $("fill").style.background = score >= 0 ? "var(--positive)" : "var(--negative)";
+
+    const values = [...scores.values()];
+    const counts = {
+      positive: values.filter((value) => value > NEUTRAL).length,
+      neutral: values.filter((value) => Math.abs(value) <= NEUTRAL).length,
+      negative: values.filter((value) => value < -NEUTRAL).length,
+    };
+    const total = values.length || 1;
+    [counts.positive, counts.neutral, counts.negative].forEach((count, index) => {
+      $("split").children[index].style.width = `${(count / total) * 100}%`;
+      $("legend").children[index].querySelector("b").textContent = `${count} · ${Math.round((count / total) * 100)}%`;
+    });
+    document.querySelectorAll("#filters button").forEach((button) => {
+      const kind = button.dataset.filter;
+      button.disabled = kind !== "all" && !counts[kind];
+      button.textContent = kind === "all" ? `All ${posts.size}` : `${capitalize(kind)} ${counts[kind]}`;
+    });
+
+    $("explanation").textContent = reasoning;
+    $("key-posts").innerHTML = key_posts
+      .filter(({ post_id }) => posts.has(post_id))
+      .map(({ post_id, note }) => `<li><a href="https://x.com/i/status/${post_id}" target="_blank" rel="noopener"><span class="author">@${escapeHtml(posts.get(post_id).username)}</span><span class="note">${escapeHtml(note)}</span></a></li>`)
+      .join("");
+    $("key-label").hidden = !$("key-posts").children.length;
+    $("why-waiting").hidden = true;
+    $("why-done").hidden = false;
+    renderChart();
+    renderFeed();
+  }
+
+  // One column per day, oldest on the left. A bar shows the average score of that day's posts, up for
+  // positive and down for negative, until the scores are in.
+  function renderChart() {
+    const columns = [...days].reverse().map((day) => {
+      const values = [...posts.values()].filter((post) => post.created_at?.slice(0, 10) === day && scores.has(post.post_id)).map((post) => scores.get(post.post_id));
+      const average = values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : null;
+      // A full bar reaches the top or the bottom of the chart, at a score of +1 or −1.
+      const height = average === null ? 0 : Math.max(4, Math.abs(average) * 100);
+      const title = average === null ? `${formatDay(day)}: no scored posts` : `${formatDay(day)}: ${formatScore(average)} average over ${plural(values.length, "post")}`;
+      const loading = !scores.size;
+      return `<div class="column" title="${title}">
+        <div class="up">${loading ? `<div class="bar skeleton" style="height: 50%"></div>` : average > 0 ? `<div class="bar" style="height: ${height}%"></div>` : ""}</div>
+        <div class="down">${!loading && average !== null && average <= 0 ? `<div class="bar" style="height: ${height}%"></div>` : ""}</div>
+        <span class="date">${formatDay(day)}</span>
+        <span class="posts">${loading ? "" : plural(values.length, "post")}</span>
+      </div>`;
+    });
+    $("chart").innerHTML = columns.join("");
+  }
+
+  function renderFeed() {
+    const list = [...posts.values()].filter((post) => filter === "all" || kind(scores.get(post.post_id)) === filter);
+    $("feed").innerHTML = list.map(postCard).join("");
+    $("feed").classList.toggle("all", filter !== "all");
+    $("more").textContent = `Show all ${list.length} posts`;
+    $("more").hidden = filter !== "all" || list.length <= 12 || $("feed").classList.contains("all");
+  }
+
+  function postCard({ post_id, username, text, created_at }) {
+    const score = scores.get(post_id);
+    const chip = score === undefined ? "" : `<span class="chip">${formatScore(score)}</span>`;
+    return `<a class="post ${score === undefined ? "" : kind(score)}" href="https://x.com/i/status/${post_id}" target="_blank" rel="noopener"><header><span class="author">@${escapeHtml(username)}</span><span class="time">${ago(created_at)}</span>${chip}</header><p>${escapeHtml(text)}</p></a>`;
+  }
+
+  function kind(score) {
+    if (score === undefined) return "";
+    return score > NEUTRAL ? "positive" : score < -NEUTRAL ? "negative" : "neutral";
+  }
+
+  function mood(score) {
+    if (score > 0.5) return "Very positive";
+    if (score > NEUTRAL) return "Positive";
+    if (score < -0.5) return "Very negative";
+    if (score < -NEUTRAL) return "Negative";
+    return "Mixed or neutral";
+  }
 
   function dayChip(day) {
     return $("days").querySelector(`[data-day="${day}"]`);
@@ -270,40 +460,14 @@
 
   function setStep(step) {
     $("step").textContent = step ? `· ${step}` : "";
-    $("search").classList.toggle("active", Boolean(step));
   }
 
   function describe(kept, filtered) {
     const found = kept + filtered;
     if (!found) return "No posts found.";
-    const summary = `Found ${plural(found, "post")}`;
-    if (!kept) return `${summary}, but ${found === 1 ? "it's" : "they're all"} noise.`;
-    if (!filtered) return `${summary}, all worth scoring.`;
-    return `${summary} and filtered out ${filtered} as noise.`;
-  }
-
-  function showSentiment({ score, reasoning, key_posts }) {
-    $("thinking").classList.remove("active");
-    $("thinking").open = false;
-    $("thinking-label").textContent = `Thought for ${plural(Math.round((Date.now() - thinkingSince) / 1000), "second")}`;
-    const position = (score + 1) * 50;
-    $("score").textContent = formatScore(score);
-    $("score").classList.remove("empty");
-    $("sentiment").hidden = false;
-    $("marker").hidden = false;
-    // The card was hidden until now, so lay it out first. Otherwise the meter jumps to the score
-    // instead of sliding there from neutral.
-    $("sentiment").getBoundingClientRect();
-    $("marker").style.left = `${position}%`;
-    $("fill").style.left = `${Math.min(position, 50)}%`;
-    $("fill").style.width = `${Math.abs(position - 50)}%`;
-    $("based").textContent = `Based on ${plural(scored, "post")}.`;
-    $("explanation").textContent = reasoning;
-    $("key-posts").innerHTML = key_posts
-      .filter(({ post_id }) => posts.has(post_id))
-      .map(({ post_id, note }) => `<li><a href="https://x.com/i/status/${post_id}" target="_blank" rel="noopener"><span class="author">@${escapeHtml(posts.get(post_id).username)}</span><span class="note">${escapeHtml(note)}</span></a></li>`)
-      .join("");
-    $("result").hidden = false;
+    if (!kept) return `${found === 1 ? "It's" : "They're all"} noise.`;
+    if (!filtered) return "All of them are worth scoring.";
+    return `Filtered out ${filtered} as noise.`;
   }
 
   function stop(message) {
@@ -311,45 +475,54 @@
     events = undefined;
     setRunning(false);
     setStep("");
-    $("thinking").classList.remove("active");
+    document.querySelectorAll(".day.searching").forEach((chip) => chip.classList.remove("searching"));
     if (!message) return;
     $("message").textContent = message;
     $("message").hidden = false;
   }
 
   function setRunning(running) {
-    $("go").className = `pill ${running ? "pill-secondary" : "pill-primary"}`;
-    $("go").innerHTML = running ? "Stop" : `Check sentiment ${ICONS.chevron}`;
+    $("go").textContent = running ? "Stop" : "Analyze";
+    $("go").classList.toggle("stop", running);
   }
 
   function reset(topic) {
     posts.clear();
+    scores.clear();
+    days = [];
     scored = 0;
+    filter = "all";
+    $("hero").hidden = true;
+    CARDS.forEach((id) => ($(id).hidden = false));
+    $("why-waiting").hidden = false;
+    $("why-done").hidden = true;
     $("topic-label").textContent = `${topic} sentiment`;
-    $("score").textContent = "";
-    $("score").classList.add("empty");
-    $("marker").hidden = true;
+    $("score-waiting").hidden = false;
+    $("score-done").hidden = true;
+    $("scoring-label").textContent = "Waiting for the posts";
+    $("reasoning").textContent = "";
     $("marker").style.left = "50%";
     $("fill").style.left = "50%";
     $("fill").style.width = "0";
-    $("result").hidden = true;
+    $("found-count").textContent = "0";
+    $("kept-count").textContent = "–";
+    $("funnel-bar").style.width = "0";
+    $("funnel-note").textContent = "Searching the last 10 days";
+    [...$("split").children].forEach((bar) => (bar.style.width = "0"));
+    $("legend").querySelectorAll("b").forEach((count) => (count.textContent = "–"));
+    document.querySelectorAll("#filters button").forEach((button) => {
+      button.classList.toggle("active", button.dataset.filter === "all");
+      button.disabled = button.dataset.filter !== "all";
+      button.textContent = capitalize(button.dataset.filter);
+    });
     $("query").innerHTML = "";
     $("days").innerHTML = "";
-    $("found").textContent = "";
-    $("posts").innerHTML = "";
-    $("posts").classList.remove("all");
+    $("chart").innerHTML = "";
+    $("feed").innerHTML = "";
+    $("feed").classList.remove("all");
     $("more").hidden = true;
     $("message").hidden = true;
-    $("reasoning").textContent = "";
-    $("thinking-label").textContent = "Thinking";
-    $("thinking").hidden = true;
-    $("sentiment").hidden = true;
-    $("search").hidden = false;
     setStep("searching 𝕏");
-  }
-
-  function postCard({ post_id, username, text, created_at }) {
-    return `<a class="post" href="https://x.com/i/status/${post_id}" target="_blank" rel="noopener"><span class="author">@${escapeHtml(username)}<span class="time">${ago(created_at)}</span>${ICONS.link}</span><p>${escapeHtml(text)}</p></a>`;
   }
 
   function ago(time) {
@@ -369,8 +542,12 @@
     return `${count} ${word}${count === 1 ? "" : "s"}`;
   }
 
+  function capitalize(word) {
+    return word[0].toUpperCase() + word.slice(1);
+  }
+
   function escapeHtml(text) {
-    return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   }
 </script>
 </body>

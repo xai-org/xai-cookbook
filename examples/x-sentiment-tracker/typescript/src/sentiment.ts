@@ -9,7 +9,13 @@ const DAYS = 10;
 const DAY_MS = 86_400_000;
 
 export type Post = { post_id: string; username: string; text: string; created_at: string };
-export type Sentiment = { score: number; reasoning: string; key_posts: Array<{ post_id: string; note: string }> };
+export type Sentiment = {
+  // Each post's own score, which lets a caller show how the sentiment moved from day to day.
+  post_scores: Array<{ post_id: string; score: number }>;
+  score: number;
+  reasoning: string;
+  key_posts: Array<{ post_id: string; note: string }>;
+};
 
 export type AnalyzeEvents = {
   searching?: (query: string, days: string[]) => void;
@@ -51,9 +57,19 @@ const FILTER_SCHEMA = {
   additionalProperties: false,
 };
 
+// The posts' own scores come first, so Grok judges each post before it settles on the overall score.
 const SENTIMENT_SCHEMA = {
   type: "object",
   properties: {
+    post_scores: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: { post_id: { type: "string" }, score: { type: "number", minimum: -1, maximum: 1 } },
+        required: ["post_id", "score"],
+        additionalProperties: false,
+      },
+    },
     score: { type: "number", minimum: -1, maximum: 1, description: "From -1 (negative) to 1 (positive), with 0 being neutral" },
     reasoning: { type: "string", description: "A brief explanation of how you arrived at the score" },
     key_posts: {
@@ -66,7 +82,7 @@ const SENTIMENT_SCHEMA = {
       },
     },
   },
-  required: ["score", "reasoning", "key_posts"],
+  required: ["post_scores", "score", "reasoning", "key_posts"],
   additionalProperties: false,
 };
 
@@ -152,10 +168,14 @@ async function scoreSentiment(posts: Post[], topic: string, on: AnalyzeEvents, s
   const stream = await client.responses.create(
     {
       model: "grok-4.7",
+      // At the default effort, Grok reasons through every post before it answers, which takes minutes
+      // once each post gets its own score. Low effort takes seconds and puts nearly every post on the
+      // same side.
+      reasoning: { effort: "low" },
       input: [
         {
           role: "system",
-          content: `Score the overall sentiment toward ${topic} in these X posts from -1 (very negative) to 1 (very positive), with 0 being neutral. Weigh each post by how clear its sentiment is and how prominent its author is, and base the score only on these posts. Explain the score briefly and list the posts that influenced it most.`,
+          content: `Score the sentiment toward ${topic} in these X posts from -1 (very negative) to 1 (very positive), with 0 being neutral. First score every post on its own, from -1 to 1 like the overall score. Then give the overall score, weighing each post by how clear its sentiment is and how prominent its author is, and base it only on these posts. Explain the overall score briefly and list the posts that influenced it most.`,
         },
         { role: "user", content: JSON.stringify(posts) },
       ],
@@ -165,5 +185,13 @@ async function scoreSentiment(posts: Post[], topic: string, on: AnalyzeEvents, s
     { signal },
   );
   const response = await stream.on("reasoning", (text) => on.reasoning?.(text)).done();
-  return response.toJson() as Sentiment;
+  const sentiment = response.toJson() as Sentiment;
+  // The schema's minimum and maximum aren't enforced, and Grok sometimes scores the most one-sided
+  // posts past -1 or 1, so the scores are clamped.
+  const clamp = (score: number) => Math.min(1, Math.max(-1, score));
+  return {
+    ...sentiment,
+    score: clamp(sentiment.score),
+    post_scores: sentiment.post_scores.map((post) => ({ ...post, score: clamp(post.score) })),
+  };
 }

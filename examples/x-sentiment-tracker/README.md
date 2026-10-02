@@ -1,6 +1,6 @@
 ---
 title: 𝕏 Sentiment Tracker
-description: Score the sentiment about any topic from live 𝕏 posts with Grok's X Search tool, and watch the searches and Grok's reasoning stream into a small web app.
+description: Score the sentiment about any topic from live 𝕏 posts with Grok's X Search tool, and see it on a dashboard with a score for every post and the sentiment day by day.
 type: app
 level: intermediate
 languages: [typescript]
@@ -21,7 +21,8 @@ Give it a topic, like a company, a product, or an event, and it searches 𝕏 fo
 - Run one search per day in parallel to collect more posts than a single search returns
 - Use citations to keep only the posts that X Search actually returned
 - Show server-side searches and reasoning as they happen with the SDK's stream events
-- Match the reasoning effort to the job: low for searching and filtering, the default for scoring
+- Score every post as structured output, and clamp the scores, since a schema's minimum and maximum aren't enforced
+- Use a low reasoning effort to keep each step fast, even when Grok scores every post
 - Stream progress from a Node server to a web page with server-sent events, and cancel the work when the page closes
 
 ## Run it
@@ -34,7 +35,7 @@ npm install
 npm run web
 ```
 
-Open http://localhost:3000, enter a topic, and click **Check sentiment**. The page shows the searches as they run, the posts Grok keeps, and its reasoning, then the score on a scale from -1 (negative) to +1 (positive), with the posts that influenced it most. Click **Stop** or close the page to cancel.
+Open http://localhost:3000, enter a topic or pick one, and click **Analyze**. The page works like a social listening dashboard. It shows each day's search as it runs, how many posts were found and kept, and Grok's reasoning while it scores. Then it shows the overall score from -1 (negative) to +1 (positive), the split between positive, neutral, and negative posts, the sentiment day by day, why Grok gave that score, and every post with its own score. Click **Stop** or close the page to cancel.
 
 To check a topic from the terminal instead, pass it as an argument. It defaults to SpaceX.
 
@@ -52,6 +53,6 @@ The shared code is in `src/sentiment.ts`. `analyze()` runs these steps and repor
 
 1. `findPosts()` streams a `grok-4.7` request with `xSearch()` limited to one day, asking for that day's most popular posts as JSON. The `server_tool_call` event reports the search as it runs, and the `citation` event collects the posts Grok cites, which is how the app drops any post that X Search didn't return. `analyze()` runs it for each of the last 10 days at once, removes duplicates, and skips a day whose search fails.
 2. `filterPosts()` keeps the posts that show how people feel about the topic, using a low reasoning effort.
-3. `scoreSentiment()` scores the posts it kept with the default effort and reports Grok's reasoning as it streams in.
+3. `scoreSentiment()` scores each post it kept, then the topic overall, and reports Grok's reasoning as it streams in. It uses a low effort too: at the default, Grok reasons through every post before it answers, which takes a few minutes. The schema asks for scores from -1 to 1, but the range isn't enforced, so the scores are clamped.
 
-`src/server.ts` runs `analyze()` for the topic from the page and sends each step to it as a server-sent event. It passes an `AbortSignal` to every request, so closing the page or clicking **Stop** cancels whatever is running. `public/index.html` is plain HTML and JavaScript that shows those events: each day's search, the posts Grok kept, its reasoning, and the score with the posts that influenced it most. `src/index.ts` prints the same steps in the terminal.
+`src/server.ts` runs `analyze()` for the topic from the page and sends each step to it as a server-sent event. It passes an `AbortSignal` to every request, so closing the page or clicking **Stop** cancels whatever is running. `public/index.html` is plain HTML and JavaScript that shows those events as a dashboard, and works out the sentiment for each day from the scores of that day's posts. `src/index.ts` prints the same steps in the terminal.
