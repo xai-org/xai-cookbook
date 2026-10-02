@@ -77,9 +77,11 @@
   #code { margin: 0; max-height: 480px; overflow: auto; font: 12px/20px var(--mono); tab-size: 2; }
   #copy { position: absolute; top: 16px; right: 18px; height: 30px; padding: 0 12px; font-size: 13px; }
 
+  @media (max-width: 1100px) {
+    .compare { grid-template-columns: minmax(0, 1fr); }
+  }
   @media (max-width: 860px) {
     h1 { font-size: 36px; }
-    .compare { grid-template-columns: minmax(0, 1fr); }
   }
 </style>
 </head>
