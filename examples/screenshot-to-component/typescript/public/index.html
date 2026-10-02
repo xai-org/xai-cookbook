@@ -52,16 +52,9 @@
   .examples .pill { height: 30px; padding: 0 12px; font-size: 13px; }
 
   .stage { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; margin-top: 48px; }
-  .card { position: relative; background: var(--card); border-radius: 16px; padding: 20px 22px; }
+  .card { position: relative; background: var(--card); border-radius: 16px; padding: 20px 22px; animation: appear 0.3s ease-out; }
+  @keyframes appear { from { opacity: 0; transform: translateY(4px); } }
   .card-label { display: flex; align-items: center; gap: 8px; margin: 0 0 12px; font-size: 13px; font-weight: 500; color: var(--muted); }
-  .thinking summary { margin: 0; list-style: none; cursor: pointer; }
-  .thinking summary::-webkit-details-marker { display: none; }
-  .thinking:has(#reasoning:empty) summary { cursor: default; }
-  .chevron { width: 14px; height: 14px; margin-left: auto; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.2s; }
-  .thinking[open] .chevron { transform: rotate(180deg); }
-  .thinking:has(#reasoning:empty) .chevron { display: none; }
-  #reasoning { margin-top: 12px; max-height: 200px; overflow: auto; white-space: pre-wrap; font: 12px/20px var(--mono); color: var(--muted); }
-  #reasoning:empty { display: none; }
   .dots { display: none; gap: 4px; }
   .card.active .dots { display: inline-flex; }
   .dots i { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); animation: blink 1.2s infinite both; }
@@ -77,11 +70,12 @@
   @property --fade-top { syntax: "<length>"; inherits: false; initial-value: 0px; }
   @property --fade-bottom { syntax: "<length>"; inherits: false; initial-value: 0px; }
   #code {
-    margin: 0; max-height: 480px; overflow: auto; font: 12px/20px var(--mono); tab-size: 2; color: #1f2328;
+    margin: 0; height: min(480px, 60vh); overflow: auto; font: 12px/20px var(--mono); tab-size: 2; color: #1f2328;
     -webkit-mask-image: linear-gradient(to bottom, transparent, #000 var(--fade-top), #000 calc(100% - var(--fade-bottom)), transparent);
     mask-image: linear-gradient(to bottom, transparent, #000 var(--fade-top), #000 calc(100% - var(--fade-bottom)), transparent);
     transition: --fade-top 0.2s, --fade-bottom 0.2s;
   }
+  #code.thinking { white-space: pre-wrap; color: var(--muted); }
   #code.fade-top { --fade-top: 48px; }
   #code.fade-bottom { --fade-bottom: 48px; }
   #code .token.comment { color: #6e7781; }
@@ -94,8 +88,7 @@
   #code .token.punctuation, #code .token.operator, #code .token.plain-text { color: #1f2328; }
   #code .token.attr-value .token.punctuation { color: inherit; }
   #copy { position: absolute; top: 16px; right: 18px; height: 30px; padding: 0 12px; font-size: 13px; }
-  #round { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; align-items: start; }
-  #round:has(#outlines[hidden]) { grid-template-columns: minmax(0, 1fr); }
+  #round { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; align-items: start; overflow: hidden; }
   .round-text { display: grid; gap: 10px; }
   .round-text > * { margin: 0; }
   #round-status, #match { font-size: 14px; }
@@ -103,7 +96,7 @@
   #changes:empty { display: none; }
   #again { justify-self: start; height: 32px; padding: 0 14px; font-size: 13px; }
   #outlines { margin: 0; }
-  #overlay { display: block; width: 100%; border-radius: 8px; background: #fff; box-shadow: 0 0 0 1px var(--rule); }
+  #overlay { display: block; width: 100%; height: 100%; }
   #outlines figcaption { margin-top: 8px; font-size: 13px; line-height: 20px; color: var(--muted); }
 
   @media (max-width: 1100px) {
@@ -111,6 +104,9 @@
   }
   @media (max-width: 860px) {
     h1 { font-size: 36px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .card { animation: none; }
   }
 </style>
 </head>
@@ -152,15 +148,13 @@
         <p id="match" hidden></p>
         <button type="button" id="again" class="pill pill-secondary" hidden>Compare again</button>
       </div>
-      <figure id="outlines" hidden>
-        <img id="overlay" alt="The outlines of the screenshot and the component, laid over each other">
+      <figure id="outlines">
+        <div class="frame" id="overlay-frame">
+          <img id="overlay" alt="The outlines of the screenshot and the component, laid over each other" hidden>
+        </div>
         <figcaption>What Grok compares: the screenshot's outlines in blue and the component's in red. Black is where they line up.</figcaption>
       </figure>
     </section>
-    <details class="card thinking" id="thinking" open hidden>
-      <summary class="card-label"><span id="status">Uploading the screenshot</span> <span class="dots"><i></i><i></i><i></i></span><svg class="chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4"/></svg></summary>
-      <div id="reasoning"></div>
-    </details>
     <section class="card" id="code-card" hidden>
       <p class="card-label"><span id="code-label">Code</span> <span class="dots"><i></i><i></i><i></i></span></p>
       <button type="button" id="copy" class="pill pill-secondary" hidden>Copy code</button>
@@ -203,7 +197,6 @@
   // The best-scoring component so far. Each later round starts from it.
   let best = null;
   let running = false;
-  let thinkingSince = 0;
   let source = "";
   let codeFrame = 0;
 
@@ -230,10 +223,6 @@
     choose(event.dataTransfer.files[0]);
   });
 
-  $("thinking").querySelector("summary").onclick = (event) => {
-    if (!$("reasoning").textContent) event.preventDefault();
-  };
-
   function choose(file) {
     if (!file || running) return;
     if (!IMAGE_TYPES.includes(file.type)) return alert("Choose a PNG, JPEG, or WebP image.");
@@ -243,7 +232,6 @@
     $("shot").src = URL.createObjectURL(file);
     $("compare").hidden = false;
     $("round").hidden = true;
-    $("thinking").hidden = true;
     $("code-card").hidden = true;
     $("result-label").textContent = "Component";
     showPlaceholder("Click Make component to recreate the screenshot.");
@@ -257,11 +245,9 @@
     pending = best = null;
     source = "";
     showCode("");
-    $("code-label").textContent = "Code";
-    $("code-card").hidden = true;
     $("round").hidden = true;
     $("match").hidden = true;
-    $("outlines").hidden = true;
+    $("overlay").hidden = true;
     $("result-label").textContent = "Component";
     showPlaceholder("The component appears here when Grok is done.");
     start("Uploading the screenshot");
@@ -279,30 +265,25 @@
     const on = (name, handler) => events.addEventListener(name, (message) => handler(JSON.parse(message.data)));
 
     on("step", ({ step, status }) => {
-      if (step === "think" && status === "active") {
-        thinkingSince = Date.now();
-        $("status").textContent = "Thinking";
-      }
-      if (step === "think" && status === "done") {
-        $("thinking").open = false;
-        $("thinking").classList.remove("active");
-        $("status").textContent = `Thought for ${Math.round((Date.now() - thinkingSince) / 1000)} seconds`;
-      }
+      if (step === "think" && status === "active") $("code-label").textContent = "Thinking";
       // In later rounds, the code from the round before stays up until Grok starts rewriting it.
       if (step === "write" && status === "active") {
         source = "";
         showCode("");
-        $("copy").hidden = true;
-        $("code-card").hidden = false;
-        $("code-card").classList.add("active");
+        $("code-label").textContent = "Writing the code";
       }
     });
     on("changes", ({ changes }) => showChanges(changes, false));
+    // In the first round there's no code to show yet, so the box shows Grok's reasoning instead.
     on("reasoning", ({ text }) => {
-      $("reasoning").textContent += text;
-      $("reasoning").scrollTop = $("reasoning").scrollHeight;
+      if (source) return;
+      const box = $("code");
+      box.classList.add("thinking");
+      box.textContent += text;
+      box.scrollTop = box.scrollHeight;
+      updateFades();
     });
-    on("name", ({ name }) => ($("code-label").textContent = `${name}.tsx`));
+    on("name", ({ name }) => ($("code-label").textContent = `Writing ${name}.tsx`));
     on("code", ({ text }) => {
       source += text;
       // The code arrives in many small pieces, so highlight it at most once per frame.
@@ -319,7 +300,6 @@
       pending = { round, component: { name, code }, page };
       show(pending, true);
       stop();
-      $("round").hidden = false;
       $("round").classList.add("active");
       if (round > 1) {
         showChanges(changes, true);
@@ -329,6 +309,7 @@
       $("round-label").textContent = "Round 2";
       $("round-status").textContent = "Taking a screenshot of the component";
       $("changes").replaceChildren();
+      reveal($("round"));
     });
     on("failure", ({ message }) => {
       events.close();
@@ -346,6 +327,7 @@
     const { naturalWidth: width, naturalHeight: height } = $("shot");
     if (!width) return;
     $("frame").style.aspectRatio = `${width} / ${height}`;
+    $("overlay-frame").style.aspectRatio = `${width} / ${height}`;
     $("preview").style.width = `${width}px`;
     $("preview").style.height = `${height}px`;
     $("preview").style.transform = `scale(${$("frame").clientWidth / width})`;
@@ -430,6 +412,8 @@
     const { name, code } = version.component;
     source = code;
     showCode(code);
+    $("code").scrollTop = 0;
+    updateFades();
     $("copy").hidden = false;
     $("code-label").textContent = `${name}.tsx`;
     $("result-label").textContent = version.round > 1 ? `${name} · round ${version.round}` : name;
@@ -440,7 +424,17 @@
 
   function showOutlines() {
     $("overlay").src = best.overlay;
-    $("outlines").hidden = false;
+    $("overlay").hidden = false;
+  }
+
+  // Grows a card open from nothing, so the cards below it slide down instead of jumping.
+  function reveal(card) {
+    card.hidden = false;
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    card.animate(
+      [{ height: "0px", paddingTop: "0px", paddingBottom: "0px", marginTop: "-16px" }, { height: `${card.offsetHeight}px` }],
+      { duration: 300, easing: "ease-out" },
+    );
   }
 
   // Traces the outlines in the screenshot and in a screenshot of the component. The overlay draws the
@@ -517,6 +511,7 @@
 
   // Prism loads from a CDN. If it didn't load, the code still shows, just without colors.
   function showCode(code) {
+    $("code").classList.remove("thinking");
     if (window.Prism) $("code").innerHTML = Prism.highlight(code, Prism.languages.tsx, "tsx");
     else $("code").textContent = code;
     updateFades();
@@ -540,12 +535,11 @@
     running = true;
     ["go", "sample", "file"].forEach((id) => ($(id).disabled = true));
     $("again").hidden = true;
-    $("reasoning").textContent = "";
+    $("copy").hidden = true;
+    $("code-label").textContent = status;
+    $("code-card").hidden = false;
+    $("code-card").classList.add("active");
     $("result").classList.add("active");
-    $("status").textContent = status;
-    $("thinking").classList.add("active");
-    $("thinking").open = true;
-    $("thinking").hidden = false;
   }
 
   function stop() {
@@ -558,13 +552,12 @@
     alert(message);
     stop();
     if (round === 1) {
-      $("status").textContent = "Couldn't make the component";
+      $("code-label").textContent = "Couldn't make the component";
       return;
     }
     // Put back the best component, so Compare again can retry this round.
     round -= 1;
     show(best, false);
-    $("status").textContent = "Couldn't improve the component";
     $("round-status").textContent = "This round didn't finish, so the component is the best one from before.";
     $("again").hidden = false;
   }
