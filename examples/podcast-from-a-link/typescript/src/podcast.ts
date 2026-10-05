@@ -1,18 +1,13 @@
 import { existsSync, openAsBlob } from "node:fs";
 import { basename } from "node:path";
-import { type UnsafeSpeechText, xAI } from "@xai-official/sdk";
+import { SpaceXAI, stripInvalidSpeechTags } from "@xai-official/sdk";
 
-const client = new xAI();
+const client = new SpaceXAI();
 
 export const HOSTS = {
   host: { name: "Eve", voice: "eve" },
   guest: { name: "Rex", voice: "rex" },
 } as const;
-
-// The voice API reads unknown tags aloud instead of rejecting them, so any tag
-// outside these lists is stripped before recording.
-const INLINE_TAGS = ["pause", "laugh", "chuckle", "sigh", "breath"];
-const WRAPPING_TAGS = ["emphasis", "whisper", "slow"];
 
 export type Material = { type: "input_text"; text: string } | { type: "input_file"; file_id: string };
 export type Line = { speaker: keyof typeof HOSTS; text: string };
@@ -80,8 +75,7 @@ async function uploadPdf(file: Blob, filename: string, signal?: AbortSignal): Pr
 // Streams the script and reports each line as soon as it's complete, so callers can
 // start recording before Grok has finished writing.
 export async function writeScript(material: Material, on: ScriptEvents = {}, signal?: AbortSignal): Promise<Script> {
-  let json = "";
-  let title = false;
+  let titled = false;
   let lines = 0;
   const stream = await client.responses.create(
     {
@@ -100,19 +94,20 @@ export async function writeScript(material: Material, on: ScriptEvents = {}, sig
   );
   const response = await stream
     .on("reasoning", (text) => on.reasoning?.(text))
-    .on("text", (delta) => {
-      json += delta;
-      const titleMatch = !title && json.match(/"title"\s*:\s*("(?:[^"\\]|\\.)*")/);
-      if (titleMatch) {
-        title = true;
-        on.title?.(JSON.parse(titleMatch[1]));
+    // The script so far, with whatever is still being written closed off. Grok writes the title before
+    // the lines, so the title is finished once the lines start, and each line once the next one starts.
+    .on("json", (value) => {
+      const partial = value as Partial<Script>;
+      if (!titled && partial.title !== undefined && partial.lines) {
+        titled = true;
+        on.title?.(partial.title);
       }
-      // Each line is a small flat object, so a complete one is a {...} with no braces inside.
-      const complete = json.slice(json.indexOf('"lines"')).match(/\{[^{}]*\}/g) ?? [];
-      for (; lines < complete.length; lines++) on.line?.(JSON.parse(complete[lines]), lines);
+      const written = partial.lines ?? [];
+      for (; lines < written.length - 1; lines++) on.line?.(written[lines], lines);
     })
     .done();
   const script = response.toJson() as Script;
+  if (!titled) on.title?.(script.title);
   for (; lines < script.lines.length; lines++) on.line?.(script.lines[lines], lines);
   return script;
 }
@@ -120,20 +115,15 @@ export async function writeScript(material: Material, on: ScriptEvents = {}, sig
 export async function recordLine(line: Line, signal?: AbortSignal): Promise<Uint8Array> {
   const speech = await client.voice.speak(
     {
-      // The model writes this text, so it can't be checked at compile time. cleanTags() does it instead.
-      text: cleanTags(line.text) as UnsafeSpeechText,
+      // The model writes this text, so the SDK can't check its speech tags at compile time. Any tag the
+      // voice API wouldn't recognize is removed instead, so it isn't read aloud.
+      text: stripInvalidSpeechTags(line.text),
       language: "en",
       voice_id: HOSTS[line.speaker].voice,
     },
     { signal },
   );
   return speech.bytes();
-}
-
-function cleanTags(text: string): string {
-  return text
-    .replace(/\[([a-z-]+)\]/g, (tag, name) => (INLINE_TAGS.includes(name) ? tag : ""))
-    .replace(/<\/?([a-z-]+)>/g, (tag, name) => (WRAPPING_TAGS.includes(name) ? tag : ""));
 }
 
 function htmlToText(html: string): string {
