@@ -29,6 +29,7 @@ Every example is a folder under [`examples/`](examples/) with a README that expl
 | [Screenshot to React Component](examples/screenshot-to-component/) | Turn a screenshot of a UI into a React component styled with Tailwind, then have Grok compare a screenshot of the component with the original and fix what doesn't match, in a small web app. | Beginner | [TypeScript](examples/screenshot-to-component/typescript/) |
 | [Mobile Voice Apps](examples/voice-agent-mobile/) | Native iOS and Android apps for real-time voice conversations with Grok, plus text-to-speech on iOS. | Intermediate | [Swift](examples/voice-agent-mobile/swift/) · [Kotlin](examples/voice-agent-mobile/kotlin/) |
 | [Phone Voice Agent](examples/voice-agent-phone/) | A voice agent you can call on the phone, using Twilio. | Intermediate | [TypeScript](examples/voice-agent-phone/xai/) |
+| [Storyboard to Short Film](examples/storyboard-to-film/) | Turn a one-line premise into a four-shot short film with Grok Imagine keyframes, image-to-video, and narration, and watch it being made in a small web app. | Intermediate | [TypeScript](examples/storyboard-to-film/typescript/) |
 | [Web Voice Agent](examples/voice-agent-web/) | A React client with swappable Python and Node.js backends that talk to the Voice Agent API over WebSocket. | Intermediate | [TypeScript](examples/voice-agent-web/) · [Python](examples/voice-agent-web/xai/backend-python/) |
 | [𝕏 Sentiment Tracker](examples/x-sentiment-tracker/) | Score the sentiment about any topic from live 𝕏 posts with Grok's X Search tool, and see it on a dashboard with a score for every post and the sentiment day by day. | Intermediate | [TypeScript](examples/x-sentiment-tracker/typescript/) |
 | [WebRTC Voice Agent](examples/voice-agent-webrtc/) | A low-latency browser voice agent that uses WebRTC between the browser and a server, which connects to xAI over WebSocket. | Advanced | [TypeScript](examples/voice-agent-webrtc/) |
@@ -46,7 +47,7 @@ npm install
 npm start -- https://en.wikipedia.org/wiki/Voyager_Golden_Record
 ```
 
-Each app's README lists the arguments it takes.
+Each app's README lists the arguments it takes. Apps that generate images or video cost more to run, and their READMEs say how much.
 
 ## Run the notebooks
 

@@ -1,0 +1,598 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Storyboard to Short Film</title>
+<style>
+  /* The look every SpaceXAI Cookbook page shares, after x.ai. */
+  :root {
+    --bg: #fff;
+    --card: #f9f8f6;
+    --secondary: #f2f1ef;
+    --secondary-hover: #e9e8e5;
+    --tint: rgb(10 10 10 / 0.04);
+    --line: rgb(10 10 10 / 0.08);
+    --border: rgb(10 10 10 / 0.15);
+    --fg: #0a0a0a;
+    --muted: rgb(10 10 10 / 0.6);
+    --faint: rgb(10 10 10 / 0.36);
+    --accent: #ff6308;
+    --accent-soft: rgb(255 99 8 / 0.1);
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; font: 14px/22px var(--sans); background: var(--bg); color: var(--fg); -webkit-font-smoothing: antialiased; }
+  button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
+  a { color: inherit; }
+  svg { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  @keyframes blink { 50% { opacity: 0.3; } }
+  @keyframes pulse { to { background-color: var(--secondary-hover); } }
+  @keyframes fade { from { opacity: 0; } }
+
+  .site { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 12px; height: 60px; padding: 0 20px; background: rgb(255 255 255 / 0.85); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+  .logo { flex: none; margin-right: 4px; color: var(--fg); }
+  .logo svg { display: block; width: 52px; height: 20px; fill: currentColor; stroke: none; }
+  .crumbs { display: flex; align-items: center; gap: 8px; min-width: 0; color: var(--muted); white-space: nowrap; }
+  .crumbs svg { width: 12px; height: 12px; color: var(--faint); }
+  .crumbs h1 { margin: 0; overflow: hidden; text-overflow: ellipsis; font-size: inherit; line-height: inherit; font-weight: 500; color: var(--fg); }
+  .site .pill { flex: none; margin-left: auto; }
+  .models { flex: none; height: 26px; padding: 0 10px; border-radius: 9999px; box-shadow: inset 0 0 0 1px var(--line); font-size: 12px; font-weight: 500; line-height: 26px; color: var(--muted); }
+  .pill { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 40px; padding: 0 18px; border-radius: 9999px; font-size: 14px; font-weight: 500; white-space: nowrap; text-decoration: none; }
+  .pill-sm { height: 32px; padding: 0 14px; font-size: 13px; }
+  .pill-primary { background: var(--fg); color: #fff; }
+  .pill-primary:hover { background: #202329; }
+  .pill-secondary { background: var(--secondary); color: var(--fg); }
+  .pill-secondary:hover { background: var(--secondary-hover); }
+  .pill:disabled { opacity: 0.4; cursor: default; }
+  .pill svg { width: 14px; height: 14px; }
+  .field { min-width: 0; height: 40px; padding: 0 18px; border: 1px solid var(--border); border-radius: 9999px; background: var(--bg); color: var(--fg); font: inherit; outline: none; }
+  .field:focus { border-color: var(--fg); }
+  .field::placeholder { color: var(--faint); }
+  .surface { display: flex; flex-direction: column; gap: 8px; height: calc(100vh - 72px); min-height: 560px; margin: 0 12px 12px; padding: 8px; border-radius: 20px; background: var(--card); }
+  .panel { min-width: 0; padding: 20px 22px; border-radius: 16px; background: var(--bg); }
+  .label { margin: 0; font-size: 13px; font-weight: 500; color: var(--muted); }
+  @media (max-width: 900px) {
+    .models { display: none; }
+  }
+  @media (max-width: 640px) {
+    .site { padding: 0 16px; }
+    .crumbs > span, .crumbs > svg { display: none; }
+    .surface { margin: 0 8px 8px; }
+  }
+
+  /* Storyboard to Short Film */
+  :root {
+    --voice: rgb(124 58 237 / 0.08);
+    --voice-ready: rgb(124 58 237 / 0.14);
+    --voice-fg: #6d28d9;
+    --voice-strong: #7c3aed;
+  }
+  .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px; border-radius: 16px; background: var(--bg); }
+  .toolbar .field { flex: 1 1 260px; }
+  #summary { padding: 0 8px; color: var(--faint); font-size: 13px; font-variant-numeric: tabular-nums; }
+  #summary:empty { display: none; }
+
+  .workspace { flex: 1; display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: 8px; min-height: 0; }
+  .plan { position: relative; padding: 0; }
+  .plan-scroll { position: absolute; inset: 0; overflow: auto; padding: 20px 22px; }
+  .plan .label { margin-bottom: 10px; }
+  .plan-intro { margin: 0; color: var(--muted); }
+  #thinking summary { display: flex; align-items: center; gap: 6px; color: var(--muted); list-style: none; cursor: pointer; }
+  #thinking summary::-webkit-details-marker { display: none; }
+  #thinking summary svg { width: 12px; height: 12px; transition: transform 0.2s; }
+  #thinking[open] summary svg { transform: rotate(90deg); }
+  #thinking:has(#reasoning:empty) { display: none; }
+  #reasoning { max-height: 240px; margin-top: 8px; overflow: auto; white-space: pre-wrap; font: 11px/18px var(--mono); color: var(--faint); }
+  #board { margin-top: 16px; }
+  #title { margin: 0; font-size: 20px; line-height: 26px; font-weight: 500; letter-spacing: -0.01em; }
+  #style { margin: 4px 0 0; color: var(--muted); }
+  .shot-list { display: grid; gap: 2px; margin: 14px -10px 0; padding: 0; list-style: none; }
+  .shot-list li { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 8px; padding: 10px; border-radius: 12px; cursor: pointer; animation: fade 0.3s ease-out; }
+  .shot-list li:hover { background: var(--card); }
+  .shot-list li.selected { background: var(--secondary); }
+  .shot-list .n { font-family: var(--mono); font-size: 12px; color: var(--faint); }
+  .shot-list p { margin: 0; }
+  .shot-list .scene { font-size: 13px; line-height: 20px; }
+  .shot-list .motion { margin-top: 2px; font-size: 12px; line-height: 18px; color: var(--muted); }
+  .shot-list .narration { margin-top: 6px; font-size: 13px; line-height: 20px; color: var(--voice-fg); }
+
+  .stage { display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: 12px; min-height: 0; padding: 12px; }
+  .monitor { display: grid; place-items: center; min-height: 0; container-type: size; }
+  .screen { position: relative; display: grid; place-items: center; width: min(100cqw, 100cqh * 16 / 9); aspect-ratio: 16 / 9; overflow: hidden; border-radius: 12px; background: #0a0a0a; color: #f2f1ef; }
+  .screen video, .screen img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; animation: fade 0.4s ease-out; }
+  .screen-note { position: relative; max-width: 440px; margin: 0; padding: 0 24px; text-align: center; color: rgb(242 241 239 / 0.62); }
+  .empty-title { margin: 0 0 8px; font-size: 28px; line-height: 34px; font-weight: 450; letter-spacing: -0.01em; color: #f2f1ef; }
+  .examples { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 18px; }
+  .examples button { height: 32px; padding: 0 14px; border-radius: 9999px; background: rgb(255 255 255 / 0.1); color: #f2f1ef; font-size: 13px; font-weight: 500; }
+  .examples button:hover { background: rgb(255 255 255 / 0.16); }
+  .transport { display: flex; align-items: center; gap: 12px; min-height: 36px; padding: 0 4px; }
+  #play { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: var(--fg); color: #fff; }
+  #play:disabled { opacity: 0.2; cursor: default; }
+  #play svg { width: 12px; height: 12px; fill: currentColor; stroke: none; }
+  #timecode { font: 12px var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+  #caption { flex: 1; min-width: 0; overflow: hidden; color: var(--muted); white-space: nowrap; text-overflow: ellipsis; }
+
+  .timeline { flex: none; padding: 16px 22px 20px; }
+  .steps { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 20px; margin: 0 0 14px; padding: 0; list-style: none; font-size: 13px; color: var(--faint); }
+  .steps li { display: flex; align-items: center; gap: 7px; }
+  .steps i { width: 7px; height: 7px; border-radius: 50%; border: 1.5px solid currentColor; }
+  .steps .active { color: var(--fg); }
+  .steps .active i { border-color: var(--accent); background: var(--accent); animation: blink 1s ease-in-out infinite; }
+  .steps .done { color: var(--muted); }
+  .steps .done i { border-color: var(--fg); background: var(--fg); }
+  .steps .detail { color: var(--faint); font-variant-numeric: tabular-nums; }
+  .tracks { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 0 10px; }
+  .track-labels { display: grid; grid-template-rows: 72px 36px; gap: 6px; font-size: 12px; font-weight: 500; color: var(--faint); }
+  .track-labels span { display: flex; align-items: center; }
+  .lanes { position: relative; display: grid; grid-template-rows: 72px 36px; gap: 6px; }
+  .lanes.seekable { cursor: col-resize; }
+  .lane { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
+  .clip { position: relative; display: block; min-width: 0; overflow: hidden; padding: 0; border-radius: 8px; background: var(--secondary); text-align: left; outline: 2px solid transparent; outline-offset: -2px; }
+  .clip.empty { background: transparent; outline: 1px dashed var(--border); outline-offset: -1px; }
+  .clip.working { animation: pulse 1s ease-in-out infinite alternate; }
+  .clip.selected, .clip.current { outline-color: var(--fg); }
+  .clip img { display: block; width: 100%; height: 100%; object-fit: cover; animation: fade 0.4s ease-out; }
+  .clip .tag { position: absolute; left: 5px; top: 5px; padding: 0 5px; border-radius: 4px; background: rgb(0 0 0 / 0.6); font: 10px/16px var(--mono); color: #fff; }
+  .clip .state { position: absolute; right: 5px; bottom: 5px; padding: 0 5px; border-radius: 4px; background: rgb(0 0 0 / 0.6); font: 10px/16px var(--mono); color: #fff; font-variant-numeric: tabular-nums; }
+  .voice { display: flex; align-items: center; gap: 6px; padding: 0 10px; background: var(--voice); color: var(--voice-fg); font-size: 12px; }
+  .voice.ready { background: var(--voice-ready); }
+  .voice svg { flex: none; width: 10px; height: 10px; fill: currentColor; stroke: none; opacity: 0.4; }
+  .voice.ready svg { opacity: 1; }
+  .voice span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .voice.empty svg { display: none; }
+  .voice.playing { background: var(--voice-strong); color: #fff; }
+  #playhead { position: absolute; top: -6px; bottom: -6px; left: 0; width: 2px; margin-left: -1px; border-radius: 1px; background: var(--accent); pointer-events: none; }
+
+  @media (max-width: 900px) {
+    .surface { height: auto; }
+    .workspace { grid-template-columns: minmax(0, 1fr); }
+    .plan { order: 2; }
+    .plan-scroll { position: static; max-height: 360px; }
+    .monitor { height: 52vw; }
+  }
+  @media (max-width: 640px) {
+    .monitor { height: 60vw; }
+    .screen-note { padding: 0 16px; font-size: 13px; line-height: 19px; }
+    .empty-title { margin-bottom: 4px; font-size: 20px; line-height: 26px; }
+    .examples { margin-top: 10px; }
+  }
+</style>
+</head>
+<body>
+<header class="site">
+  <a class="logo" href="https://x.ai" target="_blank" rel="noopener" aria-label="SpaceXAI"><svg viewBox="0 0 759 290.2" aria-hidden="true"><g transform="translate(-674.5,-388.5)"><path d="M1433.19 388.934C1345.69 396.068 1001.73 438.71 763.235 678.467H674.732L684.62 668.612C734.53 620.395 955.373 416.045 1433.19 388.668V388.934Z"/><path d="M1133.66 678.467H1064.29L927.618 578.979C940.213 571.058 952.888 563.515 965.603 556.33L1133.66 678.467Z"/><path d="M1022.8 678.468H953.463L932.43 663.169H814.998C823.265 655.828 831.635 648.702 840.092 641.784H902.996L870.444 618.106C882.079 609.448 893.843 601.155 905.701 593.211L1022.8 678.468Z"/><path d="M770.433 495.02L823.901 533.876C810.594 541.712 798.139 549.468 786.514 557.055L701.158 494.986L770.433 495.02Z"/></g></svg></a>
+  <nav class="crumbs"><span>Cookbook</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg><h1>Storyboard to Short Film</h1></nav>
+  <span class="models">grok-4.7, Grok Imagine, and text to speech</span>
+  <a class="pill pill-secondary pill-sm" href="https://github.com/xai-org/xai-cookbook/tree/main/examples/storyboard-to-film" target="_blank" rel="noopener">View code</a>
+</header>
+
+
+<main class="surface">
+  <form id="form" class="toolbar">
+    <input id="premise" class="field" required aria-label="Premise" placeholder="A premise in one line, like a paper boat's journey through a rainy city at night">
+    <span id="summary">About $5 and a few minutes a film</span>
+    <button id="go" class="pill pill-primary">Make film</button>
+  </form>
+
+  <div class="workspace">
+    <aside class="panel plan">
+      <div class="plan-scroll">
+        <p class="label">Plan</p>
+        <p class="plan-intro" id="plan-intro">Grok plans four shots from your premise: what each one shows, how the camera moves, and a line of narration.</p>
+        <details id="thinking" open>
+          <summary><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg><span id="thinking-label">Thinking</span></summary>
+          <div id="reasoning"></div>
+        </details>
+        <div id="board" hidden>
+          <p id="title"></p>
+          <p id="style"></p>
+          <ol class="shot-list" id="shot-list"></ol>
+        </div>
+      </div>
+    </aside>
+
+    <section class="panel stage">
+      <div class="monitor">
+        <div class="screen" id="screen">
+          <video id="screen-video" playsinline hidden></video>
+          <img id="screen-image" alt="" hidden>
+          <div class="screen-note" id="screen-note">
+            <p class="empty-title">Describe a film in one line</p>
+            Grok plans four shots, draws a keyframe for each, animates them into eight-second clips, and narrates the story. Try one of these, or type your own above.
+            <div class="examples">
+              <button type="button" data-premise="A paper boat's journey through a rainy city at night">Paper boat</button>
+              <button type="button" data-premise="A lighthouse keeper's cat on the night of the big storm">Lighthouse cat</button>
+              <button type="button" data-premise="An old robot tends a rooftop garden through the four seasons">Robot gardener</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="transport">
+        <button type="button" id="play" disabled aria-label="Play"></button>
+        <span id="timecode">0:00 / 0:00</span>
+        <span id="caption"></span>
+      </div>
+    </section>
+  </div>
+
+  <section class="panel timeline">
+    <ol class="steps" id="steps">
+      <li data-step="plan"><i></i>Plan<span class="detail"></span></li>
+      <li data-step="draw"><i></i>Keyframes<span class="detail"></span></li>
+      <li data-step="animate"><i></i>Shots and narration<span class="detail"></span></li>
+      <li data-step="film"><i></i>Film<span class="detail"></span></li>
+    </ol>
+    <div class="tracks">
+      <div class="track-labels"><span>Shots</span><span>Voice</span></div>
+      <div class="lanes" id="lanes">
+        <div class="lane" id="shot-lane"></div>
+        <div class="lane" id="voice-lane"></div>
+        <div id="playhead" hidden></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  const ICONS = {
+    play: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9.5-5.5z"/></svg>',
+    pause: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 2.5h3v11h-3zM9.5 2.5h3v11h-3z"/></svg>',
+  };
+  const screenVideo = $("screen-video");
+  const audio = new Audio();
+  let shots = [];
+  let shotClips = [];
+  let voiceClips = [];
+  let selected = 0;
+  let film = null;
+  let narrating = null;
+  let thinkingSince = 0;
+  let renderingSince = 0;
+  let timer = 0;
+  let frame = 0;
+
+  $("play").innerHTML = ICONS.play;
+  document.querySelectorAll(".examples button").forEach((button) => {
+    button.onclick = () => {
+      $("premise").value = button.dataset.premise;
+      $("premise").focus();
+    };
+  });
+  buildTimeline();
+
+  $("form").onsubmit = (event) => {
+    event.preventDefault();
+    reset();
+    $("go").disabled = true;
+    const events = new EventSource(`/api/film?premise=${encodeURIComponent($("premise").value)}`);
+    const on = (name, handler) => events.addEventListener(name, (message) => handler(JSON.parse(message.data)));
+    const finish = () => {
+      events.close();
+      clearInterval(timer);
+      $("go").disabled = false;
+    };
+
+    on("step", ({ step, status }) => {
+      setStep(step, status);
+      if (step === "plan" && status === "active") {
+        thinkingSince = Date.now();
+        setDetail("plan", "thinking");
+      }
+      if (step === "plan" && status === "done") {
+        $("thinking").open = false;
+        const seconds = Math.round((Date.now() - thinkingSince) / 1000);
+        $("thinking-label").textContent = `Thought for ${plural(seconds, "second")}`;
+        setDetail("plan", "");
+      }
+      if (step === "draw") {
+        setDetail("draw", "drawing keyframe 1");
+        shots[0].drawing = true;
+        updateTimeline();
+      }
+      if (step === "animate") {
+        setStep("draw", "done");
+        setDetail("draw", "");
+        renderingSince = Date.now();
+        shots.forEach((shot) => (shot.rendering = true));
+        tick();
+        timer = setInterval(tick, 1000);
+      }
+      if (step === "film") {
+        setStep("animate", "done");
+        setDetail("film", "joining the shots");
+      }
+    });
+    on("reasoning", ({ text }) => {
+      $("reasoning").textContent += text;
+      $("reasoning").scrollTop = $("reasoning").scrollHeight;
+    });
+    on("storyboard", ({ title, style, shots: list }) => {
+      $("title").textContent = title;
+      $("style").textContent = style;
+      $("plan-intro").hidden = true;
+      $("board").hidden = false;
+      shots = list.map((shot) => ({ ...shot }));
+      renderPlan();
+      showMonitor();
+    });
+    on("keyframe", ({ index, url }) => {
+      Object.assign(shots[index], { keyframe: url, drawing: false });
+      if (index === 0) {
+        setDetail("draw", "editing keyframes 2 to 4");
+        shots.slice(1).forEach((shot) => (shot.drawing = true));
+      }
+      updateTimeline();
+      if (index === selected) showMonitor();
+    });
+    on("video", ({ index, url }) => {
+      Object.assign(shots[index], { video: url, rendering: false, renderedIn: elapsed(renderingSince) });
+      tick();
+      if (index === selected) showMonitor();
+    });
+    on("narration", ({ index, url }) => {
+      shots[index].audio = url;
+      updateTimeline();
+    });
+    on("done", ({ film: url, folder, cost }) => {
+      setStep("film", "done");
+      setDetail("film", url ? "" : "ffmpeg isn't installed, so the shots weren't joined");
+      $("summary").textContent = `$${cost.toFixed(2)} for images and video · saved to ${folder}/`;
+      if (url) {
+        film = url;
+        audio.pause();
+        showMonitor();
+      }
+      finish();
+    });
+    on("failure", ({ message }) => {
+      stop(message);
+      finish();
+    });
+    // Without this, the browser would reconnect and start a new film.
+    events.onerror = () => {
+      stop("Lost the connection to the server.");
+      finish();
+    };
+  };
+
+  function setStep(step, status) {
+    const item = $("steps").querySelector(`[data-step="${step}"]`);
+    item.classList.toggle("active", status === "active");
+    item.classList.toggle("done", status === "done");
+  }
+
+  function setDetail(step, text) {
+    $("steps").querySelector(`[data-step="${step}"] .detail`).textContent = text ? `· ${text}` : "";
+  }
+
+  function renderPlan() {
+    $("shot-list").replaceChildren(
+      ...shots.map((shot, index) => {
+        const item = document.createElement("li");
+        item.innerHTML = `<span class="n">${index + 1}</span><div><p class="scene"></p><p class="motion"></p><p class="narration"></p></div>`;
+        item.querySelector(".scene").textContent = shot.scene;
+        item.querySelector(".motion").textContent = shot.motion;
+        item.querySelector(".narration").textContent = `“${shot.narration}”`;
+        item.onclick = () => pick(index);
+        return item;
+      }),
+    );
+  }
+
+  // Four slots on each track, made once per film and updated in place, so the images don't fade in
+  // again on every update. A shot's slot shows its keyframe once it's drawn, and its voice slot shows
+  // its line of narration.
+  function buildTimeline() {
+    const slot = (className, html, onClick) =>
+      Array.from({ length: 4 }, (_, index) => {
+        const clip = document.createElement("button");
+        clip.type = "button";
+        clip.className = className;
+        clip.innerHTML = html(index);
+        clip.onclick = (event) => {
+          if (film || !shots[index]) return;
+          event.stopPropagation();
+          onClick(index);
+        };
+        return clip;
+      });
+    shotClips = slot("clip", (index) => `<span class="tag">${index + 1}</span><span class="state" hidden></span>`, pick);
+    voiceClips = slot("clip voice", () => `<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9.5-5.5z"/></svg><span></span>`, playNarration);
+    $("shot-lane").replaceChildren(...shotClips);
+    $("voice-lane").replaceChildren(...voiceClips);
+    updateTimeline();
+  }
+
+  function updateTimeline() {
+    shotClips.forEach((clip, index) => {
+      const shot = shots[index];
+      clip.classList.toggle("empty", !shot);
+      clip.classList.toggle("working", Boolean(shot?.drawing && !shot.keyframe));
+      clip.classList.toggle("selected", Boolean(shot) && index === selected && !film);
+      if (shot?.keyframe && !clip.querySelector("img")) clip.prepend(image(shot.keyframe));
+      const state = clip.querySelector(".state");
+      state.textContent = !shot || film ? "" : shot.rendering ? `rendering ${elapsed(renderingSince)}` : shot.renderedIn ? `rendered in ${shot.renderedIn}` : "";
+      state.hidden = !state.textContent;
+    });
+    voiceClips.forEach((clip, index) => {
+      const shot = shots[index];
+      clip.classList.toggle("empty", !shot);
+      clip.classList.toggle("ready", Boolean(shot?.audio));
+      clip.classList.toggle("playing", index === narrating && !audio.paused);
+      clip.querySelector("span").textContent = shot?.narration ?? "";
+      clip.title = shot?.narration ?? "";
+    });
+    document.querySelectorAll("#shot-list li").forEach((item, index) => item.classList.toggle("selected", index === selected && !film));
+    $("lanes").classList.toggle("seekable", Boolean(film));
+  }
+
+  // The monitor shows the film once it's joined. Until then it shows the selected shot: its video once
+  // it's rendered, or its keyframe while it renders.
+  function showMonitor() {
+    const shot = shots[selected];
+    const source = film ?? shot?.video;
+    $("screen-note").hidden = Boolean(source || shot?.keyframe);
+    if (source) {
+      if (screenVideo.getAttribute("src") !== source) {
+        screenVideo.src = source;
+        screenVideo.poster = film ? shots[0]?.keyframe ?? "" : shot.keyframe ?? "";
+      }
+      screenVideo.hidden = false;
+      $("screen-image").hidden = true;
+    } else {
+      screenVideo.pause();
+      screenVideo.hidden = true;
+      screenVideo.removeAttribute("src");
+      $("screen-image").hidden = !shot?.keyframe;
+      if (shot?.keyframe) $("screen-image").src = shot.keyframe;
+      if (shots.length && !shot?.keyframe) {
+        $("screen-note").innerHTML = `<p class="empty-title">Shot ${selected + 1}</p>Drawing the keyframe`;
+      }
+    }
+    $("play").disabled = !source;
+    $("playhead").hidden = !film;
+    updateTimeline();
+    updateTransport();
+  }
+
+  function pick(index) {
+    if (film) return seekToShot(index);
+    selected = index;
+    showMonitor();
+  }
+
+  function seekToShot(index) {
+    if (!screenVideo.duration) return;
+    screenVideo.currentTime = (index * screenVideo.duration) / shots.length;
+    screenVideo.play();
+  }
+
+  // Once the film is joined, the tracks are its timeline: clicking anywhere seeks there.
+  $("lanes").addEventListener("click", (event) => {
+    if (!film || !screenVideo.duration) return;
+    const { left, width } = $("lanes").getBoundingClientRect();
+    screenVideo.currentTime = Math.min(Math.max((event.clientX - left) / width, 0), 0.999) * screenVideo.duration;
+    if (screenVideo.paused) screenVideo.play();
+  });
+
+  $("play").onclick = () => (screenVideo.paused ? screenVideo.play() : screenVideo.pause());
+  addEventListener("keydown", (event) => {
+    if (event.code !== "Space" || event.target.closest("input, button") || $("play").disabled) return;
+    event.preventDefault();
+    $("play").click();
+  });
+  screenVideo.onplay = () => {
+    audio.pause();
+    $("play").innerHTML = ICONS.pause;
+    follow();
+  };
+  screenVideo.onpause = screenVideo.onended = () => ($("play").innerHTML = ICONS.play);
+  screenVideo.onloadedmetadata = screenVideo.onseeked = updateTransport;
+
+  // While the film plays, the playhead and the current shot follow it every frame.
+  function follow() {
+    cancelAnimationFrame(frame);
+    updateTransport();
+    if (!screenVideo.paused) frame = requestAnimationFrame(follow);
+  }
+
+  function updateTransport() {
+    const { currentTime, duration } = screenVideo;
+    const known = Number.isFinite(duration) && duration > 0;
+    $("timecode").textContent = `${clock(known ? currentTime : 0)} / ${clock(known ? duration : 0)}`;
+    if (film) {
+      const current = known ? Math.min(shots.length - 1, Math.floor((currentTime / duration) * shots.length)) : 0;
+      $("playhead").style.left = `${known ? (currentTime / duration) * 100 : 0}%`;
+      shotClips.forEach((clip, index) => clip.classList.toggle("current", index === current));
+      $("caption").textContent = shots[current] ? `Shot ${current + 1} · “${shots[current].narration}”` : "";
+    } else {
+      const shot = shots[selected];
+      $("caption").textContent = shot ? `Shot ${selected + 1} · “${shot.narration}”` : "";
+    }
+  }
+
+  function tick() {
+    const rendering = shots.filter((shot) => shot.rendering);
+    if (renderingSince) {
+      setDetail("animate", rendering.length ? `${shots.length - rendering.length} of ${shots.length} rendered · ${elapsed(renderingSince)}` : "");
+    }
+    updateTimeline();
+  }
+
+  function playNarration(index) {
+    if (index === narrating && !audio.paused) return audio.pause();
+    if (!shots[index].audio) return;
+    screenVideo.pause();
+    narrating = index;
+    audio.src = shots[index].audio;
+    audio.play();
+  }
+
+  audio.onplay = audio.onpause = audio.onended = updateTimeline;
+
+  function image(url) {
+    const img = new Image();
+    img.src = url;
+    img.alt = "";
+    return img;
+  }
+
+  function elapsed(since) {
+    return clock((Date.now() - since) / 1000);
+  }
+
+  function clock(seconds) {
+    const whole = Math.floor(seconds);
+    return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, "0")}`;
+  }
+
+  function plural(count, word) {
+    return `${count} ${word}${count === 1 ? "" : "s"}`;
+  }
+
+  function stop(message) {
+    alert(message);
+    clearInterval(timer);
+    shots.forEach((shot) => Object.assign(shot, { drawing: false, rendering: false }));
+    updateTimeline();
+    const active = $("steps").querySelector(".active");
+    if (active) {
+      active.classList.remove("active");
+      active.querySelector(".detail").textContent = "· couldn't finish";
+    }
+  }
+
+  function reset() {
+    audio.pause();
+    screenVideo.pause();
+    clearInterval(timer);
+    cancelAnimationFrame(frame);
+    shots = [];
+    selected = 0;
+    film = null;
+    narrating = null;
+    renderingSince = 0;
+    $("summary").textContent = "";
+    $("plan-intro").hidden = false;
+    $("reasoning").textContent = "";
+    $("thinking-label").textContent = "Thinking";
+    $("thinking").open = true;
+    $("board").hidden = true;
+    $("shot-list").replaceChildren();
+    $("steps").querySelectorAll("li").forEach((item) => {
+      item.classList.remove("active", "done");
+      item.querySelector(".detail").textContent = "";
+    });
+    $("screen-note").innerHTML = `<p class="empty-title">Planning the film</p>The keyframes appear here as Grok draws them.`;
+    buildTimeline();
+    showMonitor();
+  }
+</script>
+</body>
+</html>
