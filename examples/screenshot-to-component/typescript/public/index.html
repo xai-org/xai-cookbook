@@ -1,0 +1,745 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Screenshot to React Component</title>
+<style>
+  /* The look every SpaceXAI Cookbook page shares, after x.ai. */
+  :root {
+    --bg: #fff;
+    --card: #f9f8f6;
+    --secondary: #f2f1ef;
+    --secondary-hover: #e9e8e5;
+    --tint: rgb(10 10 10 / 0.04);
+    --line: rgb(10 10 10 / 0.08);
+    --border: rgb(10 10 10 / 0.15);
+    --fg: #0a0a0a;
+    --muted: rgb(10 10 10 / 0.6);
+    --faint: rgb(10 10 10 / 0.36);
+    --accent: #ff6308;
+    --accent-soft: rgb(255 99 8 / 0.1);
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; font: 14px/22px var(--sans); background: var(--bg); color: var(--fg); -webkit-font-smoothing: antialiased; }
+  button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
+  a { color: inherit; }
+  svg { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  @keyframes blink { 50% { opacity: 0.3; } }
+  @keyframes fade { from { opacity: 0; } }
+
+  .site { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 12px; height: 60px; padding: 0 20px; background: rgb(255 255 255 / 0.85); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+  .logo { flex: none; margin-right: 4px; color: var(--fg); }
+  .logo svg { display: block; width: 52px; height: 20px; fill: currentColor; stroke: none; }
+  .crumbs { display: flex; align-items: center; gap: 8px; min-width: 0; color: var(--muted); white-space: nowrap; }
+  .crumbs svg { width: 12px; height: 12px; color: var(--faint); }
+  .crumbs h1 { margin: 0; overflow: hidden; text-overflow: ellipsis; font-size: inherit; line-height: inherit; font-weight: 500; color: var(--fg); }
+  .site .pill { flex: none; margin-left: auto; }
+  .models { flex: none; height: 26px; padding: 0 10px; border-radius: 9999px; box-shadow: inset 0 0 0 1px var(--line); font-size: 12px; font-weight: 500; line-height: 26px; color: var(--muted); }
+  .pill { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 40px; padding: 0 18px; border-radius: 9999px; font-size: 14px; font-weight: 500; white-space: nowrap; text-decoration: none; }
+  .pill-sm { height: 32px; padding: 0 14px; font-size: 13px; }
+  .pill-primary { background: var(--fg); color: #fff; }
+  .pill-primary:hover { background: #202329; }
+  .pill-secondary { background: var(--secondary); color: var(--fg); }
+  .pill-secondary:hover { background: var(--secondary-hover); }
+  .pill:disabled { opacity: 0.4; cursor: default; }
+  .pill svg { width: 14px; height: 14px; }
+  .surface { display: flex; flex-direction: column; gap: 8px; height: calc(100vh - 72px); min-height: 560px; margin: 0 12px 12px; padding: 8px; border-radius: 20px; background: var(--card); }
+  .panel { min-width: 0; padding: 20px 22px; border-radius: 16px; background: var(--bg); }
+  .label { margin: 0; font-size: 13px; font-weight: 500; color: var(--muted); }
+  @media (max-width: 900px) {
+    .models { display: none; }
+  }
+  @media (max-width: 640px) {
+    .site { padding: 0 16px; }
+    .crumbs > span, .crumbs > svg { display: none; }
+    .surface { margin: 0 8px 8px; }
+  }
+
+  /* Screenshot to React Component */
+  :root {
+    --good: #16a34a;
+    --good-soft: rgb(22 163 74 / 0.1);
+    --bad: #e5484d;
+    --bad-soft: rgb(229 72 77 / 0.1);
+    --warn: #b45309;
+    --ink: #0a0a0a;
+    --ink-line: rgb(255 255 255 / 0.08);
+    --ink-fg: #f2f1ef;
+    --ink-faint: rgb(242 241 239 / 0.36);
+  }
+  .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px; border-radius: 16px; background: var(--bg); }
+  .toolbar .spacer { flex: 1; }
+  label.pill { cursor: pointer; }
+  label.pill.disabled { opacity: 0.4; cursor: default; }
+  .file { max-width: 300px; }
+  .file input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+  .file span { overflow: hidden; text-overflow: ellipsis; }
+  .hint { color: var(--faint); }
+
+  .workspace { flex: 1; display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 8px; min-height: 0; }
+  .main { display: grid; grid-template-rows: minmax(0, 1fr) minmax(200px, 36%); gap: 8px; min-height: 0; }
+  .stage { display: grid; grid-template-rows: auto minmax(0, 1fr); min-height: 0; padding: 0; }
+  .viewbar { display: flex; align-items: center; gap: 12px; padding: 12px 16px; }
+  .segmented { display: inline-flex; gap: 2px; padding: 3px; border-radius: 9999px; background: var(--secondary); }
+  .segmented button { height: 28px; padding: 0 14px; border-radius: 9999px; font-size: 13px; font-weight: 500; color: var(--muted); }
+  .segmented button.active { background: var(--bg); color: var(--fg); box-shadow: 0 1px 2px rgb(10 10 10 / 0.08); }
+  .segmented button:disabled { opacity: 0.4; cursor: default; }
+  .badge { display: inline-flex; align-items: center; height: 28px; margin-left: auto; padding: 0 12px; border-radius: 9999px; background: var(--good-soft); color: var(--good); font-size: 13px; font-weight: 500; font-variant-numeric: tabular-nums; }
+
+  .canvas { position: relative; min-height: 0; overflow: auto; padding: 0 16px 16px; }
+  .canvas.dragging .dropzone { border-color: var(--accent); background: var(--accent-soft); }
+  .dropzone { display: grid; place-content: center; justify-items: center; gap: 8px; height: 100%; min-height: 260px; padding: 24px; border: 1.5px dashed var(--border); border-radius: 12px; text-align: center; color: var(--muted); }
+  .dropzone svg { width: 28px; height: 28px; margin-bottom: 4px; color: var(--faint); }
+  .dropzone p { max-width: 540px; margin: 0; }
+  .drop-title { font-size: 28px; line-height: 34px; font-weight: 450; letter-spacing: -0.02em; color: var(--fg); }
+  .drop-actions { display: flex; gap: 8px; margin-top: 12px; }
+  .panes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; }
+  .pane-label { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; font-size: 13px; font-weight: 500; color: var(--muted); }
+  .pane-label .dot, .tab .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: blink 1s ease-in-out infinite; }
+  #shot, .frame { display: block; width: 100%; border-radius: 10px; background: #fff; box-shadow: 0 0 0 1px var(--line); }
+  .frame { position: relative; aspect-ratio: 16 / 9; overflow: hidden; }
+  #preview { position: absolute; top: 0; left: 0; border: 0; transform-origin: 0 0; animation: fade 0.3s ease-out; }
+  #placeholder { position: absolute; inset: 0; display: grid; place-items: center; margin: 0; padding: 0 24px; text-align: center; color: var(--faint); }
+  .outlines { max-width: 960px; margin: 0 auto; }
+  .outlines img { display: block; width: 100%; border-radius: 10px; background: #fff; box-shadow: 0 0 0 1px var(--line); }
+  .outlines figcaption { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-top: 10px; color: var(--muted); }
+  .outlines figcaption i { display: inline-block; width: 10px; height: 10px; margin-right: 6px; border-radius: 2px; vertical-align: -1px; }
+
+  .editor-panel { display: grid; grid-template-rows: auto minmax(0, 1fr); min-height: 0; overflow: hidden; border-radius: 16px; background: var(--ink); color: var(--ink-fg); }
+  .editor-bar { display: flex; align-items: center; gap: 16px; height: 44px; padding: 0 10px 0 16px; border-bottom: 1px solid var(--ink-line); }
+  .lights { display: flex; gap: 7px; }
+  .lights i { width: 11px; height: 11px; border-radius: 50%; }
+  .tab { display: inline-flex; align-items: center; gap: 8px; font: 12px var(--mono); color: var(--ink-fg); }
+  #copy { height: 28px; margin-left: auto; padding: 0 12px; border-radius: 9999px; background: rgb(255 255 255 / 0.1); color: var(--ink-fg); font-size: 12px; font-weight: 500; }
+  #copy:hover { background: rgb(255 255 255 / 0.16); }
+  @property --fade-top { syntax: "<length>"; inherits: false; initial-value: 0px; }
+  @property --fade-bottom { syntax: "<length>"; inherits: false; initial-value: 0px; }
+  .editor {
+    display: flex; min-height: 0; overflow: auto; padding: 12px 0;
+    -webkit-mask-image: linear-gradient(to bottom, transparent, #000 var(--fade-top), #000 calc(100% - var(--fade-bottom)), transparent);
+    mask-image: linear-gradient(to bottom, transparent, #000 var(--fade-top), #000 calc(100% - var(--fade-bottom)), transparent);
+    transition: --fade-top 0.2s, --fade-bottom 0.2s;
+  }
+  .editor.fade-top { --fade-top: 40px; }
+  .editor.fade-bottom { --fade-bottom: 40px; }
+  .editor pre { margin: 0; font: 12px/20px var(--mono); tab-size: 2; }
+  .gutter { flex: none; min-width: 48px; padding: 0 14px 0 8px; text-align: right; color: var(--ink-faint); user-select: none; }
+  #code { flex: 1; padding-right: 16px; }
+  .editor.thinking .gutter { display: none; }
+  .editor.thinking #code { padding-left: 16px; white-space: pre-wrap; color: var(--ink-faint); }
+  #code .token.comment { color: #8b949e; }
+  #code .token.keyword { color: #ff8a4c; }
+  #code .token.string, #code .token.attr-value, #code .token.template-string { color: #a5d6ff; }
+  #code .token.tag { color: #7ee787; }
+  #code .token.attr-name, #code .token.number, #code .token.boolean { color: #79c0ff; }
+  #code .token.function { color: #d2a8ff; }
+  #code .token.class-name, #code .token.builtin { color: #ffa657; }
+  #code .token.punctuation, #code .token.operator { color: #c9d1d9; }
+  #code .token.attr-value .token.punctuation { color: inherit; }
+
+  .rail { display: flex; flex-direction: column; min-height: 0; overflow: auto; padding: 16px; }
+  .rail-head { display: flex; align-items: center; justify-content: space-between; min-height: 32px; margin-bottom: 12px; }
+  .rail-intro { margin: 0; color: var(--muted); }
+  .rounds { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+  .round { padding: 12px 14px; border-radius: 12px; background: var(--card); animation: fade 0.3s ease-out; }
+  .round-head { display: flex; align-items: center; gap: 8px; }
+  .round-name { font-weight: 500; }
+  .round.working .round-name::before { content: ""; display: inline-block; width: 6px; height: 6px; margin: 0 8px 2px 0; border-radius: 50%; background: var(--accent); animation: blink 1s ease-in-out infinite; }
+  .score { margin-left: auto; padding: 0 8px; border-radius: 9999px; background: var(--bg); font-size: 12px; font-weight: 500; line-height: 20px; font-variant-numeric: tabular-nums; }
+  .score:empty { display: none; }
+  .round.kept .score { background: var(--good-soft); color: var(--good); }
+  .round.undone .score { background: var(--bad-soft); color: var(--bad); }
+  .round-status { margin: 4px 0 0; color: var(--muted); }
+  .fixes { display: grid; gap: 2px; margin: 8px 0 0; padding-left: 18px; font-size: 13px; line-height: 20px; }
+  .fixes:empty { display: none; }
+  .round.undone .fixes { color: var(--faint); text-decoration: line-through; }
+  .round-note { margin: 8px 0 0; color: var(--warn); }
+
+  @media (max-width: 1000px) {
+    .surface { height: auto; }
+    .workspace { grid-template-columns: minmax(0, 1fr); }
+    .main { grid-template-rows: auto 420px; }
+    .panes { grid-template-columns: minmax(0, 1fr); }
+  }
+</style>
+</head>
+<body>
+<header class="site">
+  <a class="logo" href="https://x.ai" target="_blank" rel="noopener" aria-label="SpaceXAI"><svg viewBox="0 0 759 290.2" aria-hidden="true"><g transform="translate(-674.5,-388.5)"><path d="M1433.19 388.934C1345.69 396.068 1001.73 438.71 763.235 678.467H674.732L684.62 668.612C734.53 620.395 955.373 416.045 1433.19 388.668V388.934Z"/><path d="M1133.66 678.467H1064.29L927.618 578.979C940.213 571.058 952.888 563.515 965.603 556.33L1133.66 678.467Z"/><path d="M1022.8 678.468H953.463L932.43 663.169H814.998C823.265 655.828 831.635 648.702 840.092 641.784H902.996L870.444 618.106C882.079 609.448 893.843 601.155 905.701 593.211L1022.8 678.468Z"/><path d="M770.433 495.02L823.901 533.876C810.594 541.712 798.139 549.468 786.514 557.055L701.158 494.986L770.433 495.02Z"/></g></svg></a>
+  <nav class="crumbs"><span>Cookbook</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg><h1>Screenshot to React Component</h1></nav>
+  <span class="models">grok-4.7 with image understanding</span>
+  <a class="pill pill-secondary pill-sm" href="https://github.com/xai-org/xai-cookbook/tree/main/examples/screenshot-to-component" target="_blank" rel="noopener">View code</a>
+</header>
+
+
+<main class="surface">
+  <form id="form" class="toolbar">
+    <label class="pill pill-secondary file" id="picker">
+      <input id="file" type="file" accept="image/png,image/jpeg,image/webp">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 11.5v2h11v-2M8 2.5v8M4.5 6 8 2.5 11.5 6"/></svg>
+      <span id="file-name">Open a screenshot</span>
+    </label>
+    <button type="button" class="pill pill-secondary sample">Try the sample</button>
+    <span class="hint">or paste one</span>
+    <span class="spacer"></span>
+    <button id="go" class="pill pill-primary" disabled>Make component</button>
+  </form>
+
+  <div class="workspace">
+    <div class="main">
+      <section class="panel stage">
+        <div class="viewbar">
+          <div class="segmented" role="tablist">
+            <button type="button" id="view-split" class="active">Side by side</button>
+            <button type="button" id="view-outlines" disabled>Outlines</button>
+          </div>
+          <span class="badge" id="badge" hidden></span>
+        </div>
+
+        <div class="canvas" id="canvas">
+          <div class="dropzone" id="dropzone">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 15l5-5 4 4 3-3 6 6"/><circle cx="15.5" cy="8.5" r="1.5"/></svg>
+            <p class="drop-title">Drop a screenshot of a user interface</p>
+            <p>Or paste one, or open a file. Grok writes a React component styled with Tailwind that recreates it. Then the page screenshots the component, and Grok compares the two and fixes what doesn't line up.</p>
+            <div class="drop-actions">
+              <label class="pill pill-secondary" for="file">Open a screenshot</label>
+              <button type="button" class="pill pill-primary sample">Try the sample</button>
+            </div>
+          </div>
+          <div class="panes" id="panes" hidden>
+            <section>
+              <p class="pane-label">Screenshot</p>
+              <img id="shot" alt="The screenshot you chose">
+            </section>
+            <section>
+              <p class="pane-label"><span class="dot" id="result-dot" hidden></span><span id="result-label">Component</span></p>
+              <div class="frame" id="frame">
+                <p id="placeholder"></p>
+                <iframe id="preview" title="The component Grok wrote" sandbox="allow-scripts" hidden></iframe>
+              </div>
+            </section>
+          </div>
+          <figure class="outlines" id="outlines-view" hidden>
+            <img id="overlay" alt="The outlines of the screenshot and the component, laid over each other">
+            <figcaption>
+              <span><i style="background: #00f"></i>The screenshot</span>
+              <span><i style="background: #f00"></i>The component</span>
+              <span><i style="background: #000"></i>Where they line up</span>
+              <span>This is what Grok compares in each round.</span>
+            </figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="editor-panel">
+        <div class="editor-bar">
+          <span class="lights" aria-hidden="true"><i style="background: #ff5f57"></i><i style="background: #febc2e"></i><i style="background: #28c840"></i></span>
+          <span class="tab"><span class="dot" id="code-dot" hidden></span><span id="code-label">No code yet</span></span>
+          <button type="button" id="copy" hidden>Copy code</button>
+        </div>
+        <div class="editor" id="editor"><pre class="gutter" id="gutter"></pre><pre id="code"></pre></div>
+      </section>
+    </div>
+
+    <aside class="panel rail">
+      <div class="rail-head">
+        <p class="label">Rounds</p>
+        <button type="button" id="again" class="pill pill-secondary pill-sm" hidden>Compare again</button>
+      </div>
+      <p class="rail-intro" id="rail-intro">Each round shows up here with how closely the component lines up with the screenshot. The page keeps the best one.</p>
+      <ol class="rounds" id="rounds"></ol>
+    </aside>
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1/prism.min.js" data-manual></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-jsx.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-typescript.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-tsx.min.js"></script>
+<script>
+  const $ = (id) => document.getElementById(id);
+  const IMAGE_TYPES = ["image/png", "image/jpeg", "image/webp"];
+  // Added to the preview. Once the component has rendered and Tailwind has styled it, this takes a
+  // screenshot of the preview at the screenshot's size and sends it to the page for the next round.
+  const SNAPSHOT = `<script type="module">
+    try {
+      const { toSvg } = await import("https://esm.sh/html-to-image@1.11.13");
+      const root = document.getElementById("root");
+      for (let i = 0; i < 100 && !root.childElementCount; i++) await new Promise((resolve) => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // toPng waits for an animation frame, and the browser skips those while the preview is
+      // scrolled out of view, so this draws the SVG onto a canvas itself.
+      const image = new Image();
+      image.src = await toSvg(document.body, { width: innerWidth, height: innerHeight, backgroundColor: "#fff" });
+      await image.decode();
+      const canvas = Object.assign(document.createElement("canvas"), { width: innerWidth, height: innerHeight });
+      canvas.getContext("2d").drawImage(image, 0, 0);
+      parent.postMessage({ type: "render", image: canvas.toDataURL("image/png"), height: document.documentElement.scrollHeight }, "*");
+    } catch (error) {
+      parent.postMessage({ type: "render", error: String(error) }, "*");
+    }
+  <\/script>`;
+  // The preview shows exactly the area the page compares, so it doesn't scroll. Scrolling would also
+  // add a scrollbar that narrows the page, which the screenshot of the component doesn't have.
+  const NO_SCROLL = "<style>html { overflow: hidden; }</style>";
+  const INPUTS = [$("go"), $("file"), ...document.querySelectorAll(".sample")];
+  let screenshot = null;
+  let round = 0;
+  // The component from the round that just finished, until the page has scored it.
+  let pending = null;
+  // The best-scoring component so far. Each later round starts from it.
+  let best = null;
+  let running = false;
+  let source = "";
+  let codeFrame = 0;
+  // Each round's entry in the rail, by round number.
+  const rounds = new Map();
+
+  $("file").onchange = () => {
+    choose($("file").files[0]);
+    $("file").value = "";
+  };
+  document.querySelectorAll(".sample").forEach((button) => {
+    button.onclick = async () => {
+      const image = await (await fetch("/sample-screenshot.png")).blob();
+      choose(new File([image], "sample-screenshot.png", { type: image.type }));
+      $("form").requestSubmit();
+    };
+  });
+  addEventListener("paste", (event) => choose(event.clipboardData.files[0]));
+  addEventListener("dragover", (event) => {
+    event.preventDefault();
+    $("canvas").classList.add("dragging");
+  });
+  addEventListener("dragleave", (event) => {
+    if (!event.relatedTarget) $("canvas").classList.remove("dragging");
+  });
+  addEventListener("drop", (event) => {
+    event.preventDefault();
+    $("canvas").classList.remove("dragging");
+    choose(event.dataTransfer.files[0]);
+  });
+
+  $("view-split").onclick = () => setView("split");
+  $("view-outlines").onclick = () => setView("outlines");
+
+  function setView(view) {
+    $("view-split").classList.toggle("active", view === "split");
+    $("view-outlines").classList.toggle("active", view === "outlines");
+    $("panes").hidden = view !== "split" || !screenshot;
+    $("outlines-view").hidden = view !== "outlines";
+  }
+
+  function choose(file) {
+    if (!file || running) return;
+    if (!IMAGE_TYPES.includes(file.type)) return alert("Choose a PNG, JPEG, or WebP image.");
+    screenshot = file;
+    pending = best = null;
+    $("file-name").textContent = file.name;
+    $("shot").src = URL.createObjectURL(file);
+    $("dropzone").hidden = true;
+    resetRun("Click Make component to recreate the screenshot.");
+    $("go").disabled = false;
+  }
+
+  $("form").onsubmit = async (event) => {
+    event.preventDefault();
+    round = 1;
+    pending = best = null;
+    resetRun("The component appears here when Grok is done.");
+    start();
+    addRound(1, "Uploading the screenshot");
+    try {
+      const upload = await fetch("/api/screenshots", { method: "POST", body: screenshot });
+      if (!upload.ok) throw new Error(await upload.text());
+      const { id } = await upload.json();
+      listen(new EventSource(`/api/component?screenshot=${id}`));
+    } catch (error) {
+      fail(error.message);
+    }
+  };
+
+  function listen(events) {
+    const on = (name, handler) => events.addEventListener(name, (message) => handler(JSON.parse(message.data)));
+
+    on("step", ({ step, status }) => {
+      if (step === "think" && status === "active") {
+        updateRound(round, { status: round > 1 ? "Comparing the component with the screenshot" : "Thinking" });
+      }
+      // In later rounds, the code from the round before stays up until Grok starts rewriting it.
+      if (step === "write" && status === "active") {
+        source = "";
+        showCode("");
+        setCodeLabel("Writing the code", true);
+        updateRound(round, { status: "Writing the code" });
+      }
+    });
+    on("changes", ({ changes }) => updateRound(round, { changes, status: `Fixing ${count(changes.length)}` }));
+    // In the first round there's no code to show yet, so the editor shows Grok's reasoning instead.
+    on("reasoning", ({ text }) => {
+      if (source) return;
+      $("editor").classList.add("thinking");
+      $("code").textContent += text;
+      $("editor").scrollTop = $("editor").scrollHeight;
+      updateFades();
+    });
+    on("name", ({ name }) => setCodeLabel(`${name}.tsx`, true));
+    on("code", ({ text }) => {
+      source += text;
+      // The code arrives in many small pieces, so highlight it at most once per frame.
+      cancelAnimationFrame(codeFrame);
+      codeFrame = requestAnimationFrame(() => {
+        showCode(source);
+        $("editor").scrollTop = $("editor").scrollHeight;
+        updateFades();
+      });
+    });
+    on("done", ({ name, code, changes, page }) => {
+      events.close();
+      cancelAnimationFrame(codeFrame);
+      pending = { round, component: { name, code }, page };
+      show(pending, true);
+      stop();
+      updateRound(round, {
+        status: "Taking a screenshot of the component",
+        changes: round > 1 ? changes : undefined,
+      });
+    });
+    on("failure", ({ message }) => {
+      events.close();
+      fail(message);
+    });
+    events.onerror = () => {
+      events.close();
+      fail("Lost the connection to the server.");
+    };
+  }
+
+  // The component is laid out at the screenshot's own width, then scaled down to fit next to it,
+  // so it wraps the way the screenshot does instead of the way a narrow column would.
+  function fit() {
+    const { naturalWidth: width, naturalHeight: height } = $("shot");
+    if (!width) return;
+    $("frame").style.aspectRatio = `${width} / ${height}`;
+    $("preview").style.width = `${width}px`;
+    $("preview").style.height = `${height}px`;
+    $("preview").style.transform = `scale(${$("frame").clientWidth / width})`;
+  }
+  $("shot").onload = fit;
+  new ResizeObserver(fit).observe($("frame"));
+
+  // The preview sends a screenshot of each new component. The page scores it against the original
+  // and keeps whichever component scores best, so a round that makes things worse is undone.
+  addEventListener("message", async (event) => {
+    if (event.source !== $("preview").contentWindow || event.data?.type !== "render" || !pending) return;
+    const version = pending;
+    pending = null;
+    try {
+      if (event.data.error) throw new Error(event.data.error);
+      Object.assign(version, { render: event.data.image, height: event.data.height }, await compare(event.data.image));
+    } catch {
+      updateRound(version.round, { status: "Couldn't take a screenshot of the component to compare", working: false });
+      $("again").hidden = !best;
+      return;
+    }
+    // A page too tall to fit can't center its content, so everything moves at once and the outlines
+    // drift apart, even where the layout matches.
+    const extra = version.height - $("shot").naturalHeight;
+    updateRound(version.round, {
+      score: version.score,
+      note: extra > 0 ? `Its page is ${extra} px taller than the screenshot, so it scrolls, which can shift everything at once.` : "",
+    });
+    if (!best) {
+      best = version;
+      updateRound(version.round, { status: "First draft", working: false, outcome: "kept" });
+      showOutlines();
+      return refine();
+    }
+    const before = best;
+    if (version.score > before.score) {
+      best = version;
+      updateRound(version.round, { status: `Kept, up from ${percent(before.score)}`, working: false, outcome: "kept" });
+    } else {
+      show(best, false);
+      updateRound(version.round, {
+        status: `Undone, down from ${percent(before.score)}, so the page kept round ${before.round}`,
+        working: false,
+        outcome: "undone",
+      });
+    }
+    showOutlines();
+    $("again").hidden = false;
+  });
+  $("again").onclick = () => refine();
+
+  // Each later round sends Grok the screenshot, a screenshot of the best component so far, the
+  // outline overlay, and the code.
+  async function refine() {
+    round += 1;
+    start();
+    addRound(round, "Uploading the screenshots");
+    try {
+      const upload = await fetch("/api/refinements", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          screenshot: await dataUrl(screenshot),
+          render: best.render,
+          overlay: best.overlay,
+          height: { page: best.height, screenshot: $("shot").naturalHeight },
+          ...best.component,
+        }),
+      });
+      if (!upload.ok) throw new Error(await upload.text());
+      const { id } = await upload.json();
+      listen(new EventSource(`/api/refinement?id=${id}`));
+    } catch (error) {
+      fail(error.message);
+    }
+  }
+
+  // Each round gets an entry in the rail, newest first, that's updated in place as the round goes.
+  function addRound(number, status) {
+    const entry = document.createElement("li");
+    entry.className = "round";
+    entry.innerHTML = `<div class="round-head"><span class="round-name">Round ${number}</span><span class="score"></span></div><p class="round-status"></p><ul class="fixes"></ul><p class="round-note" hidden></p>`;
+    $("rounds").prepend(entry);
+    $("rail-intro").hidden = true;
+    rounds.set(number, entry);
+    updateRound(number, { status, working: true });
+  }
+
+  function updateRound(number, { status, changes, score, note, working, outcome }) {
+    const entry = rounds.get(number);
+    if (!entry) return;
+    if (status !== undefined) entry.querySelector(".round-status").textContent = status;
+    if (changes) {
+      entry.querySelector(".fixes").replaceChildren(...changes.map((change) => Object.assign(document.createElement("li"), { textContent: change })));
+    }
+    if (score !== undefined) entry.querySelector(".score").textContent = percent(score);
+    if (note !== undefined) {
+      entry.querySelector(".round-note").textContent = note;
+      entry.querySelector(".round-note").hidden = !note;
+    }
+    if (working !== undefined) entry.classList.toggle("working", working);
+    if (outcome) entry.classList.add(outcome);
+  }
+
+  // Shows a component in the preview and the editor. A new one gets a screenshot taken of it.
+  function show(version, snapshot) {
+    const { name, code } = version.component;
+    source = code;
+    showCode(code);
+    $("editor").scrollTop = 0;
+    updateFades();
+    $("copy").hidden = false;
+    setCodeLabel(`${name}.tsx`, false);
+    $("result-label").textContent = version.round > 1 ? `${name} · round ${version.round}` : name;
+    $("preview").srcdoc = version.page.replace("</html>", `${NO_SCROLL}${snapshot ? SNAPSHOT : ""}\n</html>`);
+    $("preview").hidden = false;
+    $("placeholder").hidden = true;
+  }
+
+  function showOutlines() {
+    $("overlay").src = best.overlay;
+    $("view-outlines").disabled = false;
+    $("badge").textContent = `Round ${best.round} · ${percent(best.score)} match`;
+    $("badge").hidden = false;
+  }
+
+  function setCodeLabel(text, working) {
+    $("code-label").textContent = text;
+    $("code-dot").hidden = !working;
+  }
+
+  function count(number) {
+    return number === 1 ? "1 difference" : `${number} differences`;
+  }
+
+  function percent(share) {
+    return `${Math.round(share * 100)}%`;
+  }
+
+  // Traces the outlines in the screenshot and in a screenshot of the component. The overlay draws the
+  // screenshot's in blue and the component's in red, so whatever doesn't line up stands out. For the
+  // score, each outline earns credit for how close the nearest outline in the other image is, so
+  // something a few pixels off still counts for most of what it would if it lined up exactly.
+  async function compare(render) {
+    const images = await Promise.all([screenshot, await (await fetch(render)).blob()].map((blob) => createImageBitmap(blob)));
+    const { width, height } = images[0];
+    const [a, b] = images.map((image) => outline(image, width, height));
+    const canvas = Object.assign(document.createElement("canvas"), { width, height });
+    const context = canvas.getContext("2d");
+    const overlay = context.createImageData(width, height);
+    for (let i = 0; i < a.length; i++) {
+      overlay.data[i * 4] = a[i] ? 0 : 255;
+      overlay.data[i * 4 + 1] = a[i] || b[i] ? 0 : 255;
+      overlay.data[i * 4 + 2] = b[i] ? 0 : 255;
+      overlay.data[i * 4 + 3] = 255;
+    }
+    context.putImageData(overlay, 0, 0);
+    // Outlines a fortieth of the width apart, 32 pixels in a 1280-pixel screenshot, earn nothing.
+    const reach = width / 40;
+    const score = (closeness(a, distances(b, width), reach) + closeness(b, distances(a, width), reach)) / 2;
+    return { overlay: canvas.toDataURL("image/png"), score };
+  }
+
+  // Marks each pixel that's much brighter or darker than the pixels around it.
+  function outline(image, width, height) {
+    const canvas = Object.assign(document.createElement("canvas"), { width, height });
+    const context = canvas.getContext("2d", { willReadFrequently: true });
+    context.drawImage(image, 0, 0, width, height);
+    const { data } = context.getImageData(0, 0, width, height);
+    const light = new Float32Array(width * height);
+    for (let i = 0; i < light.length; i++) light[i] = 0.299 * data[i * 4] + 0.587 * data[i * 4 + 1] + 0.114 * data[i * 4 + 2];
+    const around = [-width - 1, -width, -width + 1, -1, 1, width - 1, width, width + 1];
+    const edges = new Uint8Array(width * height);
+    for (let y = 1; y < height - 1; y++) {
+      for (let x = 1; x < width - 1; x++) {
+        const i = y * width + x;
+        let sum = 0;
+        for (const offset of around) sum += light[i + offset];
+        edges[i] = Math.abs(8 * light[i] - sum) > 24 ? 1 : 0;
+      }
+    }
+    return edges;
+  }
+
+  // How far each pixel is from the nearest outline pixel. The first pass carries distances down and to
+  // the right from the neighbors it has already visited, and the second carries them back up and left.
+  function distances(edges, width) {
+    const height = edges.length / width;
+    const distance = Float32Array.from(edges, (edge) => (edge ? 0 : Infinity));
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const i = y * width + x;
+        let d = distance[i];
+        if (x > 0) d = Math.min(d, distance[i - 1] + 1);
+        if (y > 0) {
+          d = Math.min(d, distance[i - width] + 1);
+          if (x > 0) d = Math.min(d, distance[i - width - 1] + Math.SQRT2);
+          if (x < width - 1) d = Math.min(d, distance[i - width + 1] + Math.SQRT2);
+        }
+        distance[i] = d;
+      }
+    }
+    for (let y = height - 1; y >= 0; y--) {
+      for (let x = width - 1; x >= 0; x--) {
+        const i = y * width + x;
+        let d = distance[i];
+        if (x < width - 1) d = Math.min(d, distance[i + 1] + 1);
+        if (y < height - 1) {
+          d = Math.min(d, distance[i + width] + 1);
+          if (x < width - 1) d = Math.min(d, distance[i + width + 1] + Math.SQRT2);
+          if (x > 0) d = Math.min(d, distance[i + width - 1] + Math.SQRT2);
+        }
+        distance[i] = d;
+      }
+    }
+    return distance;
+  }
+
+  // The average credit of the outline pixels in a: all of it with an outline from the other image right
+  // there, less the further away the nearest one is, and none from reach on.
+  function closeness(a, distance, reach) {
+    let total = 0;
+    let credit = 0;
+    for (let i = 0; i < a.length; i++) {
+      if (!a[i]) continue;
+      total++;
+      credit += Math.max(0, 1 - distance[i] / reach);
+    }
+    return total ? credit / total : 0;
+  }
+
+  function dataUrl(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // Prism loads from a CDN. If it didn't load, the code still shows, just without colors.
+  function showCode(code) {
+    $("editor").classList.remove("thinking");
+    if (window.Prism) $("code").innerHTML = Prism.highlight(code, Prism.languages.tsx, "tsx");
+    else $("code").textContent = code;
+    const lines = code ? code.split("\n").length : 0;
+    $("gutter").textContent = Array.from({ length: lines }, (_, index) => index + 1).join("\n");
+    updateFades();
+  }
+
+  // An edge of the editor fades only when there's more code past it.
+  function updateFades() {
+    const box = $("editor");
+    box.classList.toggle("fade-top", box.scrollTop > 0);
+    box.classList.toggle("fade-bottom", box.scrollTop + box.clientHeight < box.scrollHeight - 1);
+  }
+  $("editor").addEventListener("scroll", updateFades);
+
+  $("copy").onclick = async () => {
+    await navigator.clipboard.writeText(source);
+    $("copy").textContent = "Copied";
+    setTimeout(() => ($("copy").textContent = "Copy code"), 1500);
+  };
+
+  function resetRun(placeholder) {
+    source = "";
+    showCode("");
+    setCodeLabel("No code yet", false);
+    $("copy").hidden = true;
+    $("again").hidden = true;
+    $("badge").hidden = true;
+    $("view-outlines").disabled = true;
+    $("rounds").replaceChildren();
+    $("rail-intro").hidden = false;
+    rounds.clear();
+    $("result-label").textContent = "Component";
+    $("placeholder").textContent = placeholder;
+    $("placeholder").hidden = false;
+    $("preview").hidden = true;
+    $("preview").removeAttribute("srcdoc");
+    setView("split");
+  }
+
+  function start() {
+    running = true;
+    INPUTS.forEach((input) => (input.disabled = true));
+    $("picker").classList.add("disabled");
+    $("again").hidden = true;
+    $("copy").hidden = true;
+    $("result-dot").hidden = false;
+  }
+
+  function stop() {
+    running = false;
+    INPUTS.forEach((input) => (input.disabled = false));
+    $("picker").classList.remove("disabled");
+    $("result-dot").hidden = true;
+    $("code-dot").hidden = true;
+  }
+
+  // A round that fails keeps its number in the rail, and the page goes back to the best component.
+  function fail(message) {
+    alert(message);
+    stop();
+    updateRound(round, {
+      status: round === 1 ? "Couldn't make the component" : "Didn't finish, so the component is still the best one from before",
+      working: false,
+      outcome: "undone",
+    });
+    if (!best) return setCodeLabel("No code yet", false);
+    show(best, false);
+    $("again").hidden = false;
+  }
+</script>
+</body>
+</html>
