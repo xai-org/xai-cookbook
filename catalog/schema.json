@@ -85,6 +85,10 @@
         "video"
       ]
     },
+    "hide_from_docs": {
+      "description": "Leave the example out of registry.yaml, so docs.x.ai doesn't show it. It stays in the README catalog.",
+      "type": "boolean"
+    },
     "capabilities": {
       "type": "array",
       "minItems": 1,

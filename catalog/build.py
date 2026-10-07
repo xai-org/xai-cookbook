@@ -125,7 +125,7 @@ def render_readme(catalog: str) -> str:
 
 def render_registry(examples: list[dict]) -> str:
     entries = []
-    for example in sorted(examples, key=sort_key):
+    for example in sorted((e for e in examples if not e.get("hide_from_docs")), key=sort_key):
         base = f"examples/{example['slug']}"
         entry = {"title": example["title"]}
         if "seo_title" in example:

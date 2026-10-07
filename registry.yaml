@@ -441,23 +441,6 @@
   level: advanced
   languages:
   - typescript
-- title: Real-Time Sentiment Analysis on 𝕏
-  seo_title: Real-Time Sentiment Analysis on 𝕏 with the Grok API
-  path: examples/x-sentiment-analysis/python/guide.ipynb
-  image: examples/x-sentiment-analysis/cover.jpg
-  icon: bar-chart
-  description: Pull the latest posts from 𝕏 with Grok's X Search tool, filter out the noise with a quick pass, and score sentiment with a deeper one.
-  date: 2025-04-10
-  authors:
-  - Omar Diab
-  tags:
-  - x-data
-  - structured-output
-  - reasoning
-  type: guide
-  level: advanced
-  languages:
-  - python
 - title: Refund Agent with Human Approval
   seo_title: 'Human-in-the-Loop AI Agent: Approve Refunds with the Grok API'
   path: examples/refund-agent-human-approval/README.md
