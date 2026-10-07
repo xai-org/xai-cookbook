@@ -30,7 +30,7 @@ Every example is a folder under [`examples/`](examples/) with a README that expl
 | Example | What you'll learn | Level | Code |
 | --- | --- | --- | --- |
 | [Prompt Caching](examples/prompt-caching/) | Play one 30-message chat three ways to see what the prompt cache saves, how the time at the top of the system prompt breaks it, and what compaction costs. | Intermediate | [TypeScript](examples/prompt-caching/typescript/) |
-| [Prompt Injection Defenses](examples/prompt-injection-defenses/) | Watch a fetched page talk an agent into emailing private data, then turn on defenses and rerun the attacks. | Intermediate | [TypeScript](examples/prompt-injection-defenses/typescript/) |
+| [Prompt Injection Defenses](examples/prompt-injection-defenses/) | Watch ten poisoned pages try to make an agent leak private data, see each of four defenses miss an attack another one catches, and turn on all four to stop every one. | Intermediate | [TypeScript](examples/prompt-injection-defenses/typescript/) |
 | [Real-Time Sentiment Analysis on 𝕏](examples/x-sentiment-analysis/) | Pull the latest posts from 𝕏 with Grok's X Search tool, filter out the noise with a quick pass, and score sentiment with a deeper one. | Advanced | [Python](examples/x-sentiment-analysis/python/) |
 | [Refund Agent with Human Approval](examples/refund-agent-human-approval/) | Build a support agent that stops before issuing a refund, waits for a person to approve it, and resumes the same run from a stored response, even after a server restart. | Advanced | [TypeScript](examples/refund-agent-human-approval/typescript/) |
 
