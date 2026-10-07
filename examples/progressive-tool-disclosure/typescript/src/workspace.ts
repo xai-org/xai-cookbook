@@ -29,10 +29,12 @@ export function tool(name: string, description: string, params: Spec["params"], 
   return { name, description, params, required, run };
 }
 
+const COLLECTIONS: { [service: string]: { [name: string]: unknown } } = DATA;
+
 // The records in a collection, like "github.pulls".
 export function records(path: string): Row[] {
   const [service, name] = path.split(".");
-  return (DATA as unknown as { [service: string]: { [name: string]: Row[] } })[service][name];
+  return COLLECTIONS[service][name] as Row[];
 }
 
 type FindOptions = {

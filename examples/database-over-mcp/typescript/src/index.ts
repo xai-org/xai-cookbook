@@ -61,7 +61,7 @@ function transcript(question: string, answer: Answer, seconds: number): string {
     if (step.arguments.sql) lines.push("```sql", String(step.arguments.sql), "```");
     if (step.error) lines.push(`**Error:** ${step.error}`);
     else if (step.tool === "list_tables") lines.push(markdownTable(["table", "rows"], tables(step.output).map(({ name, rows }) => [name, rows])));
-    else if (step.tool === "describe_table") lines.push("```sql", String((step.output as { sql: string }).sql), "```");
+    else if (step.tool === "describe_table") lines.push("```sql", (step.output as { sql: string }).sql, "```");
     else lines.push(markdownTable((step.output as { columns: string[] }).columns, (step.output as { rows: unknown[][] }).rows));
     return lines.join("\n");
   });

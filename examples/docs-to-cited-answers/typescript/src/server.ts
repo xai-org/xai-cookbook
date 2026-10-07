@@ -52,10 +52,7 @@ async function streamAnswer(question: string, filter: string, res: ServerRespons
     );
     emit("done", { found: result.found, text: result.text, quotes: result.quotes, tokens: result.tokens, cost: result.cost });
   } catch (error) {
-    if (!abort.signal.aborted) {
-      console.error(error);
-      emit("failure", { message: error instanceof Error ? error.message : String(error) });
-    }
+    if (!abort.signal.aborted) emit("failure", { message: error instanceof Error ? error.message : String(error) });
   }
   res.end();
 }

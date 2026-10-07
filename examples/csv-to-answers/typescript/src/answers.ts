@@ -168,7 +168,7 @@ export async function ask(
 // Each run's logs arrive as a JSON string with its stdout, stderr, and exit code, not as plain text.
 function readLogs(outputs: CodeOutputs): Omit<Run, "code"> {
   const run: Omit<Run, "code"> = { stdout: "", stderr: "", exitCode: null };
-  for (const output of outputs ?? []) {
+  for (const output of outputs) {
     if (output.type !== "logs") continue;
     try {
       const logs = JSON.parse(output.logs) as { stdout?: string; stderr?: string; exit_code?: number };

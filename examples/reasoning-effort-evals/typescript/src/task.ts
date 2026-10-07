@@ -58,7 +58,7 @@ export function answerSchema(task: Task): z.ZodType<Answer> {
   const shape = Object.fromEntries(
     Object.entries(task.fields).map(([name, field]) => [name, field.options ? z.enum(field.options) : z.string()]),
   );
-  return z.object(shape) as z.ZodType<Answer>;
+  return z.object(shape);
 }
 
 // Compares each field that has an expected answer, and counts the words in fields with a limit.

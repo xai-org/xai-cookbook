@@ -79,9 +79,9 @@ export async function startMcpServer(path: string, port: number): Promise<McpSer
     reply(res, 200, { jsonrpc: "2.0", id: message.id, ...(error ? { error } : { result }) });
   });
 
-  async function answer(method: string, params: Record<string, any>): Promise<Answer> {
+  async function answer(method: string, params: { protocolVersion?: unknown; name?: unknown; arguments?: Record<string, unknown> }): Promise<Answer> {
     if (method === "initialize") {
-      const version = PROTOCOL_VERSIONS.includes(params.protocolVersion) ? params.protocolVersion : PROTOCOL_VERSIONS[0];
+      const version = PROTOCOL_VERSIONS.find((version) => version === params.protocolVersion) ?? PROTOCOL_VERSIONS[0];
       return { result: { protocolVersion: version, capabilities: { tools: {} }, serverInfo: { name: "store", version: "1.0.0" } } };
     }
     if (method === "ping") return { result: {} };

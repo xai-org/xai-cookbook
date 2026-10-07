@@ -7,7 +7,6 @@ import {
   ATTACKS,
   CONTACTS,
   PAGES,
-  PAGE_ORIGIN,
   PROFILE,
   SECRET,
   USER_EMAIL,
@@ -36,7 +35,6 @@ export type Defenses = {
 };
 
 export const NO_DEFENSES: Defenses = { fence: false, gate: false, validate: false, confirm: false };
-export const ALL_DEFENSES: Defenses = { fence: true, gate: true, validate: true, confirm: true };
 
 export type Outcome = "ok" | "blocked" | "breach";
 export type Phase = "full" | "research" | "deliver";

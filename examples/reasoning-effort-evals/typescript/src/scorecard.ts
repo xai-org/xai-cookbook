@@ -200,7 +200,7 @@ export async function saveScorecard(scorecard: Scorecard): Promise<string> {
 // The reason comes before the verdict, so the judge explains itself before it decides.
 function verdictSchema(task: Task): Run["verdicts"] {
   const verdict = z.object({ reason: z.string(), pass: z.boolean() });
-  return z.object(Object.fromEntries(Object.keys(task.rubric).map((id) => [id, verdict]))) as Run["verdicts"];
+  return z.object(Object.fromEntries(Object.keys(task.rubric).map((id) => [id, verdict])));
 }
 
 function answerRequest(run: Run, effort: Effort, item: Case): CreateParams {
