@@ -8,6 +8,7 @@ languages: [typescript]
 capabilities: [x-data, web-search, structured-output, streaming, text-to-speech]
 models: [grok-4.7]
 env: [XAI_API_KEY]
+icon: newspaper
 authors: [Eric Zakariasson]
 date: 2026-10-05
 ---

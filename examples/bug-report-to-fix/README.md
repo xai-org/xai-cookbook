@@ -8,6 +8,7 @@ languages: [typescript]
 capabilities: [shell, function-calling, streaming, reasoning, prompt-caching, compaction]
 models: [grok-4.7]
 env: [XAI_API_KEY]
+icon: bug
 authors: [Eric Zakariasson]
 date: 2026-10-05
 ---

@@ -8,6 +8,7 @@ languages: [typescript]
 capabilities: [collections, files, structured-output, streaming]
 models: [grok-4.7]
 env: [XAI_API_KEY, XAI_MANAGEMENT_API_KEY]
+icon: document-search
 authors: [Eric Zakariasson]
 date: 2026-10-05
 ---

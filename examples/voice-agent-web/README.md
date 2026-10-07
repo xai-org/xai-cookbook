@@ -10,6 +10,7 @@ code:
   python: xai/backend-python
 capabilities: [voice]
 env: [XAI_API_KEY]
+icon: browser
 authors: [Damien Murphy]
 date: 2025-12-15
 ---

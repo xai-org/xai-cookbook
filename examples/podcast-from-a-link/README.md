@@ -8,6 +8,7 @@ languages: [typescript]
 capabilities: [structured-output, streaming, text-to-speech]
 models: [grok-4.7]
 env: [XAI_API_KEY]
+icon: microphone
 authors: [Eric Zakariasson]
 date: 2026-10-01
 ---

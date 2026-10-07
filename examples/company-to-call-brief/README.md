@@ -8,6 +8,7 @@ languages: [typescript]
 capabilities: [function-calling, web-search, x-data, structured-output, streaming, reasoning]
 models: [grok-4.7]
 env: [XAI_API_KEY]
+icon: briefcase
 authors: [Eric Zakariasson]
 date: 2026-10-05
 ---

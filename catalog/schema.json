@@ -42,13 +42,52 @@
       "additionalProperties": { "type": "string", "minLength": 1 }
     },
     "notebook": {
-      "description": "Path to the example's notebook, relative to the example folder. Notebooks are what the docs site renders.",
+      "description": "Path to the example's notebook, relative to the example folder. The docs site renders the notebook when there is one, and the README otherwise.",
       "type": "string",
       "pattern": "\\.ipynb$"
     },
     "cover": {
       "description": "Cover image, relative to the example folder.",
       "type": "string"
+    },
+    "icon": {
+      "description": "Icon on the example's card on docs.x.ai. The docs site maps each name to an icon in its design system.",
+      "enum": [
+        "bar-chart",
+        "briefcase",
+        "browser",
+        "bug",
+        "checkmark-circle",
+        "clipboard-check",
+        "clock",
+        "code",
+        "coins",
+        "database",
+        "document-search",
+        "film",
+        "histogram",
+        "line-chart",
+        "microphone",
+        "network",
+        "newspaper",
+        "person",
+        "phone",
+        "photo-person",
+        "receipt",
+        "shield-check",
+        "sliders",
+        "smartphone",
+        "sound",
+        "star",
+        "text-highlight",
+        "toolbox",
+        "translate",
+        "video"
+      ]
+    },
+    "hide_from_docs": {
+      "description": "Leave the example out of registry.yaml, so docs.x.ai doesn't show it. It stays in the README catalog.",
+      "type": "boolean"
     },
     "capabilities": {
       "type": "array",

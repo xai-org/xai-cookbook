@@ -8,6 +8,7 @@ languages: [typescript]
 capabilities: [function-calling, streaming, reasoning, web-search]
 models: [grok-4.7]
 env: [XAI_API_KEY]
+icon: shield-check
 authors: [Eric Zakariasson]
 date: 2026-10-05
 ---

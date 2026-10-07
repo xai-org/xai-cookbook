@@ -9,6 +9,7 @@ code:
   typescript: xai
 capabilities: [voice]
 env: [XAI_API_KEY, TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER]
+icon: phone
 authors: [Damien Murphy]
 date: 2025-12-15
 ---

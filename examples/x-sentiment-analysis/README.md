@@ -10,6 +10,8 @@ models: [grok-4.7]
 env: [XAI_API_KEY]
 notebook: python/guide.ipynb
 cover: cover.jpg
+icon: bar-chart
+hide_from_docs: true
 authors: [Omar Diab]
 date: 2025-04-10
 ---

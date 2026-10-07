@@ -8,6 +8,7 @@ languages: [typescript]
 capabilities: [code-execution, files, structured-output, streaming, reasoning]
 models: [grok-4.7]
 env: [XAI_API_KEY]
+icon: histogram
 authors: [Eric Zakariasson]
 date: 2026-10-05
 ---

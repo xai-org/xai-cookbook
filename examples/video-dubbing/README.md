@@ -8,6 +8,7 @@ languages: [typescript]
 capabilities: [speech-to-text, structured-output, streaming, reasoning, text-to-speech]
 models: [grok-4.7, grok-voice-transcribe-2.0]
 env: [XAI_API_KEY]
+icon: sound
 authors: [Eric Zakariasson]
 date: 2026-10-05
 ---
