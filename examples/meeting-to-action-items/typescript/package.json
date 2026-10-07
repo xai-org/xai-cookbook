@@ -1,0 +1,22 @@
+{
+  "name": "meeting-to-action-items",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "start": "node --env-file-if-exists=../../../.env --experimental-strip-types --no-warnings=ExperimentalWarning src/index.ts",
+    "web": "node --env-file-if-exists=../../../.env --experimental-strip-types --no-warnings=ExperimentalWarning src/server.ts",
+    "typecheck": "tsc"
+  },
+  "dependencies": {
+    "@xai-official/sdk": "0.2.2",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.5.0",
+    "@types/ws": "^8.18.0",
+    "typescript": "^5.9.0"
+  }
+}

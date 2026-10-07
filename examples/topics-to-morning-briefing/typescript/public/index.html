@@ -1,0 +1,695 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Topics to Morning Briefing</title>
+<style>
+  /* The look every SpaceXAI Cookbook page shares, after x.ai. */
+  :root {
+    --bg: #fff;
+    --card: #f9f8f6;
+    --secondary: #f2f1ef;
+    --secondary-hover: #e9e8e5;
+    --tint: rgb(10 10 10 / 0.04);
+    --line: rgb(10 10 10 / 0.08);
+    --border: rgb(10 10 10 / 0.15);
+    --fg: #0a0a0a;
+    --muted: rgb(10 10 10 / 0.6);
+    --faint: rgb(10 10 10 / 0.36);
+    --accent: #ff6308;
+    --accent-soft: rgb(255 99 8 / 0.1);
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; font: 14px/22px var(--sans); background: var(--bg); color: var(--fg); -webkit-font-smoothing: antialiased; }
+  button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
+  a { color: inherit; }
+  svg { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  @keyframes blink { 50% { opacity: 0.3; } }
+  @keyframes pulse { to { background-color: var(--secondary-hover); } }
+  @keyframes appear { from { opacity: 0; transform: translateY(4px); } }
+  @keyframes eq { 0%, 100% { transform: scaleY(0.3); } 50% { transform: scaleY(1); } }
+
+  .site { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 12px; height: 60px; padding: 0 20px; background: rgb(255 255 255 / 0.85); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+  .logo { flex: none; margin-right: 4px; color: var(--fg); }
+  .logo svg { display: block; width: 52px; height: 20px; fill: currentColor; stroke: none; }
+  .crumbs { display: flex; align-items: center; gap: 8px; min-width: 0; color: var(--muted); white-space: nowrap; }
+  .crumbs svg { width: 12px; height: 12px; color: var(--faint); }
+  .crumbs h1 { margin: 0; overflow: hidden; text-overflow: ellipsis; font-size: inherit; line-height: inherit; font-weight: 500; color: var(--fg); }
+  .site .pill { flex: none; margin-left: auto; }
+  .models { flex: none; height: 26px; padding: 0 10px; border-radius: 9999px; box-shadow: inset 0 0 0 1px var(--line); font-size: 12px; font-weight: 500; line-height: 26px; color: var(--muted); }
+  .pill { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 40px; padding: 0 18px; border-radius: 9999px; font-size: 14px; font-weight: 500; white-space: nowrap; text-decoration: none; }
+  .pill-sm { height: 32px; padding: 0 14px; font-size: 13px; }
+  .pill-primary { background: var(--fg); color: #fff; }
+  .pill-primary:hover { background: #202329; }
+  .pill-secondary { background: var(--secondary); color: var(--fg); }
+  .pill-secondary:hover { background: var(--secondary-hover); }
+  .pill:disabled { opacity: 0.4; cursor: default; }
+  .pill svg { width: 14px; height: 14px; }
+  .field { min-width: 0; height: 40px; padding: 0 18px; border: 1px solid var(--border); border-radius: 9999px; background: var(--bg); color: var(--fg); font: inherit; outline: none; }
+  .field:focus { border-color: var(--fg); }
+  .field::placeholder { color: var(--faint); }
+  .surface { display: flex; flex-direction: column; gap: 8px; height: calc(100vh - 72px); min-height: 560px; margin: 0 12px 12px; padding: 8px; border-radius: 20px; background: var(--card); }
+  .panel { min-width: 0; padding: 20px 22px; border-radius: 16px; background: var(--bg); }
+  .label { margin: 0; font-size: 13px; font-weight: 500; color: var(--muted); }
+  @media (max-width: 900px) {
+    .models { display: none; }
+  }
+  @media (max-width: 640px) {
+    .site { padding: 0 16px; }
+    .crumbs > span, .crumbs > svg { display: none; }
+    .surface { margin: 0 8px 8px; }
+  }
+
+  /* Topics to Morning Briefing */
+  .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px; border-radius: 16px; background: var(--bg); }
+  .topics { flex: 1; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-width: 260px; min-height: 40px; padding: 4px 8px 4px 5px; border: 1px solid var(--border); border-radius: 20px; cursor: text; }
+  .topics:focus-within { border-color: var(--fg); }
+  .topics.locked { border-color: var(--line); cursor: default; }
+  .topic-chip { display: inline-flex; align-items: center; gap: 2px; height: 30px; padding: 0 5px 0 13px; border-radius: 9999px; background: var(--secondary); font-weight: 500; white-space: nowrap; animation: appear 0.2s ease-out; }
+  .topic-chip button { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; color: var(--muted); }
+  .topic-chip button:hover { background: var(--secondary-hover); color: var(--fg); }
+  .topic-chip svg { width: 10px; height: 10px; stroke-width: 2; }
+  .locked .topic-chip button { display: none; }
+  .locked .topic-chip { padding-right: 13px; }
+  .topic-input { flex: 1; min-width: 110px; height: 30px; padding: 0 6px; border: 0; background: none; font: inherit; color: var(--fg); outline: none; }
+  .topic-input::placeholder { color: var(--faint); }
+  .cap { display: inline-flex; align-items: center; gap: 6px; height: 40px; padding: 0 5px 0 16px; border-radius: 9999px; background: var(--secondary); color: var(--muted); font-weight: 500; }
+  .cap select { height: 30px; padding: 0 6px; border: 0; border-radius: 9999px; background: var(--bg); color: var(--fg); font: inherit; font-weight: 500; cursor: pointer; }
+  #go { min-width: 112px; }
+  #go.stop { background: var(--secondary); color: var(--fg); }
+
+  .start { flex: 1; display: grid; place-content: center; justify-items: center; gap: 22px; padding: 48px 24px; text-align: center; }
+  .start h2 { margin: 0; font-size: 40px; line-height: 1.1; font-weight: 450; letter-spacing: -0.02em; }
+  .start > p { max-width: 600px; margin: -6px 0 0; font-size: 16px; line-height: 26px; color: var(--muted); }
+  .how { display: grid; grid-template-columns: repeat(3, minmax(0, 220px)); gap: 8px; margin: 6px 0 4px; padding: 0; list-style: none; text-align: left; }
+  .how li { display: grid; gap: 4px; padding: 16px; border-radius: 14px; background: var(--card); color: var(--muted); font-size: 13px; line-height: 19px; }
+  .how svg { width: 20px; height: 20px; margin-bottom: 6px; color: var(--fg); }
+  .how strong { font-size: 14px; font-weight: 500; color: var(--fg); }
+  .memory-line { margin: 0; color: var(--muted); }
+  .memory-line button { padding: 0; color: var(--fg); text-decoration: underline; text-underline-offset: 3px; }
+
+  .studio { flex: 1; display: grid; grid-template-columns: minmax(320px, 380px) minmax(0, 1fr); gap: 8px; min-height: 0; }
+  .player { display: flex; flex-direction: column; gap: 18px; min-height: 0; overflow: auto; }
+  .cover { position: relative; flex: none; display: flex; flex-direction: column; justify-content: space-between; aspect-ratio: 1.75; padding: 18px 22px; overflow: hidden; border-radius: 14px; background: radial-gradient(90% 70% at 85% 115%, rgb(255 99 8 / 0.75), rgb(255 99 8 / 0.12) 55%, transparent 75%), #0a0a0a; color: #f2f1ef; }
+  .cover::before, .cover::after { content: ""; position: absolute; left: 85%; border-radius: 50%; border: 1px solid rgb(255 255 255 / 0.12); transform: translateX(-50%); }
+  .cover::before { width: 70%; aspect-ratio: 1; bottom: -42%; }
+  .cover::after { width: 120%; aspect-ratio: 1; bottom: -78%; }
+  .cover-top { position: relative; display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; color: rgb(242 241 239 / 0.62); }
+  .cover-top svg { width: 16px; height: 16px; }
+  .on-air { display: inline-flex; align-items: center; gap: 6px; height: 24px; margin-left: auto; padding: 0 10px; border-radius: 9999px; background: rgb(255 255 255 / 0.1); color: #f2f1ef; font-size: 12px; }
+  .on-air i { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: blink 1s ease-in-out infinite; }
+  .cover-date { position: relative; margin: 0; font-size: 30px; line-height: 34px; font-weight: 450; letter-spacing: -0.02em; }
+  .cover-since { position: relative; margin: 6px 0 0; font-size: 13px; color: rgb(242 241 239 / 0.62); }
+
+  .controls { display: flex; align-items: center; gap: 14px; }
+  #play { flex: none; display: grid; place-items: center; width: 48px; height: 48px; border-radius: 50%; background: var(--fg); color: #fff; }
+  #play:disabled { opacity: 0.2; cursor: default; }
+  #play svg { width: 16px; height: 16px; fill: currentColor; stroke: none; }
+  .progress-wrap { flex: 1; min-width: 0; }
+  #progress, #chapters { display: flex; gap: 3px; }
+  #progress { align-items: center; height: 14px; }
+  #progress span { position: relative; min-width: 8px; height: 6px; overflow: hidden; border-radius: 3px; background: var(--secondary); cursor: pointer; transition: flex-grow 0.5s, height 0.15s; }
+  #progress span.ready { background: var(--secondary-hover); }
+  #progress span.making { animation: pulse 1s ease-in-out infinite alternate; }
+  #progress span.skipped { opacity: 0.35; cursor: default; }
+  #progress span.current { height: 10px; }
+  #progress span i { display: block; width: 0; height: 100%; background: var(--fg); }
+  #chapters { margin-top: 5px; font-size: 11px; line-height: 14px; color: var(--faint); }
+  #chapters span { min-width: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; transition: flex-grow 0.5s; }
+  #chapters span.current { color: var(--fg); font-weight: 500; }
+  #now-text { margin: -8px 0 0 62px; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+  /* The caption scrolls to keep the word being spoken in view, and fades out at the edges. */
+  #caption {
+    position: relative; flex: 1; min-height: 110px; margin: -6px 0; padding: 6px 0; overflow: hidden; scroll-behavior: smooth; font-size: 17px; line-height: 27px; font-weight: 450; letter-spacing: -0.005em; color: var(--faint);
+    -webkit-mask-image: linear-gradient(to bottom, transparent, #000 12px, #000 calc(100% - 40px), transparent);
+    mask-image: linear-gradient(to bottom, transparent, #000 12px, #000 calc(100% - 40px), transparent);
+  }
+  #caption .w { transition: color 0.25s; }
+  #caption .w.spoken { color: var(--fg); }
+  #caption em { font-style: normal; }
+  #caption .tag { margin: 0 2px; padding: 1px 6px; border-radius: 9999px; background: var(--line); font: 11px/16px var(--mono); color: var(--faint); vertical-align: 2px; }
+
+  .facts { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 7px 16px; margin: 0; padding-top: 16px; border-top: 1px solid var(--line); font-size: 13px; line-height: 19px; }
+  .facts dt { color: var(--faint); }
+  .facts dd { margin: 0; font-variant-numeric: tabular-nums; }
+  .meter { height: 4px; margin-top: 6px; overflow: hidden; border-radius: 2px; background: var(--secondary); }
+  .meter i { display: block; width: 0; height: 100%; border-radius: inherit; background: var(--fg); transition: width 0.6s; }
+  #saved { font: 11px/19px var(--mono); color: var(--muted); overflow-wrap: anywhere; }
+  #download { flex: none; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: var(--secondary); color: var(--fg); animation: appear 0.3s ease-out; }
+  #download:hover { background: var(--secondary-hover); }
+  #download svg { width: 15px; height: 15px; }
+
+  .rundown { display: flex; flex-direction: column; min-height: 0; padding: 0; }
+  .rundown-head { display: flex; align-items: center; gap: 8px; padding: 18px 22px 10px; }
+  #rundown-status { color: var(--faint); font-size: 13px; }
+  #rundown { position: relative; flex: 1; min-height: 0; overflow-y: auto; padding: 0 10px 10px; }
+  .topic { padding: 12px 12px 16px; border-radius: 14px; transition: background-color 0.3s; }
+  .topic.playing { background: var(--card); }
+  .topic-head { display: flex; align-items: center; gap: 10px; min-height: 28px; }
+  .topic-n { flex: none; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--secondary); font-size: 12px; font-weight: 600; transition: background-color 0.3s, color 0.3s; }
+  .topic.playing .topic-n { background: var(--fg); color: #fff; }
+  .topic-head h3 { margin: 0; overflow: hidden; font-size: 17px; line-height: 24px; font-weight: 500; letter-spacing: -0.01em; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+  .topic.waiting h3 { color: var(--faint); cursor: default; }
+  .remembered { flex: none; padding: 0 9px; border-radius: 9999px; box-shadow: inset 0 0 0 1px var(--line); font-size: 12px; line-height: 22px; color: var(--muted); }
+  .topic-state { display: inline-flex; flex: none; align-items: center; gap: 6px; margin-left: auto; font-size: 13px; color: var(--faint); white-space: nowrap; }
+  .topic-state i { display: none; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .topic.active .topic-state { color: var(--accent); }
+  .topic.active .topic-state i { display: block; animation: blink 1s ease-in-out infinite; }
+  .topic.done .topic-state { color: var(--muted); }
+  .eq { display: none; align-items: flex-end; gap: 2px; height: 11px; color: var(--accent); }
+  .topic.playing .eq { display: inline-flex; }
+  .eq i { width: 2px; height: 100%; border-radius: 1px; background: currentColor; animation: eq 0.9s ease-in-out infinite; }
+  .eq i:nth-child(2) { animation-delay: 0.15s; }
+  .eq i:nth-child(3) { animation-delay: 0.3s; }
+
+  .searches { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 0 34px; }
+  .searches:empty { display: none; }
+  .search { display: inline-flex; align-items: center; gap: 7px; max-width: 100%; height: 26px; padding: 0 10px; border-radius: 9999px; background: var(--tint); font: 11px/26px var(--mono); color: var(--muted); animation: appear 0.3s ease-out; }
+  .search b { flex: none; font: 600 12px/1 var(--sans); color: var(--fg); }
+  .search svg { flex: none; width: 12px; height: 12px; color: var(--fg); }
+  .search span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .topic.done .search { height: 22px; background: none; padding: 0 6px; box-shadow: inset 0 0 0 1px var(--line); line-height: 22px; }
+  .thinking { max-height: 54px; margin: 8px 0 0 34px; overflow: hidden; font: 11px/18px var(--mono); color: var(--faint); white-space: pre-wrap; overflow-wrap: anywhere; }
+  .thinking:empty { display: none; }
+  .note { margin: 8px 0 0 34px; color: var(--muted); }
+
+  .stories { display: grid; gap: 8px; margin: 12px 0 0 34px; }
+  .stories:empty { display: none; }
+  .story { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 18px; padding: 14px 16px; border-radius: 14px; background: var(--bg); box-shadow: inset 0 0 0 1px var(--line); animation: appear 0.35s ease-out; }
+  .topic.playing .story { box-shadow: 0 1px 2px rgb(10 10 10 / 0.04); }
+  .badge { display: inline-block; height: 20px; padding: 0 8px; border-radius: 9999px; font-size: 11px; font-weight: 600; line-height: 20px; }
+  .badge.new { background: var(--accent-soft); color: var(--accent); }
+  .badge.update { background: var(--fg); color: #fff; }
+  .badge.old { background: var(--secondary); color: var(--muted); }
+  .story h4 { margin: 8px 0 4px; font-size: 15px; line-height: 21px; font-weight: 500; letter-spacing: -0.005em; }
+  .story p { margin: 0; font-size: 13px; line-height: 20px; color: var(--muted); }
+  .story.old { grid-template-columns: minmax(0, 1fr); padding: 10px 14px; background: none; }
+  .story.old h4 { margin: 6px 0 2px; font-size: 14px; font-weight: 450; color: var(--muted); }
+  .story.old p { color: var(--faint); }
+  .sources { display: grid; gap: 6px; align-content: start; }
+  .source { display: grid; grid-template-columns: 24px minmax(0, 1fr); align-items: start; gap: 1px 9px; padding: 8px 10px; border-radius: 10px; background: var(--card); text-decoration: none; }
+  .source:hover { background: var(--secondary); }
+  .avatar { grid-row: span 2; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--fg); color: #fff; font-size: 12px; font-weight: 600; }
+  .source.article .avatar { border-radius: 7px; background: var(--secondary-hover); color: var(--fg); }
+  .source-name { overflow: hidden; font-size: 12px; font-weight: 500; line-height: 18px; text-overflow: ellipsis; white-space: nowrap; }
+  .source-text { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; font-size: 12px; line-height: 17px; color: var(--muted); overflow-wrap: anywhere; }
+  .no-sources { margin: 0; font-size: 12px; color: var(--faint); }
+
+  #message { margin: 0; padding: 12px 16px; border-radius: 12px; background: rgb(229 72 77 / 0.1); color: #e5484d; }
+
+  @media (max-width: 1000px) {
+    .surface { height: auto; }
+    .studio { grid-template-columns: minmax(0, 1fr); }
+    .cover { aspect-ratio: 2.4; }
+    #rundown { overflow: visible; }
+    .how { grid-template-columns: minmax(0, 1fr); }
+  }
+  @media (max-width: 720px) {
+    .story { grid-template-columns: minmax(0, 1fr); }
+  }
+</style>
+</head>
+<body>
+<header class="site">
+  <a class="logo" href="https://x.ai" target="_blank" rel="noopener" aria-label="SpaceXAI"><svg viewBox="0 0 759 290.2" aria-hidden="true"><g transform="translate(-674.5,-388.5)"><path d="M1433.19 388.934C1345.69 396.068 1001.73 438.71 763.235 678.467H674.732L684.62 668.612C734.53 620.395 955.373 416.045 1433.19 388.668V388.934Z"/><path d="M1133.66 678.467H1064.29L927.618 578.979C940.213 571.058 952.888 563.515 965.603 556.33L1133.66 678.467Z"/><path d="M1022.8 678.468H953.463L932.43 663.169H814.998C823.265 655.828 831.635 648.702 840.092 641.784H902.996L870.444 618.106C882.079 609.448 893.843 601.155 905.701 593.211L1022.8 678.468Z"/><path d="M770.433 495.02L823.901 533.876C810.594 541.712 798.139 549.468 786.514 557.055L701.158 494.986L770.433 495.02Z"/></g></svg></a>
+  <nav class="crumbs"><span>Cookbook</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg><h1>Topics to Morning Briefing</h1></nav>
+  <span class="models">grok-4.7 with X Search, web search, and text to speech</span>
+  <a class="pill pill-secondary pill-sm" href="https://github.com/xai-org/xai-cookbook/tree/main/examples/topics-to-morning-briefing" target="_blank" rel="noopener">View code</a>
+</header>
+
+
+<main class="surface">
+  <form id="form" class="toolbar">
+    <div class="topics" id="topics">
+      <input id="new-topic" class="topic-input" maxlength="80" aria-label="Add a topic" placeholder="Add a topic">
+    </div>
+    <label class="cap">Cost cap
+      <select id="cap" aria-label="Cost cap for one briefing">
+        <option value="0.25">$0.25</option>
+        <option value="0.5">$0.50</option>
+        <option value="1" selected>$1.00</option>
+        <option value="2">$2.00</option>
+      </select>
+    </label>
+    <button id="go" class="pill pill-primary">Brief me</button>
+  </form>
+
+  <section class="panel start" id="start">
+    <h2>Your morning briefing, from 𝕏 and the web</h2>
+    <p>Pick a few topics. Grok finds what happened since your last briefing, skips the stories it already told you about, and reads you the rest in about two minutes. A run takes a minute or two.</p>
+    <ol class="how">
+      <li><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6"/><path d="m15 15 5 5"/></svg><strong>Searches a fixed window</strong>𝕏 posts and web articles from the day of your last briefing through today.</li>
+      <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14v16l-7-4-7 4z"/><path d="m9 10 2 2 4-4"/></svg><strong>Remembers what it told you</strong>Grok checks every story against earlier briefings and keeps only what's new.</li>
+      <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 15v-3a8 8 0 0 1 16 0v3"/><rect x="3" y="14" width="4" height="6" rx="1.5"/><rect x="17" y="14" width="4" height="6" rx="1.5"/></svg><strong>Reads it to you</strong>A short spoken briefing, with the posts and articles behind each story.</li>
+    </ol>
+    <p class="memory-line" id="start-memory" hidden></p>
+  </section>
+
+  <div class="studio" id="studio" hidden>
+    <aside class="panel player">
+      <div class="cover">
+        <div class="cover-top"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 11.5h12M4 11.5a4 4 0 0 1 8 0M8 3v2M3.4 5.4l1.2 1.2M12.6 5.4l-1.2 1.2"/></svg>Morning Briefing<span class="on-air" id="on-air"><i></i><span id="on-air-text">Live</span></span></div>
+        <div>
+          <p class="cover-date" id="cover-date"></p>
+          <p class="cover-since" id="cover-since"></p>
+        </div>
+      </div>
+
+      <div class="controls">
+        <button type="button" id="play" disabled></button>
+        <div class="progress-wrap">
+          <div id="progress"></div>
+          <div id="chapters"></div>
+        </div>
+        <a id="download" download="briefing.mp3" aria-label="Download the MP3" title="Download the MP3" hidden><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.5v8M4.5 7 8 10.5 11.5 7M2.5 13.5h11"/></svg></a>
+      </div>
+      <p id="now-text"></p>
+      <p id="caption" aria-live="polite"></p>
+
+      <dl class="facts">
+        <dt>Window</dt><dd id="fact-window"></dd>
+        <dt>Memory</dt><dd id="fact-memory"></dd>
+        <dt>Fetched</dt><dd id="fact-fetched"></dd>
+        <dt>Cost</dt><dd><span id="fact-cost"></span><div class="meter"><i id="meter"></i></div></dd>
+        <dt id="saved-label" hidden>Saved</dt><dd id="saved" hidden></dd>
+      </dl>
+    </aside>
+
+    <section class="panel rundown">
+      <div class="rundown-head"><p class="label">Rundown</p><span id="rundown-status"></span></div>
+      <div id="rundown"></div>
+    </section>
+  </div>
+
+  <p id="message" hidden></p>
+</main>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  const audio = new Audio();
+  const MAX_TOPICS = 6;
+  const ICONS = {
+    play: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 2.5v11l9-5.5z"/></svg>',
+    pause: '<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3.5" y="2.5" width="3" height="11" rx="1"/><rect x="9.5" y="2.5" width="3" height="11" rx="1"/></svg>',
+    remove: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 4 8 8M12 4l-8 8"/></svg>',
+    web: '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6"/><path d="M2 8h12M8 2c1.8 1.7 2.6 3.7 2.6 6S9.8 12.3 8 14C6.2 12.3 5.4 10.3 5.4 8S6.2 3.7 8 2z"/></svg>',
+  };
+  const LABELS = { new: "New", update: "Update", old: "Already covered" };
+  let topics = [];
+  let events;
+  let clips = [];
+  let current = -1;
+  let playing = false;
+  let autoplayed = false;
+  let fetched = { posts: 0, searches: 0 };
+  let cap = 1;
+
+  showPlayButton("play");
+  fetch("/api/state").then((response) => response.json()).then((state) => {
+    topics = state.topics.slice(0, MAX_TOPICS);
+    $("cap").value = String(state.maxCost);
+    renderChips();
+    showMemory(state.memory);
+  });
+
+  $("topics").onclick = (event) => event.target === $("topics") && $("new-topic").focus();
+  $("new-topic").onkeydown = (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      addTopic();
+    }
+    if (event.key === "Backspace" && !$("new-topic").value && topics.length && !events) {
+      topics.pop();
+      renderChips();
+    }
+  };
+
+  $("form").onsubmit = (event) => {
+    event.preventDefault();
+    if (events) return stop("Stopped. Nothing was added to the memory.");
+    addTopic();
+    if (!topics.length) return $("new-topic").focus();
+    reset();
+    setRunning(true);
+    cap = Number($("cap").value);
+    const query = new URLSearchParams([...topics.map((topic) => ["topic", topic]), ["cap", cap]]);
+    events = new EventSource(`/api/briefing?${query}`);
+    const on = (name, handler) => events.addEventListener(name, (message) => handler(JSON.parse(message.data)));
+
+    on("start", startBriefing);
+    on("topic", ({ index, remembered }) => {
+      const section = topicSection(index);
+      section.className = "topic active";
+      setState(index, "Searching 𝕏 and the web");
+      if (remembered) section.querySelector(".topic-head h3").insertAdjacentHTML("afterend", `<span class="remembered" title="Grok compares what it finds with these">${plural(remembered, "story", "stories")} remembered</span>`);
+      segment(index + 1).classList.add("making");
+      $("rundown-status").textContent = `· researching ${topics[index]}`;
+      if (!playing || audio.paused) scrollToTopic(index);
+    });
+    on("search", ({ index, tool, text }) => {
+      const icon = tool === "x" ? "<b>𝕏</b>" : ICONS.web;
+      topicSection(index).querySelector(".searches").insertAdjacentHTML("beforeend", `<span class="search" title="${escapeHtml(text)}">${icon}<span>${escapeHtml(text)}</span></span>`);
+    });
+    on("reasoning", ({ index, text }) => {
+      const thinking = topicSection(index).querySelector(".thinking");
+      thinking.textContent += text;
+      thinking.scrollTop = thinking.scrollHeight;
+    });
+    on("writing", ({ index }) => setState(index, "Writing"));
+    on("report", showReport);
+    on("skipped", ({ index, reason }) => {
+      const section = topicSection(index);
+      section.className = "topic done skipped";
+      setState(index, "Skipped");
+      section.querySelector(".thinking").textContent = "";
+      section.querySelector(".stories").insertAdjacentHTML("beforebegin", `<p class="note">${escapeHtml(reason)}</p>`);
+      clips[index + 1].skipped = true;
+      segment(index + 1).className = "skipped";
+      clipReady();
+    });
+    on("clip", ({ index, url, seconds, text }) => {
+      Object.assign(clips[index], { url, seconds, text });
+      segment(index).className = "ready";
+      segment(index).style.flexGrow = seconds;
+      $("chapters").children[index].style.flexGrow = seconds;
+      clipReady(index);
+    });
+    on("done", ({ cost, seconds, url, dir, memory }) => {
+      $("fact-cost").textContent = `$${cost.toFixed(2)} of the $${cap.toFixed(2)} cap`;
+      $("meter").style.width = `${Math.min(cost / cap, 1) * 100}%`;
+      $("fact-memory").textContent = `${plural(memory.stories, "story", "stories")} from ${plural(memory.briefings, "briefing")}`;
+      $("download").href = url;
+      $("download").hidden = false;
+      $("saved").textContent = `${dir}/briefing.mp3, ${minutes(seconds)}`;
+      $("saved").hidden = $("saved-label").hidden = false;
+      $("on-air").hidden = true;
+      $("rundown-status").textContent = "";
+      showMemory(memory);
+      events.close();
+      events = undefined;
+      setRunning(false);
+    });
+    on("failure", ({ message }) => stop(`Couldn't make the briefing: ${message}`));
+    events.onerror = () => stop("Lost the connection to the server.");
+  };
+
+  function startBriefing({ from, to, remembered, briefings, clips: labels }) {
+    $("start").hidden = true;
+    $("studio").hidden = false;
+    $("cover-date").textContent = new Date().toLocaleDateString("en", { weekday: "long", month: "long", day: "numeric" });
+    $("cover-since").textContent = topics.join(" · ");
+    const last = lastDay(to);
+    $("fact-window").textContent = from === last ? `${formatDay(from)}, UTC` : `${formatDay(from)} to ${formatDay(last)}, UTC`;
+    $("fact-memory").textContent = briefings ? `${plural(remembered, "story", "stories")} on these topics from ${plural(briefings, "briefing")}` : "Empty, this is the first briefing";
+    $("fact-cost").textContent = `$0.00 of the $${cap.toFixed(2)} cap`;
+    $("fact-fetched").textContent = "Nothing yet";
+    clips = labels.map((label) => ({ label }));
+    $("progress").innerHTML = labels.map((label, index) => `<span title="${escapeHtml(label)}" style="flex-grow: ${index === 0 || index === labels.length - 1 ? 1 : 5}"><i></i></span>`).join("");
+    $("chapters").innerHTML = labels.map((label, index) => `<span style="flex-grow: ${index === 0 || index === labels.length - 1 ? 1 : 5}">${escapeHtml(label)}</span>`).join("");
+    [...$("progress").children].forEach((item, index) => (item.onclick = () => clips[index].url && play(index)));
+    $("rundown").innerHTML = labels.slice(1, -1).map((label, index) => `
+      <section class="topic waiting">
+        <header class="topic-head"><span class="topic-n">${index + 1}</span><h3>${escapeHtml(label)}</h3><span class="eq"><i></i><i></i><i></i></span><span class="topic-state"><i></i><span>Waiting</span></span></header>
+        <div class="searches"></div>
+        <p class="thinking"></p>
+        <div class="stories"></div>
+      </section>`).join("");
+    [...$("rundown").children].forEach((section, index) => (section.querySelector("h3").onclick = () => clips[index + 1].url && play(index + 1)));
+    segment(0).classList.add("making");
+    nowText("The briefing starts as soon as the first topic is ready");
+  }
+
+  function showReport({ index, stories, script, cost, posts, searches, spent }) {
+    clips[index + 1].text = script;
+    if (playing && current === index + 1 && !clips[current].url) play(current);
+    const section = topicSection(index);
+    section.className = "topic done";
+    section.querySelector(".thinking").textContent = "";
+    const fresh = stories.filter((story) => story.status !== "old");
+    const counts = ["new", "update"].map((status) => fresh.filter((story) => story.status === status).length);
+    const summary = fresh.length ? [counts[0] && `${counts[0]} new`, counts[1] && plural(counts[1], "update")].filter(Boolean).join(" · ") : "Nothing new";
+    setState(index, `${summary} · $${cost.toFixed(2)}`);
+    section.querySelector(".stories").innerHTML = [...fresh, ...stories.filter((story) => story.status === "old")].map(storyCard).join("");
+    fetched.posts += posts;
+    fetched.searches += searches;
+    $("fact-fetched").textContent = `${plural(fetched.posts, "𝕏 post")} · ${plural(fetched.searches, "search", "searches")}`;
+    $("fact-cost").textContent = `$${spent.toFixed(2)} of the $${cap.toFixed(2)} cap`;
+    $("meter").style.width = `${Math.min(spent / cap, 1) * 100}%`;
+  }
+
+  function storyCard({ status, headline, summary, posts, articles }) {
+    const sources = [
+      ...posts.map((post) => `<a class="source post" href="${safeUrl(post.url)}" target="_blank" rel="noopener"><span class="avatar">𝕏</span><span class="source-name">@${escapeHtml(post.author.replace(/^@/, ""))}</span><span class="source-text">${escapeHtml(post.text)}</span></a>`),
+      ...articles.map((article) => `<a class="source article" href="${safeUrl(article.url)}" target="_blank" rel="noopener"><span class="avatar">${escapeHtml(initial(article.site || host(article.url)))}</span><span class="source-name">${escapeHtml(article.site || host(article.url))}</span><span class="source-text">${escapeHtml(article.title)}</span></a>`),
+    ];
+    const text = `<div><span class="badge ${status}">${LABELS[status]}</span><h4>${escapeHtml(headline)}</h4><p>${escapeHtml(summary)}</p></div>`;
+    if (status === "old") return `<article class="story old">${text}</article>`;
+    return `<article class="story ${status}">${text}<div class="sources">${sources.join("") || '<p class="no-sources">No cited sources</p>'}</div></article>`;
+  }
+
+  // Starts the briefing once the intro and the first topic are ready, then plays each clip as it arrives.
+  function clipReady(index) {
+    if (index === 0 && current < 0) showCaption(clips[0].text);
+    if (!autoplayed && clips[0].url && (clips[1].url || clips[1].skipped)) {
+      autoplayed = true;
+      return play(0);
+    }
+    if (playing && audio.paused && (index === current || clips[current]?.skipped)) play(current);
+  }
+
+  function play(index) {
+    playing = true;
+    current = index;
+    while (clips[current]?.skipped) current++;
+    [...$("progress").children].forEach((item, i) => item.classList.toggle("current", i === current));
+    [...$("chapters").children].forEach((item, i) => item.classList.toggle("current", i === current));
+    [...$("rundown").children].forEach((section, i) => section.classList.toggle("playing", i === current - 1));
+    renderProgress();
+    if (current >= clips.length) return finish();
+    const clip = clips[current];
+    if (current >= 1 && current < clips.length - 1) scrollToTopic(current - 1);
+    if (!clip.url) {
+      showCaption(clip.text ?? "");
+      showPlayButton("pause");
+      return nowText(clip.text ? `Recording ${clip.label}` : current < clips.length - 1 ? `Waiting for ${clip.label}` : "Waiting for the last clip");
+    }
+    showCaption(clip.text);
+    audio.src = clip.url;
+    showPlayButton("pause");
+    // The browser can refuse to start audio the user didn't ask for, and then the button offers to play it.
+    audio.play().catch(() => {
+      playing = false;
+      showPlayButton("play");
+    });
+  }
+
+  audio.onended = () => playing && play(current + 1);
+  audio.onplay = function tick() {
+    renderProgress();
+    if (!audio.paused) requestAnimationFrame(tick);
+  };
+
+  $("play").onclick = () => {
+    if (playing) {
+      playing = false;
+      audio.pause();
+      showPlayButton("play");
+      return;
+    }
+    if (current < 0 || current >= clips.length) return play(0);
+    if (audio.src && audio.currentTime > 0 && !audio.ended && clips[current]?.url && audio.src.endsWith(clips[current].url)) {
+      playing = true;
+      audio.play();
+      return showPlayButton("pause");
+    }
+    play(current);
+  };
+
+  // Fills the bar for the clip being played and lights up the words of the caption at the same pace.
+  function renderProgress() {
+    const clip = clips[current];
+    const fraction = clip?.url && audio.src.endsWith(clip.url) && audio.duration ? audio.currentTime / audio.duration : 0;
+    [...$("progress").children].forEach((item, i) => {
+      item.firstChild.style.width = i < current ? "100%" : i === current ? `${fraction * 100}%` : "0%";
+    });
+    const words = $("caption").querySelectorAll(".w");
+    const spoken = Math.ceil(fraction * words.length);
+    words.forEach((word, i) => word.classList.toggle("spoken", i < spoken));
+    const word = words[Math.max(spoken - 1, 0)];
+    if (word) {
+      const top = Math.max(0, word.offsetTop - $("caption").clientHeight / 3);
+      if (Math.abs($("caption").scrollTop - top) > 20) $("caption").scrollTop = top;
+    }
+    if (clip?.url && audio.duration) nowText(`${clip.label} · ${minutes(audio.currentTime)} / ${minutes(audio.duration)}`);
+  }
+
+  function finish() {
+    playing = false;
+    current = clips.length;
+    showPlayButton("play");
+    [...$("rundown").children].forEach((section) => section.classList.remove("playing"));
+    nowText("Finished. Play it again or download it.");
+  }
+
+  function showCaption(text) {
+    $("caption").innerHTML = text
+      .split(/(\[[a-z-]+\]|<\/?[a-z-]+>|\s+)/)
+      .map((part) => {
+        if (!part) return "";
+        if (/^\s+$/.test(part)) return " ";
+        if (/^\[[a-z-]+\]$/.test(part)) return `<span class="tag">${part.slice(1, -1)}</span>`;
+        if (/^<\/[a-z-]+>$/.test(part)) return "</em>";
+        if (/^<[a-z-]+>$/.test(part)) return `<em title="${part.slice(1, -1)}">`;
+        return `<span class="w">${escapeHtml(part)}</span>`;
+      })
+      .join("");
+  }
+
+  function scrollToTopic(index) {
+    const section = topicSection(index);
+    if (section) $("rundown").scrollTo({ top: section.offsetTop - 6, behavior: "smooth" });
+  }
+
+  function renderChips() {
+    $("topics").querySelectorAll(".topic-chip").forEach((chip) => chip.remove());
+    topics.forEach((topic, index) => {
+      const chip = document.createElement("span");
+      chip.className = "topic-chip";
+      chip.innerHTML = `${escapeHtml(topic)}<button type="button" aria-label="Remove ${escapeHtml(topic)}">${ICONS.remove}</button>`;
+      chip.querySelector("button").onclick = () => {
+        topics.splice(index, 1);
+        renderChips();
+      };
+      $("topics").insertBefore(chip, $("new-topic"));
+    });
+    $("new-topic").hidden = topics.length >= MAX_TOPICS;
+  }
+
+  function addTopic() {
+    const topic = $("new-topic").value.trim();
+    $("new-topic").value = "";
+    if (topic && topics.length < MAX_TOPICS && !topics.some((other) => other.toLowerCase() === topic.toLowerCase())) topics.push(topic);
+    renderChips();
+  }
+
+  function showMemory({ briefings, stories, last }) {
+    if (!briefings) return ($("start-memory").hidden = true);
+    const when = new Date(last).toLocaleString("en", { weekday: "short", hour: "numeric", minute: "2-digit" });
+    $("start-memory").innerHTML = `Remembers ${plural(stories, "story", "stories")} from ${plural(briefings, "briefing")}. The last one was ${escapeHtml(when)}. <button type="button" id="forget">Forget them</button>`;
+    $("start-memory").hidden = false;
+    $("forget").onclick = async () => {
+      const response = await fetch("/api/memory", { method: "DELETE" });
+      if (response.ok) showMemory(await response.json());
+    };
+  }
+
+  function stop(message) {
+    events?.close();
+    events = undefined;
+    setRunning(false);
+    $("on-air").hidden = true;
+    $("rundown-status").textContent = "";
+    document.querySelectorAll(".topic.active, .topic.waiting").forEach((section) => {
+      section.className = "topic done";
+      section.querySelector(".topic-state span").textContent = "Stopped";
+    });
+    document.querySelectorAll("#progress .making").forEach((item) => item.classList.remove("making"));
+    $("message").textContent = message;
+    $("message").hidden = false;
+  }
+
+  function reset() {
+    audio.pause();
+    audio.removeAttribute("src");
+    clips = [];
+    current = -1;
+    playing = false;
+    autoplayed = false;
+    fetched = { posts: 0, searches: 0 };
+    $("caption").innerHTML = "";
+    $("download").hidden = true;
+    $("saved").hidden = $("saved-label").hidden = true;
+    $("on-air").hidden = false;
+    $("message").hidden = true;
+    $("play").disabled = false;
+    $("rundown").scrollTop = 0;
+    showPlayButton("play");
+  }
+
+  function setRunning(running) {
+    $("go").textContent = running ? "Stop" : "Brief me";
+    $("go").classList.toggle("stop", running);
+    $("topics").classList.toggle("locked", running);
+    $("new-topic").disabled = running;
+    $("cap").disabled = running;
+  }
+
+  function setState(index, text) {
+    topicSection(index).querySelector(".topic-state span").textContent = text;
+  }
+
+  // The button shows the action it takes: pause while playing, play otherwise.
+  function showPlayButton(action) {
+    $("play").innerHTML = ICONS[action];
+    $("play").setAttribute("aria-label", action === "play" ? "Play" : "Pause");
+  }
+
+  function nowText(text) {
+    $("now-text").textContent = text;
+  }
+
+  function topicSection(index) {
+    return $("rundown").children[index];
+  }
+
+  function segment(index) {
+    return $("progress").children[index];
+  }
+
+  // to_date is exclusive, so the last day searched is the one before it.
+  function lastDay(to) {
+    return new Date(Date.parse(`${to}T00:00:00Z`) - 86_400_000).toISOString().slice(0, 10);
+  }
+
+  function formatDay(day) {
+    return new Date(`${day}T00:00:00Z`).toLocaleDateString("en", { month: "short", day: "numeric", timeZone: "UTC" });
+  }
+
+  function minutes(seconds) {
+    const rounded = Math.round(seconds);
+    return `${Math.floor(rounded / 60)}:${String(rounded % 60).padStart(2, "0")}`;
+  }
+
+  function host(url) {
+    try {
+      return new URL(url).hostname.replace(/^www\./, "");
+    } catch {
+      return url;
+    }
+  }
+
+  function initial(name) {
+    return name.trim().charAt(0).toUpperCase() || "?";
+  }
+
+  function safeUrl(url) {
+    return /^https?:\/\//.test(url) ? escapeHtml(url) : "#";
+  }
+
+  function plural(count, word, many = `${word}s`) {
+    return `${count} ${count === 1 ? word : many}`;
+  }
+
+  function escapeHtml(text) {
+    return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+</script>
+</body>
+</html>

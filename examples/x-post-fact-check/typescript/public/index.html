@@ -1,0 +1,646 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>𝕏 Post to Fact-Check</title>
+<style>
+  /* The look every SpaceXAI Cookbook page shares, after x.ai. */
+  :root {
+    --bg: #fff;
+    --card: #f9f8f6;
+    --secondary: #f2f1ef;
+    --secondary-hover: #e9e8e5;
+    --tint: rgb(10 10 10 / 0.04);
+    --line: rgb(10 10 10 / 0.08);
+    --border: rgb(10 10 10 / 0.15);
+    --fg: #0a0a0a;
+    --muted: rgb(10 10 10 / 0.6);
+    --faint: rgb(10 10 10 / 0.36);
+    --accent: #ff6308;
+    --accent-soft: rgb(255 99 8 / 0.1);
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; font: 14px/22px var(--sans); background: var(--bg); color: var(--fg); -webkit-font-smoothing: antialiased; }
+  button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
+  a { color: inherit; }
+  svg { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  @keyframes blink { 50% { opacity: 0.3; } }
+  @keyframes pulse { to { background-color: var(--secondary-hover); } }
+  @keyframes appear { from { opacity: 0; transform: translateY(4px); } }
+  @keyframes pop { from { opacity: 0; transform: scale(0.9); } }
+
+  .site { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 12px; height: 60px; padding: 0 20px; background: rgb(255 255 255 / 0.85); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+  .logo { flex: none; margin-right: 4px; color: var(--fg); }
+  .logo svg { display: block; width: 52px; height: 20px; fill: currentColor; stroke: none; }
+  .crumbs { display: flex; align-items: center; gap: 8px; min-width: 0; color: var(--muted); white-space: nowrap; }
+  .crumbs svg { width: 12px; height: 12px; color: var(--faint); }
+  .crumbs h1 { margin: 0; overflow: hidden; text-overflow: ellipsis; font-size: inherit; line-height: inherit; font-weight: 500; color: var(--fg); }
+  .site .pill { flex: none; margin-left: auto; }
+  .models { flex: none; height: 26px; padding: 0 10px; border-radius: 9999px; box-shadow: inset 0 0 0 1px var(--line); font-size: 12px; font-weight: 500; line-height: 26px; color: var(--muted); }
+  .pill { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 40px; padding: 0 18px; border-radius: 9999px; font-size: 14px; font-weight: 500; white-space: nowrap; text-decoration: none; }
+  .pill-sm { height: 32px; padding: 0 14px; font-size: 13px; }
+  .pill-primary { background: var(--fg); color: #fff; }
+  .pill-primary:hover { background: #202329; }
+  .pill-secondary { background: var(--secondary); color: var(--fg); }
+  .pill-secondary:hover { background: var(--secondary-hover); }
+  .pill:disabled { opacity: 0.4; cursor: default; }
+  .pill svg { width: 14px; height: 14px; }
+  .field { min-width: 0; height: 40px; padding: 0 18px; border: 1px solid var(--border); border-radius: 9999px; background: var(--bg); color: var(--fg); font: inherit; outline: none; }
+  .field:focus { border-color: var(--fg); }
+  .field::placeholder { color: var(--faint); }
+  .surface { display: flex; flex-direction: column; gap: 8px; height: calc(100vh - 72px); min-height: 560px; margin: 0 12px 12px; padding: 8px; border-radius: 20px; background: var(--card); }
+  .panel { min-width: 0; padding: 20px 22px; border-radius: 16px; background: var(--bg); }
+  .label { margin: 0; font-size: 13px; font-weight: 500; color: var(--muted); }
+  @media (max-width: 900px) {
+    .models { display: none; }
+  }
+  @media (max-width: 640px) {
+    .site { padding: 0 16px; }
+    .crumbs > span, .crumbs > svg { display: none; }
+    .surface { margin: 0 8px 8px; }
+  }
+
+  /* 𝕏 Post to Fact-Check */
+  :root {
+    --supported: #15803d;
+    --supported-soft: rgb(22 163 74 / 0.1);
+    --context: #d9480f;
+    --context-soft: rgb(217 72 15 / 0.1);
+  }
+  .fill { fill: currentColor; stroke: none; }
+  .skeleton { display: block; height: 12px; margin: 6px 0 10px; border-radius: 6px; background: var(--secondary); animation: pulse 1s ease-in-out infinite alternate; }
+
+  .toolbar { display: flex; align-items: center; gap: 8px; padding: 8px; border-radius: 16px; background: var(--bg); }
+  .link { position: relative; flex: 1; display: flex; min-width: 220px; }
+  .link svg { position: absolute; left: 17px; top: 13px; width: 14px; height: 14px; }
+  .link .field { flex: 1; padding-left: 42px; }
+  .deep { position: relative; display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px 0 12px; border-radius: 9999px; background: var(--secondary); color: var(--muted); font-weight: 500; white-space: nowrap; cursor: pointer; }
+  .deep input { position: absolute; opacity: 0; pointer-events: none; }
+  .switch { position: relative; width: 28px; height: 16px; border-radius: 8px; background: var(--border); transition: background 0.2s; }
+  .switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 12px; height: 12px; border-radius: 50%; background: #fff; transition: transform 0.2s; }
+  .deep:has(input:checked) { color: var(--fg); }
+  .deep:has(input:checked) .switch { background: var(--fg); }
+  .deep:has(input:checked) .switch::after { transform: translateX(12px); }
+  .deep:has(input:focus-visible) { outline: 2px solid var(--fg); outline-offset: 2px; }
+  .deep:has(input:disabled) { opacity: 0.5; cursor: default; }
+  #go { min-width: 120px; }
+  #go.stop { background: var(--secondary); color: var(--fg); }
+  #go svg { width: 12px; height: 12px; }
+
+  .desk { flex: 1; display: grid; grid-template-columns: minmax(380px, 440px) minmax(0, 1fr); gap: 8px; min-height: 0; }
+  .desk > .panel { overflow-y: auto; }
+
+  .start { grid-column: 1 / -1; display: grid; place-content: center; justify-items: center; gap: 16px; padding: 48px 24px; text-align: center; }
+  .start h2 { margin: 0; font-size: 40px; line-height: 1.1; font-weight: 450; letter-spacing: -0.02em; }
+  .start p { max-width: 620px; margin: 0; font-size: 16px; line-height: 26px; color: var(--muted); }
+  .samples { display: grid; grid-template-columns: repeat(2, minmax(0, 320px)); gap: 10px; margin-top: 12px; }
+  .sample { display: grid; align-content: start; gap: 8px; padding: 14px 16px 12px; border-radius: 16px; background: var(--card); text-align: left; transition: background 0.2s; }
+  .sample:hover { background: var(--secondary); }
+  .sample-head { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .sample-head i { flex: none; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: var(--fg); color: #fff; font-size: 13px; font-style: normal; font-weight: 600; }
+  .sample-who { display: grid; min-width: 0; line-height: 17px; }
+  .sample-who b, .sample-who span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sample-who b { font-size: 13px; font-weight: 600; }
+  .sample-who span { font-size: 12px; color: var(--faint); }
+  .sample-text { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 3; font-size: 13px; line-height: 19px; }
+  .sample-meta { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--faint); }
+  .sample-meta svg { width: 13px; height: 13px; }
+  .fine { font-size: 13px !important; line-height: 20px !important; color: var(--faint) !important; }
+
+  .post-panel { display: flex; flex-direction: column; gap: 12px; }
+  .post-panel > *, .claims-panel > * { flex: none; }
+  .post { padding: 16px 18px; border-radius: 16px; box-shadow: inset 0 0 0 1px var(--line); animation: appear 0.3s ease-out; }
+  .post-head { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .avatar { flex: none; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--fg); color: #fff; font-size: 16px; font-weight: 600; }
+  .who { display: grid; min-width: 0; line-height: 19px; }
+  .who b, .who span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .who b { font-weight: 600; }
+  .who span { color: var(--muted); }
+  .x-mark { flex: none; width: 16px; height: 16px; margin-left: auto; }
+  .post-text { margin: 12px 0 0; font-size: 15px; line-height: 22px; white-space: pre-line; overflow-wrap: anywhere; }
+  .post-text a { color: #1d9bf0; text-decoration: none; }
+  .post-media { display: grid; gap: 4px; margin-top: 12px; overflow: hidden; border-radius: 14px; box-shadow: 0 0 0 1px var(--line); }
+  .post-media:empty { display: none; }
+  .post-media img, .post-media video { display: block; width: 100%; max-height: 260px; object-fit: cover; background: var(--secondary); animation: appear 0.3s ease-out; }
+  .post-seen { display: flex; gap: 8px; margin: 10px 0 0; font-size: 12px; line-height: 18px; color: var(--muted); }
+  .post-seen:empty { display: none; }
+  .post-seen svg { flex: none; width: 14px; height: 14px; margin-top: 2px; color: var(--faint); }
+  .post-foot { display: flex; gap: 6px; margin-top: 12px; font-size: 13px; color: var(--faint); }
+  .post-foot a { color: inherit; }
+
+  .note { overflow: hidden; border-radius: 16px; box-shadow: inset 0 0 0 1px var(--line); scroll-margin: 12px; animation: appear 0.3s ease-out; }
+  .note-head { display: flex; align-items: center; gap: 8px; padding: 11px 18px; background: var(--card); font-size: 13px; font-weight: 600; }
+  .note-head svg { width: 15px; height: 15px; }
+  .note-status { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; font-weight: 500; color: var(--accent); }
+  .note-status i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; animation: blink 1s ease-in-out infinite; }
+  .note-text { min-height: 92px; margin: 0; padding: 14px 18px 6px; font-size: 15px; line-height: 24px; }
+  .refs { white-space: nowrap; }
+  .ref { display: inline-block; min-width: 16px; height: 16px; margin-left: 2px; padding: 0 4px; border-radius: 9999px; background: var(--secondary); font-size: 10px; font-weight: 600; line-height: 16px; text-align: center; text-decoration: none; vertical-align: 2px; color: var(--muted); animation: pop 0.2s ease-out; }
+  .refs .ref:first-child { margin-left: 4px; }
+  .ref:hover { background: var(--fg); color: #fff; }
+  .note-sources { display: grid; margin: 0; padding: 4px 18px 12px; list-style: none; }
+  .note-sources a { display: grid; grid-template-columns: 18px auto minmax(0, 1fr); gap: 8px; align-items: baseline; padding: 3px 0; font-size: 13px; line-height: 20px; text-decoration: none; }
+  .note-sources a:hover .title { color: var(--fg); }
+  .note-sources .num { font-size: 11px; color: var(--faint); font-variant-numeric: tabular-nums; }
+  .note-sources .domain { font-weight: 500; }
+  .note-sources .title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); }
+  .note-foot { margin: 0; padding: 10px 18px; border-top: 1px solid var(--line); font-size: 12px; line-height: 18px; color: var(--faint); }
+  .no-note { margin: 0; padding: 14px 18px; border-radius: 16px; background: var(--card); color: var(--muted); }
+
+  .claims-panel { display: flex; flex-direction: column; gap: 14px; }
+  .claims-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; }
+  .stepper { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+  .stepper li { display: flex; align-items: center; gap: 7px; height: 30px; padding: 0 12px; border-radius: 9999px; background: var(--card); color: var(--faint); font-size: 13px; font-weight: 500; }
+  .stepper li i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .stepper li.active { background: var(--accent-soft); color: var(--accent); }
+  .stepper li.active i { animation: blink 1s ease-in-out infinite; }
+  .stepper li.done { color: var(--fg); }
+  .reading { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+  .reading li { display: inline-flex; align-items: center; gap: 7px; max-width: 100%; height: 28px; padding: 0 12px; border-radius: 9999px; background: var(--card); font-size: 12px; color: var(--muted); animation: appear 0.25s ease-out; }
+  .reading li span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .reading li svg { flex: none; width: 13px; height: 13px; }
+  .reading li.pending { flex: 1 1 240px; animation: pulse 1s ease-in-out infinite alternate; }
+  #message { margin: 0; padding: 12px 16px; border-radius: 12px; background: var(--context-soft); color: var(--context); }
+
+  .claims { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .claim { display: flex; flex-direction: column; gap: 10px; min-height: 250px; padding: 16px 18px 14px; border-radius: 14px; background: var(--card); scroll-margin: 12px; animation: appear 0.3s ease-out; }
+  .claim.placeholder { gap: 0; padding-top: 20px; }
+  .claim.placeholder .skeleton { background: var(--secondary-hover); }
+  .claim header { display: flex; align-items: center; gap: 8px; min-height: 26px; }
+  .claim .n { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--bg); font-size: 12px; font-weight: 600; }
+  .claim .from { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--muted); }
+  .claim .from svg { width: 13px; height: 13px; }
+  .verdict { display: inline-flex; align-items: center; gap: 6px; height: 26px; margin-left: auto; padding: 0 11px; border-radius: 9999px; background: var(--bg); color: var(--faint); font-size: 12px; font-weight: 500; white-space: nowrap; }
+  .verdict i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .verdict svg { width: 13px; height: 13px; stroke-width: 2; }
+  .claim.checking .verdict { color: var(--muted); }
+  .claim.checking .verdict i { animation: blink 1s ease-in-out infinite; }
+  .claim.done .verdict { animation: pop 0.3s ease-out; }
+  .claim.supported .verdict { background: var(--supported-soft); color: var(--supported); }
+  .claim.missing_context .verdict { background: var(--context-soft); color: var(--context); }
+  .claim.not_enough_evidence .verdict { background: var(--secondary-hover); color: var(--muted); }
+  .claim-text { margin: 0; font-size: 15px; line-height: 22px; font-weight: 500; }
+  .searches { display: grid; gap: 5px; margin: 0; padding: 0; list-style: none; }
+  .searches li { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: 12px; line-height: 18px; color: var(--muted); animation: appear 0.25s ease-out; }
+  .searches li:nth-last-child(n + 6) { display: none; }
+  .searches svg { flex: none; width: 13px; height: 13px; color: var(--faint); }
+  .searches .q { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .searches .c { flex: none; margin-left: auto; color: var(--faint); font-variant-numeric: tabular-nums; }
+  .searches .pending .q { width: 60%; height: 10px; border-radius: 5px; background: var(--secondary); animation: pulse 1s ease-in-out infinite alternate; }
+  .result { display: grid; gap: 10px; animation: appear 0.3s ease-out; }
+  .why { display: -webkit-box; margin: 0; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 4; font-size: 13px; line-height: 20px; color: var(--muted); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; height: 26px; padding: 0 10px; border-radius: 9999px; background: var(--bg); box-shadow: inset 0 0 0 1px var(--line); font-size: 12px; font-weight: 500; text-decoration: none; animation: pop 0.25s ease-out backwards; }
+  .chip:hover { box-shadow: inset 0 0 0 1px var(--border); }
+  .chip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .chip i { flex: none; width: 6px; height: 6px; border-radius: 50%; background: var(--faint); }
+  .chip.supports i { background: var(--supported); }
+  .chip.contradicts i { background: var(--context); }
+  .claim footer { display: flex; align-items: center; gap: 10px; margin-top: auto; min-height: 20px; font-size: 12px; color: var(--faint); }
+  .claim footer:empty { display: none; }
+  .favs { display: flex; padding-left: 4px; }
+  .favs i { display: grid; place-items: center; width: 18px; height: 18px; margin-left: -4px; border-radius: 5px; box-shadow: 0 0 0 2px var(--card); font-size: 10px; font-style: normal; font-weight: 600; text-transform: uppercase; animation: pop 0.25s ease-out; }
+  .tally { font-variant-numeric: tabular-nums; }
+  .tally b { font-weight: 500; color: var(--context); }
+  .no-claims { margin: 0; padding: 16px 18px; border-radius: 14px; background: var(--card); color: var(--muted); }
+  .summary { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 0; font-size: 12px; line-height: 18px; animation: appear 0.3s ease-out; }
+  .summary div { display: flex; gap: 5px; }
+  .summary dt { color: var(--faint); }
+  .summary dd { margin: 0; font-weight: 500; font-variant-numeric: tabular-nums; }
+
+  @media (max-width: 1000px) {
+    .surface { height: auto; }
+    .desk { grid-template-columns: minmax(0, 1fr); }
+    .desk > .panel { overflow: visible; }
+  }
+  @media (max-width: 700px) {
+    .toolbar { flex-wrap: wrap; }
+    .claims, .samples { grid-template-columns: minmax(0, 1fr); }
+  }
+</style>
+</head>
+<body>
+<header class="site">
+  <a class="logo" href="https://x.ai" target="_blank" rel="noopener" aria-label="SpaceXAI"><svg viewBox="0 0 759 290.2" aria-hidden="true"><g transform="translate(-674.5,-388.5)"><path d="M1433.19 388.934C1345.69 396.068 1001.73 438.71 763.235 678.467H674.732L684.62 668.612C734.53 620.395 955.373 416.045 1433.19 388.668V388.934Z"/><path d="M1133.66 678.467H1064.29L927.618 578.979C940.213 571.058 952.888 563.515 965.603 556.33L1133.66 678.467Z"/><path d="M1022.8 678.468H953.463L932.43 663.169H814.998C823.265 655.828 831.635 648.702 840.092 641.784H902.996L870.444 618.106C882.079 609.448 893.843 601.155 905.701 593.211L1022.8 678.468Z"/><path d="M770.433 495.02L823.901 533.876C810.594 541.712 798.139 549.468 786.514 557.055L701.158 494.986L770.433 495.02Z"/></g></svg></a>
+  <nav class="crumbs"><span>Cookbook</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg><h1>𝕏 Post to Fact-Check</h1></nav>
+  <span class="models" id="models">grok-4.7 with X Search and Web Search</span>
+  <a class="pill pill-secondary pill-sm" href="https://github.com/xai-org/xai-cookbook/tree/main/examples/x-post-fact-check" target="_blank" rel="noopener">View code</a>
+</header>
+
+
+<main class="surface">
+  <form id="form" class="toolbar">
+    <label class="link">
+      <svg class="fill" viewBox="0 0 24 24" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+      <input id="link" class="field" type="url" required aria-label="Link to a post on X" placeholder="Paste a link to a post on 𝕏">
+    </label>
+    <label class="deep" title="Research each claim with grok-4.20-multi-agent: four agents per claim. Slower, and it costs more."><input type="checkbox" id="deep"><span class="switch"></span>Deep research</label>
+    <button id="go" class="pill pill-primary">Fact-check</button>
+  </form>
+
+  <div class="desk">
+    <section class="panel start" id="start">
+      <h2>Fact-check a post on 𝕏</h2>
+      <p>Paste a link to a post. Grok reads it, images and video included, splits it into claims, checks each one on the web and on 𝕏 at the same time, and writes a note where every sentence links to a source it found.</p>
+      <div class="samples">
+        <button type="button" class="sample" data-url="https://x.com/unusual_whales/status/2106776609457844610">
+          <span class="sample-head"><i>U</i><span class="sample-who"><b>unusual_whales</b><span>@unusual_whales · Oct 4</span></span></span>
+          <span class="sample-text">GameStop insiders are buying, and the CEO is leading the way. Ryan Cohen has bought about $57 million of $GME stock since Sept. 10. He now owns nearly 41 million shares directly.</span>
+          <span class="sample-meta"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2.5" y="3" width="11" height="10" rx="2"/><circle cx="6" cy="6.5" r="1"/><path d="m3 12 3.5-3.5 2.5 2.5 1.5-1.5 2.5 2.5"/></svg>With an image</span>
+        </button>
+        <button type="button" class="sample" data-url="https://x.com/NASASpaceflight/status/2105991436743110733">
+          <span class="sample-head"><i>N</i><span class="sample-who"><b>NSF - NASASpaceflight.com</b><span>@NASASpaceflight · Oct 2</span></span></span>
+          <span class="sample-text">Epic camera views and super sound of the world's most powerful rocket making its first orbital mission during Flight 14.</span>
+          <span class="sample-meta"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="4" width="9" height="8" rx="1.5"/><path d="m11 7 3-1.5v5L11 9"/></svg>With a video</span>
+        </button>
+        <button type="button" class="sample" data-url="https://x.com/England/status/2107525040564580379">
+          <span class="sample-head"><i>E</i><span class="sample-who"><b>England</b><span>@England · Oct 6</span></span></span>
+          <span class="sample-text">A truly remarkable milestone 👑 Harry Kane is set to level Peter Shilton’s record for the most #ThreeLions caps of all-time.</span>
+          <span class="sample-meta"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2.5" y="3" width="11" height="10" rx="2"/><circle cx="6" cy="6.5" r="1"/><path d="m3 12 3.5-3.5 2.5 2.5 1.5-1.5 2.5 2.5"/></svg>With an image</span>
+        </button>
+        <button type="button" class="sample" data-url="https://x.com/Nature/status/2107407714439647722">
+          <span class="sample-head"><i>N</i><span class="sample-who"><b>nature</b><span>@Nature · Oct 6</span></span></span>
+          <span class="sample-text">BREAKING: The Nobel Prize in Physics has been awarded to Francis Halzen “for decisive contributions to the IceCube Neutrino Observatory and the discovery of high-energy neutrinos of astrophysical origin.”</span>
+          <span class="sample-meta"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2.5" y="3" width="11" height="10" rx="2"/><circle cx="6" cy="6.5" r="1"/><path d="m3 12 3.5-3.5 2.5 2.5 1.5-1.5 2.5 2.5"/></svg>With an image</span>
+        </button>
+      </div>
+      <p class="fine">A check takes a minute or two.</p>
+    </section>
+
+    <aside class="panel post-panel" id="post-panel" hidden>
+      <article class="post">
+        <header class="post-head">
+          <span class="avatar" id="avatar"></span>
+          <span class="who"><b id="author"></b><span id="handle"></span></span>
+          <svg class="x-mark fill" viewBox="0 0 24 24" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+        </header>
+        <p class="post-text" id="post-text"></p>
+        <div class="post-media" id="post-media"></div>
+        <p class="post-seen" id="post-seen"></p>
+        <footer class="post-foot" id="post-foot" hidden><time id="posted"></time>·<a id="post-link" target="_blank" rel="noopener">View on 𝕏</a></footer>
+      </article>
+      <section class="note" id="note" hidden>
+        <header class="note-head"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="6" cy="5.5" r="2.2"/><path d="M2 13c.4-2.2 2-3.5 4-3.5s3.6 1.3 4 3.5"/><path d="M10.5 3.6a2.2 2.2 0 0 1 0 3.8M12 9.8c1.1.5 1.8 1.6 2 3.2"/></svg>Grok added context<span class="note-status" id="note-status"><i></i>Writing</span></header>
+        <p class="note-text" id="note-text"></p>
+        <ol class="note-sources" id="note-sources"></ol>
+        <p class="note-foot" id="note-foot" hidden>Every sentence cites a source that came back from a search.</p>
+      </section>
+      <p class="no-note" id="no-note" hidden>No claim has a source that held up, so there's no note.</p>
+    </aside>
+
+    <section class="panel claims-panel" id="claims-panel" hidden>
+      <div class="claims-head">
+        <ol class="stepper" id="stepper">
+          <li data-step="read"><i></i>Read the post</li>
+          <li data-step="check"><i></i><span id="check-label">Check the claims</span></li>
+          <li data-step="note"><i></i>Write the note</li>
+        </ol>
+        <dl class="summary" id="summary" hidden>
+          <div><dt>Time</dt><dd id="time"></dd></div>
+          <div title="What the API reported this run cost"><dt>Cost</dt><dd id="cost"></dd></div>
+          <div><dt>Web searches</dt><dd id="web-searches"></dd></div>
+          <div><dt>Posts from 𝕏</dt><dd id="x-posts"></dd></div>
+          <div><dt>Tokens</dt><dd id="tokens"></dd></div>
+        </dl>
+      </div>
+      <p id="message" hidden></p>
+      <ul class="reading" id="reading"></ul>
+      <div class="claims" id="claims"></div>
+      <p class="no-claims" id="no-claims" hidden>This post doesn't make any claims that can be checked.</p>
+    </section>
+  </div>
+</main>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  const VERDICTS = { supported: "Supported", missing_context: "Missing context", not_enough_evidence: "Not enough evidence" };
+  const ICONS = {
+    x: '<svg class="fill" viewBox="0 0 24 24" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>',
+    web: '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6"/><path d="M2 8h12M8 2c1.7 1.7 2.5 3.7 2.5 6S9.7 12.3 8 14c-1.7-1.7-2.5-3.7-2.5-6S6.3 3.7 8 2z"/></svg>',
+    page: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5h5l3 3v8H4z"/><path d="M9 2.5v3h3M6 8.5h4M6 11h4"/></svg>',
+    image: '<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2.5" y="3" width="11" height="10" rx="2"/><circle cx="6" cy="6.5" r="1"/><path d="m3 12 3.5-3.5 2.5 2.5 1.5-1.5 2.5 2.5"/></svg>',
+    video: '<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="4" width="9" height="8" rx="1.5"/><path d="m11 7 3-1.5v5L11 9"/></svg>',
+    eye: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1.5 8S4 3.5 8 3.5 14.5 8 14.5 8 12 12.5 8 12.5 1.5 8 1.5 8z"/><circle cx="8" cy="8" r="2"/></svg>',
+    stop: '<svg class="fill" viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="3" width="10" height="10" rx="2"/></svg>',
+    supported: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="m3.5 8.5 3 3 6-7"/></svg>',
+    missing_context: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3.5v5.5M8 12v.5"/></svg>',
+    not_enough_evidence: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 6a2 2 0 1 1 2.6 1.9c-.4.2-.6.5-.6 1v.6M8 12v.5"/></svg>',
+  };
+  const STEPS = ["read", "check", "note"];
+  let events;
+  let cards = [];
+  let noteSources = [];
+  let thinking = "";
+
+  document.querySelectorAll(".sample").forEach((button) => {
+    button.onclick = () => {
+      $("link").value = button.dataset.url;
+      $("form").requestSubmit();
+    };
+  });
+
+  $("form").onsubmit = (event) => {
+    event.preventDefault();
+    if (events) return stop("Stopped.");
+    const link = $("link").value.trim();
+    const deep = $("deep").checked;
+    reset(link, deep);
+    setRunning(true);
+    events = new EventSource(`/api/check?url=${encodeURIComponent(link)}${deep ? "&deep=1" : ""}`);
+    const on = (name, handler) => events.addEventListener(name, (message) => handler(JSON.parse(message.data)));
+
+    // While Grok reads the post, the pending row shows the sentence of its reasoning it's on.
+    on("reasoning", ({ text }) => {
+      thinking += text;
+      const sentence = thinking.trim().split(/(?<=[.!?])\s*(?=[A-Z])/).at(-1);
+      const pending = $("reading").querySelector(".pending span");
+      if (pending && sentence) pending.textContent = sentence;
+    });
+    on("tool", addReading);
+    on("viewed", showMedia);
+    on("draft", showDraft);
+    on("read", ({ post, claims }) => {
+      showPost(post);
+      claims.forEach((claim, index) => {
+        const card = cards[index] ?? addCard(index);
+        card.el.querySelector(".claim-text").textContent = claim.text;
+        card.el.querySelector(".from").innerHTML = from(claim.from);
+        card.el.className = "claim checking";
+        card.el.querySelector(".verdict").innerHTML = "<i></i>Checking";
+        card.el.querySelector(".searches").innerHTML = `<li class="pending">${ICONS.web}<span class="q"></span></li>`;
+      });
+      cards.splice(claims.length).forEach((card) => card.el.remove());
+      $("claims").querySelectorAll(".placeholder").forEach((placeholder) => placeholder.remove());
+      $("reading").querySelector(".pending")?.remove();
+      $("no-claims").hidden = claims.length > 0;
+      setStep(claims.length ? "check" : "done");
+    });
+    on("search", addSearch);
+    on("checked", showCheck);
+    on("writing", ({ sources }) => {
+      noteSources = sources;
+      setStep("note");
+      $("note-text").innerHTML = '<span class="skeleton" style="width: 94%"></span><span class="skeleton" style="width: 88%"></span><span class="skeleton" style="width: 60%"></span>';
+      $("note-sources").innerHTML = sources.map(sourceRow).join("");
+      $("note").hidden = false;
+      $("note").scrollIntoView({ block: "nearest", behavior: "smooth" });
+    });
+    on("note", ({ sentences }) => renderNote(sentences));
+    on("done", ({ note, spend, seconds }) => {
+      if (note) {
+        renderNote(note.sentences);
+        $("note").scrollIntoView({ block: "nearest", behavior: "smooth" });
+      }
+      $("note-status").hidden = true;
+      $("note-foot").hidden = !note;
+      $("no-note").hidden = Boolean(note) || !cards.length;
+      setStep("done");
+      $("time").textContent = `${seconds} s`;
+      $("cost").textContent = `$${spend.cost.toFixed(2)}`;
+      $("web-searches").textContent = spend.webSearches;
+      $("x-posts").textContent = spend.xPosts;
+      $("tokens").textContent = spend.tokens.toLocaleString("en");
+      $("summary").hidden = false;
+      stop();
+    });
+    on("failure", ({ message }) => stop(`Couldn't check the post: ${message}`));
+    events.onerror = () => stop("Lost the connection to the server.");
+  };
+
+  // What Grok did while reading the post: fetched it, looked at its images, watched its video.
+  function addReading({ tool, detail }) {
+    const row = document.createElement("li");
+    if (tool === "view_x_video") row.innerHTML = `${ICONS.video}<span>Watched the video</span>`;
+    else if (detail.startsWith("https://pbs.twimg.com/")) row.innerHTML = `${ICONS.image}<span>Looked at an image</span>`;
+    else if (tool === "x_thread_fetch") row.innerHTML = `${ICONS.x}<span>Fetched the post and its thread</span>`;
+    else row.innerHTML = `${tool.startsWith("x_") ? ICONS.x : ICONS.web}<span>${escapeHtml(detail || tool)}</span>`;
+    $("reading").querySelector(".pending")?.before(row);
+  }
+
+  function showMedia({ type, url }) {
+    if (!url.startsWith("https://")) return;
+    const media = document.createElement(type === "video" ? "video" : "img");
+    if (type === "video") Object.assign(media, { muted: true, autoplay: true, loop: true, playsInline: true });
+    else media.alt = "";
+    media.src = url;
+    $("post-media").append(media);
+  }
+
+  // The post and its claims as Grok writes them. Each claim gets its card as soon as it starts.
+  function showDraft({ author_name, text, media, claims }) {
+    if (author_name) $("author").textContent = author_name;
+    if (text) $("post-text").innerHTML = linkify(text);
+    showSeen(media);
+    (claims ?? []).forEach((claim, index) => {
+      const card = cards[index] ?? addCard(index);
+      card.el.querySelector(".claim-text").textContent = claim.text ?? "";
+      card.el.querySelector(".from").innerHTML = from(claim.from);
+    });
+  }
+
+  function showPost(post) {
+    $("author").textContent = post.author_name;
+    $("handle").textContent = `@${post.username}`;
+    $("avatar").textContent = (post.author_name || post.username)[0].toUpperCase();
+    $("post-text").innerHTML = linkify(post.text);
+    showSeen(post.media);
+    const posted = new Date(post.posted_at);
+    $("posted").textContent = `${posted.toLocaleTimeString("en", { hour: "numeric", minute: "2-digit" })} · ${posted.toLocaleDateString("en", { month: "short", day: "numeric", year: "numeric" })}`;
+    $("post-foot").hidden = false;
+  }
+
+  function showSeen(media) {
+    const seen = (media ?? []).filter((item) => item.description);
+    $("post-seen").innerHTML = seen.length ? `${ICONS.eye}<span>${seen.map((item) => `Grok ${item.type === "video" ? "watched the video" : "looked at the image"}: ${escapeHtml(item.description)}`).join(" ")}</span>` : "";
+  }
+
+  function addCard(index) {
+    const el = document.createElement("article");
+    el.className = "claim";
+    el.innerHTML = `<header><span class="n">${index + 1}</span><span class="from"></span><span class="verdict">Queued</span></header>
+      <p class="claim-text"></p>
+      <ul class="searches"></ul>
+      <div class="result" hidden><p class="why"></p><div class="chips"></div></div>
+      <footer><span class="favs"></span><span class="tally"></span></footer>`;
+    const placeholder = $("claims").querySelector(".placeholder");
+    if (placeholder) placeholder.replaceWith(el);
+    else $("claims").append(el);
+    el.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    const card = { el, searches: 0, pages: new Set(), sites: new Set() };
+    cards[index] = card;
+    return card;
+  }
+
+  // Each search shows up as it finishes, with how many pages it found, and the sites it found pile up
+  // at the bottom of the card.
+  function addSearch({ index, tool, detail, found }) {
+    const card = cards[index];
+    if (!card) return;
+    const row = document.createElement("li");
+    const icon = tool === "web_search" ? ICONS.web : tool.startsWith("x_") ? ICONS.x : ICONS.page;
+    const text = tool === "open_page" || tool === "find_in_page" ? `Read ${hostname(detail)}` : detail;
+    row.innerHTML = `${icon}<span class="q">${escapeHtml(text)}</span>${tool === "web_search" ? `<span class="c">${found.length}</span>` : ""}`;
+    card.el.querySelector(".searches .pending")?.before(row);
+    card.searches++;
+    for (const url of found) {
+      card.pages.add(url);
+      card.sites.add(hostname(url));
+    }
+    const sites = [...card.sites];
+    card.el.querySelector(".favs").innerHTML = sites.slice(0, 8).map(favicon).join("");
+    card.el.querySelector(".tally").textContent = sites.length > 8 ? `+${sites.length - 8} · ${plural(card.pages.size, "page")} found` : card.pages.size ? `${plural(card.pages.size, "page")} found` : "";
+  }
+
+  function showCheck({ index, check }) {
+    const card = cards[index];
+    if (!card) return;
+    card.el.className = `claim done ${check.verdict}`;
+    card.el.querySelector(".verdict").innerHTML = `${ICONS[check.verdict]}${VERDICTS[check.verdict]}`;
+    card.el.querySelector(".searches").hidden = true;
+    card.el.querySelector(".why").textContent = check.explanation;
+    card.el.querySelector(".chips").innerHTML = check.sources.map((source, i) => sourceChip(source, i)).join("");
+    card.el.querySelector(".result").hidden = false;
+    const dropped = check.dropped ? ` · <b title="Grok listed ${plural(check.dropped, "source")} that didn't come back as a citation, so ${check.dropped === 1 ? "it was" : "they were"} dropped">${check.dropped} dropped</b>` : "";
+    card.el.querySelector(".tally").innerHTML = `${plural(card.searches, "search", "searches")} · ${plural(card.pages.size, "page")} found · ${check.sources.length} kept${dropped}`;
+  }
+
+  function sourceChip(source, index) {
+    return `<a class="chip ${source.stance}" href="${safeUrl(source.url)}" target="_blank" rel="noopener" title="${escapeHtml(`${source.title}\n${source.finding}`)}" style="animation-delay: ${index * 60}ms"><i></i><span>${escapeHtml(sourceName(source.url))}</span></a>`;
+  }
+
+  function sourceRow(source, index) {
+    return `<li><a href="${safeUrl(source.url)}" target="_blank" rel="noopener" title="${escapeHtml(source.finding)}"><span class="num">${index + 1}</span><span class="domain">${escapeHtml(sourceName(source.url))}</span><span class="title">${escapeHtml(source.title)}</span></a></li>`;
+  }
+
+  // Each sentence ends with links to the sources it comes from, numbered like the list under the note.
+  function renderNote(sentences) {
+    const written = sentences.filter((sentence) => sentence.text);
+    if (!written.length) return;
+    $("note-text").innerHTML = written
+      .map(({ text, sources = [] }) => `${escapeHtml(text)}<span class="refs">${sources.map((n) => (noteSources[n - 1] ? `<a class="ref" href="${safeUrl(noteSources[n - 1].url)}" target="_blank" rel="noopener" title="${escapeHtml(noteSources[n - 1].title)}">${n}</a>` : "")).join("")}</span>`)
+      .join(" ");
+    $("note-text").scrollIntoView({ block: "nearest" });
+  }
+
+  // Shows links in the post the way X does, without the scheme and cut short.
+  function linkify(text) {
+    return escapeHtml(text).replace(/https?:\/\/[^\s<]+/g, (url) => {
+      const shown = url.replace(/^https?:\/\/(www\.)?/, "");
+      return `<a href="${url}" target="_blank" rel="noopener">${shown.length > 30 ? `${shown.slice(0, 28)}…` : shown}</a>`;
+    });
+  }
+
+  function from(where) {
+    if (where === "image") return `${ICONS.image}From the image`;
+    if (where === "video") return `${ICONS.video}From the video`;
+    return "";
+  }
+
+  function favicon(site) {
+    let hue = 0;
+    for (const char of site) hue = (hue * 31 + char.charCodeAt(0)) % 360;
+    return `<i title="${escapeHtml(site)}" style="background: hsl(${hue} 45% 91%); color: hsl(${hue} 40% 32%)">${escapeHtml(site[0] ?? "")}</i>`;
+  }
+
+  // The steps go read, check, note. Each one before the current one is done.
+  function setStep(step) {
+    const current = STEPS.indexOf(step);
+    [...$("stepper").children].forEach((item, index) => {
+      item.classList.toggle("done", step === "done" || index < current);
+      item.classList.toggle("active", index === current);
+    });
+  }
+
+  function stop(message) {
+    events?.close();
+    events = undefined;
+    setRunning(false);
+    $("stepper").querySelector(".active")?.classList.remove("active");
+    $("reading").querySelector(".pending")?.remove();
+    $("note-status").hidden = true;
+    $("post-panel").querySelectorAll(".skeleton").forEach((line) => line.remove());
+    $("claims").querySelectorAll(".placeholder").forEach((placeholder) => placeholder.remove());
+    for (const card of cards) {
+      if (card.el.classList.contains("done")) continue;
+      card.el.className = "claim";
+      card.el.querySelector(".verdict").textContent = "Stopped";
+      card.el.querySelector(".searches .pending")?.remove();
+    }
+    if (!message) return;
+    $("message").textContent = message;
+    $("message").hidden = false;
+  }
+
+  function setRunning(running) {
+    $("go").innerHTML = running ? `${ICONS.stop}Stop` : "Fact-check";
+    $("go").classList.toggle("stop", running);
+    $("link").disabled = running;
+    $("deep").disabled = running;
+  }
+
+  function reset(link, deep) {
+    cards = [];
+    noteSources = [];
+    thinking = "";
+    const handle = link.match(/(?:x|twitter)\.com\/(\w+)\/status\//)?.[1] ?? "";
+    $("start").hidden = true;
+    $("post-panel").hidden = false;
+    $("claims-panel").hidden = false;
+    $("post-panel").scrollTop = 0;
+    $("claims-panel").scrollTop = 0;
+    $("avatar").textContent = (handle[0] ?? "?").toUpperCase();
+    $("author").textContent = handle;
+    $("handle").textContent = handle ? `@${handle}` : "";
+    $("post-text").innerHTML = '<span class="skeleton" style="width: 96%"></span><span class="skeleton" style="width: 90%"></span><span class="skeleton" style="width: 72%"></span>';
+    $("post-media").innerHTML = "";
+    $("post-seen").innerHTML = "";
+    $("post-foot").hidden = true;
+    $("post-link").href = link;
+    $("note").hidden = true;
+    $("note-status").hidden = false;
+    $("note-foot").hidden = true;
+    $("no-note").hidden = true;
+    $("check-label").textContent = deep ? "Check the claims, four agents each" : "Check the claims";
+    $("models").textContent = deep ? "grok-4.7 and grok-4.20-multi-agent with X Search and Web Search" : "grok-4.7 with X Search and Web Search";
+    $("reading").innerHTML = `<li class="pending">${ICONS.x}<span>Reading the post</span></li>`;
+    // Holds the place of the first two claims, so the cards fill in instead of pushing in.
+    $("claims").innerHTML = '<div class="claim placeholder"><span class="skeleton" style="width: 22%"></span><span class="skeleton" style="width: 94%"></span><span class="skeleton" style="width: 68%"></span></div>'.repeat(2);
+    $("no-claims").hidden = true;
+    $("summary").hidden = true;
+    $("message").hidden = true;
+    setStep("read");
+  }
+
+  function hostname(url) {
+    try {
+      return new URL(url).hostname.replace(/^www\./, "");
+    } catch {
+      return url;
+    }
+  }
+
+  function sourceName(url) {
+    return /^https:\/\/(x|twitter)\.com\//.test(url) ? "Post on 𝕏" : hostname(url);
+  }
+
+  // Source URLs come from the model, so only web links become links.
+  function safeUrl(url) {
+    return /^https?:\/\//.test(url) ? escapeHtml(url) : "#";
+  }
+
+  function plural(count, word, many = `${word}s`) {
+    return `${count} ${count === 1 ? word : many}`;
+  }
+
+  function escapeHtml(text) {
+    return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+</script>
+</body>
+</html>

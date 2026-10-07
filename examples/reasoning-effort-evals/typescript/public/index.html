@@ -1,0 +1,889 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Reasoning Effort Evals</title>
+<style>
+  /* The look every SpaceXAI Cookbook page shares, after x.ai. */
+  :root {
+    --bg: #fff;
+    --card: #f9f8f6;
+    --secondary: #f2f1ef;
+    --secondary-hover: #e9e8e5;
+    --tint: rgb(10 10 10 / 0.04);
+    --line: rgb(10 10 10 / 0.08);
+    --border: rgb(10 10 10 / 0.15);
+    --fg: #0a0a0a;
+    --muted: rgb(10 10 10 / 0.6);
+    --faint: rgb(10 10 10 / 0.36);
+    --accent: #ff6308;
+    --accent-soft: rgb(255 99 8 / 0.1);
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; font: 14px/22px var(--sans); background: var(--bg); color: var(--fg); -webkit-font-smoothing: antialiased; }
+  button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
+  a { color: inherit; }
+  svg { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  @keyframes blink { 50% { opacity: 0.3; } }
+  @keyframes pulse { to { background-color: var(--secondary-hover); } }
+  @keyframes appear { from { opacity: 0; transform: translateY(4px); } }
+
+  .site { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 12px; height: 60px; padding: 0 20px; background: rgb(255 255 255 / 0.85); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+  .logo { flex: none; margin-right: 4px; color: var(--fg); }
+  .logo svg { display: block; width: 52px; height: 20px; fill: currentColor; stroke: none; }
+  .crumbs { display: flex; align-items: center; gap: 8px; min-width: 0; color: var(--muted); white-space: nowrap; }
+  .crumbs svg { width: 12px; height: 12px; color: var(--faint); }
+  .crumbs h1 { margin: 0; overflow: hidden; text-overflow: ellipsis; font-size: inherit; line-height: inherit; font-weight: 500; color: var(--fg); }
+  .site .pill { flex: none; margin-left: auto; }
+  .models { flex: none; height: 26px; padding: 0 10px; border-radius: 9999px; box-shadow: inset 0 0 0 1px var(--line); font-size: 12px; font-weight: 500; line-height: 26px; color: var(--muted); }
+  .pill { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 40px; padding: 0 18px; border-radius: 9999px; font-size: 14px; font-weight: 500; white-space: nowrap; text-decoration: none; }
+  .pill-sm { height: 32px; padding: 0 14px; font-size: 13px; }
+  .pill-primary { background: var(--fg); color: #fff; }
+  .pill-primary:hover { background: #202329; }
+  .pill-secondary { background: var(--secondary); color: var(--fg); }
+  .pill-secondary:hover { background: var(--secondary-hover); }
+  .pill:disabled { opacity: 0.4; cursor: default; }
+  .pill svg { width: 14px; height: 14px; }
+  .field { min-width: 0; height: 40px; padding: 0 18px; border: 1px solid var(--border); border-radius: 9999px; background: var(--bg); color: var(--fg); font: inherit; outline: none; }
+  .field:focus { border-color: var(--fg); }
+  .field::placeholder { color: var(--faint); }
+  .surface { display: flex; flex-direction: column; gap: 8px; height: calc(100vh - 72px); min-height: 560px; margin: 0 12px 12px; padding: 8px; border-radius: 20px; background: var(--card); }
+  .panel { min-width: 0; padding: 20px 22px; border-radius: 16px; background: var(--bg); }
+  .label { margin: 0; font-size: 13px; font-weight: 500; color: var(--muted); }
+  @media (max-width: 900px) {
+    .models { display: none; }
+  }
+  @media (max-width: 640px) {
+    .site { padding: 0 16px; }
+    .crumbs > span, .crumbs > svg { display: none; }
+    .surface { margin: 0 8px 8px; }
+  }
+
+  /* Reasoning Effort Evals */
+  :root {
+    --positive: #16a34a;
+    --positive-soft: rgb(22 163 74 / 0.1);
+    --negative: #e5484d;
+    --negative-soft: rgb(229 72 77 / 0.1);
+  }
+  @keyframes halo { from { opacity: 0.5; transform: scale(0.6); } to { opacity: 0; transform: scale(1.6); } }
+  .surface { min-height: 760px; }
+
+  .toolbar { flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 8px 8px 8px 10px; border-radius: 16px; background: var(--bg); }
+  .task { display: flex; align-items: center; gap: 12px; min-width: 0; margin-right: auto; }
+  .task-icon { flex: none; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; background: var(--secondary); }
+  .task-icon svg { width: 18px; height: 18px; }
+  .task-text { display: grid; min-width: 0; line-height: 18px; }
+  .task-text strong { overflow: hidden; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
+  .task-text span { font-size: 12px; color: var(--muted); }
+  .modes { display: flex; gap: 4px; padding: 3px; border-radius: 9999px; background: var(--secondary); }
+  .modes button { height: 34px; padding: 0 14px; border-radius: 9999px; color: var(--muted); font-size: 13px; font-weight: 500; white-space: nowrap; }
+  .modes button.active { background: var(--bg); color: var(--fg); }
+  .modes button:disabled { cursor: default; }
+  .modes b { font-weight: 500; color: var(--faint); }
+  #go { min-width: 156px; }
+  #go.stop { background: var(--secondary); color: var(--fg); }
+  #go svg { fill: currentColor; stroke: none; width: 12px; height: 12px; }
+
+  .start { flex: 1; display: grid; place-content: center; justify-items: center; gap: 26px; overflow: auto; padding: 40px 24px; text-align: center; }
+  .start h2 { max-width: 760px; margin: 0; font-size: 40px; line-height: 1.1; font-weight: 450; letter-spacing: -0.02em; }
+  .start > p { max-width: 640px; margin: -10px 0 0; font-size: 16px; line-height: 26px; color: var(--muted); }
+  .steps { display: grid; grid-template-columns: repeat(3, minmax(0, 220px)); gap: 8px; text-align: left; }
+  .step { padding: 14px 16px; border-radius: 14px; background: var(--card); }
+  .step b { display: flex; align-items: center; gap: 8px; font-weight: 500; }
+  .step b i { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--fg); color: #fff; font-size: 11px; font-style: normal; }
+  .step p { margin: 6px 0 0; font-size: 13px; line-height: 19px; color: var(--muted); }
+  .sample-label { margin: 0 0 -14px; font-size: 13px; color: var(--muted); }
+  .tickets { display: grid; grid-template-columns: repeat(3, minmax(0, 220px)); gap: 8px; text-align: left; }
+  .ticket { display: flex; flex-direction: column; gap: 8px; padding: 14px 16px; border-radius: 14px; box-shadow: inset 0 0 0 1px var(--line); }
+  .ticket p { display: -webkit-box; margin: 0; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 4; font-size: 13px; line-height: 19px; }
+  .ticket .plan { font-size: 12px; color: var(--faint); }
+  .chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: auto; }
+  .chip { padding: 0 8px; border-radius: 9999px; background: var(--secondary); font: 500 11px/20px var(--mono); color: var(--muted); white-space: nowrap; }
+  .chip.bad { background: var(--negative-soft); color: var(--negative); }
+  .chip.good { background: var(--positive-soft); color: var(--positive); }
+  .start-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+  .start-actions svg.play { fill: currentColor; stroke: none; width: 12px; height: 12px; }
+
+  .headline { flex: none; display: flex; align-items: center; gap: 24px; min-height: 96px; padding: 18px 24px; }
+  .headline h2 { margin: 0; font-size: 26px; line-height: 32px; font-weight: 450; letter-spacing: -0.02em; }
+  .headline h2 b { font-weight: 600; color: var(--accent); }
+  .headline p { margin: 4px 0 0; color: var(--muted); }
+  .headline .grow { flex: 1; min-width: 0; }
+  .headline .verdict { animation: appear 0.4s ease-out; }
+  .running { display: flex; align-items: center; gap: 10px; font-size: 18px; line-height: 26px; }
+  .running i { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); animation: blink 1s ease-in-out infinite; }
+  .headline.failed h2 { font-size: 18px; line-height: 26px; color: var(--negative); }
+  .totals { flex: none; display: grid; justify-items: end; gap: 6px; text-align: right; }
+  .totals strong { font-size: 26px; line-height: 30px; font-weight: 450; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+  .totals span { color: var(--muted); font-variant-numeric: tabular-nums; }
+  #download svg { width: 13px; height: 13px; }
+
+  .board { flex: 1; display: grid; grid-template-columns: minmax(0, 7fr) minmax(360px, 5fr); gap: 8px; min-height: 0; }
+  .column { display: flex; flex-direction: column; gap: 8px; min-width: 0; min-height: 0; }
+  .panel-head { display: flex; align-items: center; gap: 10px; margin: 0 0 12px; }
+  .panel-head .note { color: var(--faint); font-size: 13px; }
+  .panel-head .spacer { flex: 1; }
+
+  .chart-panel { flex: 1; display: flex; flex-direction: column; min-height: 280px; padding-bottom: 12px; }
+  .chart-wrap { position: relative; flex: 1; min-height: 0; }
+  #chart { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+  #chart text { fill: var(--muted); stroke: none; font: 12px var(--sans); }
+  #chart .grid { stroke: var(--line); stroke-width: 1; }
+  #chart .axis-title { fill: var(--faint); font-size: 12px; }
+  #chart .band { fill: var(--accent-soft); stroke: none; }
+  .band-key { display: flex; align-items: center; gap: 6px; margin-left: auto; color: var(--muted); font-size: 12px; }
+  .band-key i { width: 14px; height: 10px; border-radius: 3px; background: var(--accent-soft); box-shadow: inset 0 0 0 1px rgb(255 99 8 / 0.25); }
+  .point { cursor: pointer; transition: transform 0.7s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.4s; }
+  .point .dot { fill: var(--bg); stroke: var(--fg); stroke-width: 2; transition: fill 0.3s, stroke 0.3s, r 0.3s; }
+  .point .halo { fill: var(--fg); stroke: none; opacity: 0; transform-box: fill-box; transform-origin: center; }
+  .point.provisional .halo { animation: halo 1.6s ease-out infinite; }
+  .point.provisional .dot { stroke-dasharray: 3 3; }
+  .point.final .dot { fill: var(--fg); }
+  .point.pick .dot { fill: var(--accent); stroke: var(--accent); r: 9px; }
+  .point .ring { fill: none; stroke: var(--accent); stroke-width: 2; opacity: 0; transition: opacity 0.3s; }
+  .point.pick .ring { opacity: 0.35; }
+  .point.selected .ring { opacity: 1; stroke: var(--fg); }
+  #chart .point .leader { stroke: var(--border); stroke-width: 1; }
+  #chart .point text { fill: var(--fg); font-weight: 500; }
+  #chart .point .sub { fill: var(--muted); font-weight: 400; font-size: 11px; }
+  #chart .point.pick text { fill: var(--accent); }
+
+  .grid-panel { flex: none; }
+  .legend { display: flex; gap: 14px; margin-left: auto; color: var(--muted); font-size: 12px; }
+  .legend span { display: flex; align-items: center; gap: 6px; }
+  .legend i { width: 10px; height: 10px; border-radius: 3px; }
+  .rows { display: grid; gap: 8px; }
+  .row { display: grid; grid-template-columns: 52px minmax(0, 1fr); align-items: center; gap: 10px; }
+  .row > span { font-size: 13px; font-weight: 500; color: var(--muted); }
+  .row.selected > span { color: var(--fg); }
+  .cells { display: grid; gap: 4px; }
+  .cell { height: 22px; border-radius: 5px; background: var(--secondary); transition: background-color 0.3s, box-shadow 0.2s; }
+  .cell:hover { box-shadow: 0 0 0 2px var(--bg), 0 0 0 3px var(--fg); }
+  .cell.answering { background: var(--secondary-hover); animation: busy 0.9s ease-in-out infinite alternate; }
+  @keyframes busy { to { background-color: #d9d6d1; } }
+  .cell.pass { background: var(--positive); }
+  .cell.fail { background: var(--negative); }
+  .cell.focus { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--fg); }
+
+  .table-panel { flex: none; padding-bottom: 12px; }
+  .score { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  .score th { padding: 0 8px 8px; font-size: 12px; font-weight: 500; text-align: right; color: var(--muted); white-space: nowrap; }
+  .score th:first-child, .score td:first-child { padding-left: 10px; text-align: left; }
+  .score td { padding: 9px 8px; border-top: 1px solid var(--line); text-align: right; white-space: nowrap; }
+  .score tbody tr { cursor: pointer; }
+  .score tbody tr:hover td, .score tbody tr.selected td { background: var(--tint); }
+  .score tbody tr.selected td:first-child { box-shadow: inset 2px 0 0 var(--fg); }
+  .score .effort { font-weight: 500; }
+  .score .acc { font-size: 16px; font-weight: 500; }
+  .score .pending { color: var(--faint); }
+  .badge { margin-left: 6px; padding: 0 7px; border-radius: 9999px; background: var(--secondary); font-size: 11px; font-weight: 500; line-height: 18px; color: var(--muted); }
+  .badge.pick { background: var(--accent-soft); color: var(--accent); }
+  .meter { height: 3px; margin-top: 5px; overflow: hidden; border-radius: 2px; background: var(--secondary); }
+  .meter i { display: block; width: 0; height: 100%; background: var(--fg); transition: width 0.3s; }
+  .score tbody tr.done .meter { visibility: hidden; }
+
+  .inspector { flex: 1; display: flex; flex-direction: column; min-height: 220px; padding-bottom: 0; }
+  .inspector .panel-head { flex: none; }
+  .inspector-body { flex: 1; min-height: 0; overflow-y: auto; margin: 0 -22px; padding: 0 22px 20px; }
+  .back { display: inline-flex; align-items: center; gap: 4px; color: var(--muted); font-size: 13px; }
+  .back svg { width: 12px; height: 12px; }
+  .feed { display: grid; gap: 6px; }
+  .feed-item { display: grid; gap: 2px; padding: 9px 12px; border-radius: 12px; background: var(--card); animation: appear 0.3s ease-out; cursor: pointer; }
+  .feed-item:hover { background: var(--secondary); }
+  .feed-item header { display: flex; align-items: center; gap: 8px; }
+  .feed-item header b { font-weight: 500; }
+  .feed-item .mark { margin-left: auto; font-size: 12px; font-weight: 500; }
+  .feed-item.pass .mark { color: var(--positive); }
+  .feed-item.fail .mark { color: var(--negative); }
+  .feed-item p { margin: 0; overflow: hidden; font-size: 13px; line-height: 19px; color: var(--muted); text-overflow: ellipsis; white-space: nowrap; }
+  .tag { padding: 0 7px; border-radius: 9999px; background: var(--bg); font-size: 11px; font-weight: 500; line-height: 18px; color: var(--muted); }
+  .misses { display: grid; gap: 8px; }
+  .empty-note { margin: 0; color: var(--muted); }
+  .miss { display: grid; gap: 10px; padding: 14px 16px; border-radius: 14px; background: var(--card); animation: appear 0.3s ease-out; transition: box-shadow 0.3s; }
+  .miss.focus { box-shadow: inset 0 0 0 1.5px var(--fg); }
+  .miss header { display: flex; align-items: baseline; gap: 8px; }
+  .miss header b { font-weight: 600; }
+  .miss header .meta { margin-left: auto; color: var(--faint); font-size: 12px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .miss .input { margin: 0; font-size: 13px; line-height: 19px; white-space: pre-line; overflow-wrap: anywhere; }
+  .checks { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+  .checks li { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: start; gap: 8px; font-size: 13px; line-height: 19px; }
+  .checks li > span:last-child { color: var(--muted); }
+  .checks li.bad > span:last-child { color: var(--fg); }
+  .checks .chip { line-height: 19px; }
+  .checks .by { color: var(--faint); font-size: 11px; }
+  .answer-text { margin: 0; padding: 10px 12px; border-radius: 10px; background: var(--bg); font-size: 13px; line-height: 19px; color: var(--muted); overflow-wrap: anywhere; }
+  .answer-text b { display: block; font-size: 11px; font-weight: 500; color: var(--faint); }
+  details.reasoning summary { color: var(--muted); font-size: 13px; cursor: pointer; }
+  details.reasoning pre { max-height: 220px; margin: 8px 0 0; overflow: auto; white-space: pre-wrap; font: 11px/17px var(--mono); color: var(--faint); }
+
+  .drawer { position: fixed; z-index: 30; top: 12px; right: 12px; bottom: 12px; display: flex; flex-direction: column; gap: 14px; width: min(620px, calc(100vw - 24px)); padding: 20px 22px; border-radius: 20px; background: var(--bg); box-shadow: 0 0 0 1px var(--line), 0 24px 64px rgb(10 10 10 / 0.18); animation: appear 0.2s ease-out; }
+  .drawer-head { display: flex; align-items: center; justify-content: space-between; }
+  .drawer-head h2 { margin: 0; font-size: 18px; font-weight: 500; }
+  .drawer label { display: flex; flex-direction: column; gap: 6px; min-height: 0; font-size: 13px; font-weight: 500; color: var(--muted); }
+  .drawer label span { font-weight: 400; color: var(--faint); }
+  .drawer textarea { flex: 1; min-height: 0; padding: 12px 14px; border: 1px solid var(--border); border-radius: 12px; outline: none; resize: none; font: 12px/18px var(--mono); color: var(--fg); }
+  .drawer textarea:focus { border-color: var(--fg); }
+  #prompt-label { flex: 2; }
+  #cases-label { flex: 3; }
+  #editor-error { margin: 0; max-height: 120px; overflow: auto; padding: 10px 12px; border-radius: 12px; background: var(--negative-soft); color: var(--negative); font: 12px/18px var(--mono); white-space: pre-wrap; }
+  .drawer-actions { display: flex; gap: 8px; justify-content: flex-end; }
+  .icon-button { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: var(--secondary); }
+  .icon-button svg { width: 14px; height: 14px; }
+
+  @media (max-width: 1100px) {
+    .surface { height: auto; }
+    .board { grid-template-columns: minmax(0, 1fr); }
+    .chart-panel { min-height: 380px; }
+    .inspector { min-height: 480px; }
+    .steps, .tickets { grid-template-columns: minmax(0, 1fr); }
+  }
+</style>
+</head>
+<body>
+<header class="site">
+  <a class="logo" href="https://x.ai" target="_blank" rel="noopener" aria-label="SpaceXAI"><svg viewBox="0 0 759 290.2" aria-hidden="true"><g transform="translate(-674.5,-388.5)"><path d="M1433.19 388.934C1345.69 396.068 1001.73 438.71 763.235 678.467H674.732L684.62 668.612C734.53 620.395 955.373 416.045 1433.19 388.668V388.934Z"/><path d="M1133.66 678.467H1064.29L927.618 578.979C940.213 571.058 952.888 563.515 965.603 556.33L1133.66 678.467Z"/><path d="M1022.8 678.468H953.463L932.43 663.169H814.998C823.265 655.828 831.635 648.702 840.092 641.784H902.996L870.444 618.106C882.079 609.448 893.843 601.155 905.701 593.211L1022.8 678.468Z"/><path d="M770.433 495.02L823.901 533.876C810.594 541.712 798.139 549.468 786.514 557.055L701.158 494.986L770.433 495.02Z"/></g></svg></a>
+  <nav class="crumbs"><span>Cookbook</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg><h1>Reasoning Effort Evals</h1></nav>
+  <span class="models">grok-4.7 at four reasoning efforts</span>
+  <a class="pill pill-secondary pill-sm" href="https://github.com/xai-org/xai-cookbook/tree/main/examples/reasoning-effort-evals" target="_blank" rel="noopener">View code</a>
+</header>
+
+<main class="surface">
+  <form id="form" class="toolbar">
+    <div class="task">
+      <span class="task-icon"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="2.5" width="10" height="11.5" rx="2"/><path d="M6 2.5V2h4v.5M5.75 7l1.25 1.25L9.5 5.75M5.75 11h4.5"/></svg></span>
+      <div class="task-text"><strong id="task-name">Loading the sample</strong><span id="task-meta"></span></div>
+      <button type="button" id="edit" class="pill pill-secondary pill-sm"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10.5 3 13 5.5 6 12.5H3.5V10z"/></svg>Edit prompt and cases</button>
+    </div>
+    <div class="modes" id="modes">
+      <button type="button" class="active" data-mode="realtime">grok-4.7 <b>real time</b></button>
+      <button type="button" data-mode="batch">grok-4.3 <b>Batch API</b></button>
+    </div>
+    <button id="go" class="pill pill-primary" disabled></button>
+  </form>
+
+  <section class="panel start" id="start">
+    <h2>Find the cheapest reasoning effort that's still good enough</h2>
+    <p>Give it a prompt and test cases with expected answers. It runs every case at low, medium, high, and xhigh reasoning effort, grades the answers, and plots accuracy against cost.</p>
+    <div class="steps">
+      <div class="step"><b><i>1</i>Answer</b><p>Grok answers every case at each effort, 24 requests at a time, as structured output.</p></div>
+      <div class="step"><b><i>2</i>Grade</b><p>Code checks the fields with right answers. A judge grades the free text against a rubric, without knowing which effort wrote it.</p></div>
+      <div class="step"><b><i>3</i>Pick</b><p>The cheapest effort within 5 points of the best one wins. Click any point to see what it got wrong.</p></div>
+    </div>
+    <p class="sample-label" id="sample-label" hidden></p>
+    <div class="tickets" id="tickets"></div>
+    <div class="start-actions">
+      <button type="button" id="run-sample" class="pill pill-primary" disabled><svg class="play" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 2.5v11l9-5.5z"/></svg>Run the sample</button>
+      <button type="button" id="edit-start" class="pill pill-secondary">Use your own prompt</button>
+    </div>
+  </section>
+
+  <section class="panel headline" id="headline" hidden></section>
+
+  <div class="board" id="board" hidden>
+    <div class="column">
+      <section class="panel chart-panel">
+        <div class="panel-head"><p class="label">Accuracy and cost</p><span class="note" id="chart-note">One point per reasoning effort</span><span class="band-key" id="band-key" hidden><i></i><span id="band-text"></span></span></div>
+        <div class="chart-wrap" id="chart-wrap"><svg id="chart" aria-label="Accuracy against cost for each reasoning effort"><g id="axes"></g><g id="points"></g></svg></div>
+      </section>
+      <section class="panel grid-panel">
+        <div class="panel-head">
+          <p class="label">Test cases</p><span class="note" id="grid-note"></span>
+          <div class="legend"><span><i style="background: var(--positive)"></i>Correct</span><span><i style="background: var(--negative)"></i>Wrong</span><span><i style="background: #d9d6d1"></i>Answering</span></div>
+        </div>
+        <div class="rows" id="rows"></div>
+      </section>
+    </div>
+    <div class="column">
+      <section class="panel table-panel">
+        <div class="panel-head"><p class="label">Scorecard</p><span class="note" id="table-note"></span></div>
+        <table class="score">
+          <thead><tr><th>Effort</th><th>Correct</th><th>Per 1,000 answers</th><th>Median latency</th><th>Reasoning</th></tr></thead>
+          <tbody id="table"></tbody>
+        </table>
+      </section>
+      <section class="panel inspector">
+        <div class="panel-head" id="inspector-head"></div>
+        <div class="inspector-body" id="inspector"></div>
+      </section>
+    </div>
+  </div>
+</main>
+
+<aside class="drawer" id="editor" hidden>
+  <div class="drawer-head"><h2>Your prompt and test cases</h2><button type="button" class="icon-button" id="close-editor" aria-label="Close"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 4 8 8M12 4l-8 8"/></svg></button></div>
+  <label id="prompt-label">Prompt <span>The instructions Grok follows for every case.</span><textarea id="prompt-input" spellcheck="false"></textarea></label>
+  <label id="cases-label">Fields, rubric, and test cases <span>JSON in the same format as sample-task.json. Fields with options are checked by code, and the judge grades the rest against the rubric.</span><textarea id="task-input" spellcheck="false"></textarea></label>
+  <p id="editor-error" hidden></p>
+  <div class="drawer-actions">
+    <button type="button" id="reset" class="pill pill-secondary pill-sm">Reset to the sample</button>
+    <button type="button" id="use" class="pill pill-primary pill-sm">Use these</button>
+  </div>
+</aside>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  const ICONS = {
+    play: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 2.5v11l9-5.5z"/></svg>',
+    stop: '<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3.5" y="3.5" width="9" height="9" rx="1.5"/></svg>',
+    back: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3.5 5.5 8l4.5 4.5"/></svg>',
+    download: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.5v8M4.5 7 8 10.5 11.5 7M2.5 13.5h11"/></svg>',
+  };
+  const SVG = "http://www.w3.org/2000/svg";
+  let sample;
+  let task;
+  let mode = "realtime";
+  let events;
+  let run;
+  let clock;
+
+  fetch("/sample-task.json").then((response) => response.json()).then((json) => {
+    sample = { ...json, prompt: joinPrompt(json.prompt) };
+    useTask(sample);
+    showSamples();
+  });
+
+  document.querySelectorAll("#modes button").forEach((button) => {
+    button.onclick = () => {
+      if (events) return;
+      mode = button.dataset.mode;
+      document.querySelectorAll("#modes button").forEach((other) => other.classList.toggle("active", other === button));
+    };
+  });
+  $("form").onsubmit = (event) => {
+    event.preventDefault();
+    if (events) stop("Stopped. Requests in flight were cancelled.");
+    else start();
+  };
+  $("run-sample").onclick = () => {
+    useTask(sample);
+    start();
+  };
+  $("edit").onclick = $("edit-start").onclick = openEditor;
+  $("close-editor").onclick = () => ($("editor").hidden = true);
+  $("reset").onclick = () => fillEditor(sample);
+  $("use").onclick = saveEditor;
+  addEventListener("keydown", (event) => {
+    if (event.key === "Escape") $("editor").hidden = true;
+  });
+  new ResizeObserver(() => run && renderChart()).observe($("chart-wrap"));
+
+  function useTask(next) {
+    task = next;
+    $("task-name").textContent = task.name;
+    $("task-meta").textContent = `${plural(task.cases.length, "case")} · ${task === sample ? "the sample" : "your own"} · ${Object.keys(task.rubric ?? {}).length ? "code checks and a judge" : "code checks"}`;
+    $("go").disabled = false;
+    $("run-sample").disabled = false;
+    setRunning(false);
+  }
+
+  function showSamples() {
+    const picks = ["t06", "t13", "t27"].map((id) => sample.cases.find((item) => item.id === id)).filter(Boolean);
+    $("sample-label").textContent = `The sample: ${plural(sample.cases.length, "support ticket")} for Fernbill, a made-up invoicing app. Grok picks a category and a priority and writes a reply.`;
+    $("sample-label").hidden = false;
+    $("tickets").innerHTML = picks
+      .map((item) => {
+        const [plan, ...rest] = item.input.split("\n\n");
+        const chips = Object.values(item.expected).map((value) => `<span class="chip">${escapeHtml(value)}</span>`).join("");
+        return `<div class="ticket"><span class="plan">${escapeHtml(plan)}</span><p>${escapeHtml(rest.join(" "))}</p><div class="chips">${chips}</div></div>`;
+      })
+      .join("");
+  }
+
+  // EventSource can only make GET requests, so the task is posted first and the stream opened with its id.
+  async function start() {
+    $("go").disabled = true;
+    const response = await fetch("/api/tasks", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(task) });
+    $("go").disabled = false;
+    if (!response.ok) {
+      openEditor();
+      showEditorError(await response.text());
+      return;
+    }
+    const { id } = await response.json();
+    events = new EventSource(`/api/scorecard?task=${id}&mode=${mode}`);
+    const on = (name, handler) => events.addEventListener(name, (message) => handler(JSON.parse(message.data)));
+    setRunning(true);
+
+    on("started", (info) => {
+      run = {
+        ...info,
+        graded: new Map(),
+        answering: new Set(),
+        summaries: new Map(),
+        cost: 0,
+        retries: 0,
+        startedAt: Date.now(),
+        selected: null,
+        view: "feed",
+        focus: null,
+        feed: [],
+        step: info.batch
+          ? `Sending ${plural(info.cases.length * info.efforts.length, "request")} to ${info.model} as one batch`
+          : `Answering ${plural(info.cases.length, "case")} at ${info.efforts.length} reasoning efforts, ${info.concurrency} requests at a time`,
+      };
+      $("start").hidden = true;
+      $("board").hidden = false;
+      $("headline").hidden = false;
+      $("chart-note").textContent = `${run.model}, one point per reasoning effort`;
+      $("table-note").textContent = run.model;
+      $("grid-note").textContent = `${plural(run.cases.length, "case")} at each effort`;
+      $("points").innerHTML = "";
+      buildRows();
+      renderAll();
+      clearInterval(clock);
+      clock = setInterval(renderHeadline, 1000);
+    });
+    on("answering", ({ effort, caseId }) => {
+      run.answering.add(key(effort, caseId));
+      renderCell(effort, caseId);
+    });
+    on("graded", (graded) => {
+      run.graded.set(key(graded.effort, graded.caseId), graded);
+      run.answering.delete(key(graded.effort, graded.caseId));
+      run.cost += graded.cost;
+      run.feed.unshift(graded);
+      run.feed.length = Math.min(run.feed.length, 40);
+      renderCell(graded.effort, graded.caseId);
+      renderTable();
+      renderChart();
+      renderHeadline();
+      if (run.view === "feed" || (run.view === "case" && run.focus === key(graded.effort, graded.caseId))) renderInspector();
+      else if (run.view === "effort" && run.selected === graded.effort && !graded.passed) renderInspector();
+    });
+    on("finished", (summary) => {
+      run.summaries.set(summary.effort, summary);
+      renderTable();
+      renderChart();
+    });
+    on("rate-limited", () => {
+      run.retries++;
+      renderHeadline();
+    });
+    on("batch", ({ id, done, total }) => {
+      run.step = done < total ? `Batch ${id.replace(/^batch_/, "").slice(0, 8)}: ${done} of ${total} answers back` : "Grading the last answers";
+      renderHeadline();
+    });
+    on("comparing", ({ pick, best }) => {
+      run.step = `Comparing ${pick}'s answers with ${best}'s, in both orders`;
+      renderHeadline();
+    });
+    on("done", (scorecard) => {
+      Object.assign(run, { result: scorecard, pick: scorecard.pick, best: scorecard.best });
+      stop();
+      select(scorecard.pick);
+      renderAll();
+    });
+    on("failure", ({ message }) => stop(`Couldn't finish the scorecard: ${message}`));
+    events.onerror = () => stop("Lost the connection to the server.");
+  }
+
+  function stop(message) {
+    events?.close();
+    events = undefined;
+    clearInterval(clock);
+    setRunning(false);
+    if (!run) return;
+    run.answering.clear();
+    run.stopped = message;
+    run.endedAt = Date.now();
+    renderAll();
+  }
+
+  function setRunning(running) {
+    $("go").innerHTML = running ? `${ICONS.stop}Stop` : `${ICONS.play}Run scorecard`;
+    $("go").classList.toggle("stop", running);
+    $("edit").disabled = running;
+    document.querySelectorAll("#modes button").forEach((button) => (button.disabled = running));
+  }
+
+  function renderAll() {
+    renderHeadline();
+    run.efforts.forEach((effort) => run.cases.forEach((item) => renderCell(effort, item.id)));
+    renderTable();
+    renderChart();
+    renderInspector();
+  }
+
+  function renderHeadline() {
+    const box = $("headline");
+    box.classList.remove("failed");
+    const seconds = Math.round(((run.endedAt ?? Date.now()) - run.startedAt) / 1000);
+    if (run.result) {
+      const { summaries, pick, best, headToHead, cost, download } = run.result;
+      const picked = summaries.find((summary) => summary.effort === pick);
+      const top = summaries.find((summary) => summary.effort === best);
+      const others = summaries.filter((summary) => summary.effort !== pick);
+      const span = (values, format) => {
+        const [low, high] = [Math.min(...values), Math.max(...values)].map(format);
+        return low === high ? low : `${low} to ${high}`;
+      };
+      const title = pick === best
+        ? `<b>${pick}</b> scores best, and nothing within ${run.tolerance} points of it costs ${Math.round(run.minSaving * 100)}% less`
+        : `<b>${pick}</b> is the cheapest effort within ${run.tolerance} points of the best`;
+      let detail = pick === best
+        ? `${percent(picked.accuracy)} correct at ${dollars(picked.costPer1000)} per 1,000 answers. The other efforts scored ${span(others.map((summary) => summary.accuracy), percent)}, at ${span(others.map((summary) => summary.costPer1000), dollars)}.`
+        : `${percent(picked.accuracy)} correct at ${dollars(picked.costPer1000)} per 1,000 answers, ${Math.round((1 - picked.cost / top.cost) * 100)}% less than ${best}, which scores ${percent(top.accuracy)} at ${dollars(top.costPer1000)}.`;
+      if (headToHead) detail += ` Head to head, its answers beat ${best}'s in ${headToHead.wins} cases, tied in ${headToHead.ties}, and lost ${headToHead.losses}.`;
+      setHtml(box, `<div class="grow verdict"><h2>${title}</h2><p>${escapeHtml(detail)}</p></div>
+        <div class="totals verdict"><strong>${dollars(cost.answers + cost.grading)}</strong><span>to run this scorecard in ${duration(run.result.seconds)}</span><a id="download" class="pill pill-secondary pill-sm" href="${download}" download>${ICONS.download}Download results</a></div>`);
+      return;
+    }
+    if (run.stopped) {
+      box.classList.add("failed");
+      setHtml(box, `<div class="grow"><h2>${escapeHtml(run.stopped)}</h2><p>${run.graded.size} of ${run.cases.length * run.efforts.length} answers were graded, for ${dollars(run.cost)}.</p></div>`);
+      return;
+    }
+    const total = run.cases.length * run.efforts.length;
+    const stats = [`${run.graded.size} of ${total} graded`, `${dollars(run.cost)} so far`, duration(seconds)];
+    if (run.retries) stats.splice(1, 0, `${plural(run.retries, "rate limit")} hit, retried`);
+    setHtml(box, `<div class="grow"><div class="running"><i></i>${escapeHtml(run.step)}</div><p>${stats.join(" · ")}</p></div>`);
+  }
+
+  // Replacing the same markup would restart its animations, so unchanged markup is left alone.
+  function setHtml(element, html) {
+    if (element.dataset.html === html) return;
+    element.dataset.html = html;
+    element.innerHTML = html;
+  }
+
+  function buildRows() {
+    const columns = Math.min(run.cases.length, 30);
+    $("rows").innerHTML = run.efforts
+      .map((effort) => `<div class="row" data-effort="${effort}"><span>${effort}</span><div class="cells" style="grid-template-columns: repeat(${columns}, minmax(0, 28px))">${run.cases.map((item) => `<button type="button" class="cell" data-effort="${effort}" data-case="${escapeHtml(item.id)}"></button>`).join("")}</div></div>`)
+      .join("");
+    $("rows").querySelectorAll(".cell").forEach((cell) => (cell.onclick = () => showCase(cell.dataset.effort, cell.dataset.case)));
+    $("rows").querySelectorAll(".row > span").forEach((label) => (label.onclick = () => select(label.parentElement.dataset.effort)));
+    $("table").innerHTML = run.efforts.map((effort) => `<tr data-effort="${effort}"></tr>`).join("");
+    $("table").querySelectorAll("tr").forEach((row) => (row.onclick = () => select(row.dataset.effort)));
+  }
+
+  function renderCell(effort, caseId) {
+    const cell = $("rows").querySelector(`.cell[data-effort="${effort}"][data-case="${CSS.escape(caseId)}"]`);
+    if (!cell) return;
+    const graded = run.graded.get(key(effort, caseId));
+    cell.className = `cell${graded ? (graded.passed ? " pass" : " fail") : run.answering.has(key(effort, caseId)) ? " answering" : ""}${run.focus === key(effort, caseId) ? " focus" : ""}`;
+    cell.title = graded ? `${caseId} at ${effort}: ${graded.passed ? "correct" : `wrong. ${graded.checks.find((check) => !check.pass)?.note ?? ""}`}` : `${caseId} at ${effort}`;
+  }
+
+  function renderTable() {
+    $("table").querySelectorAll("tr").forEach((row) => {
+      const effort = row.dataset.effort;
+      const summary = run.summaries.get(effort);
+      const graded = gradedFor(effort);
+      const passed = graded.filter((item) => item.passed).length;
+      const badges = `${run.pick === effort ? '<span class="badge pick">Good enough</span>' : ""}${run.best === effort && run.pick !== effort ? '<span class="badge">Best</span>' : ""}`;
+      const meter = `<div class="meter"><i style="width: ${(graded.length / run.cases.length) * 100}%"></i></div>`;
+      row.className = `${summary ? "done" : ""}${run.selected === effort ? " selected" : ""}`;
+      $("rows").querySelector(`.row[data-effort="${effort}"]`)?.classList.toggle("selected", run.selected === effort);
+      if (summary) {
+        row.innerHTML = `<td><span class="effort">${effort}</span>${badges}${meter}</td><td class="acc">${percent(summary.accuracy)}</td><td>${dollars(summary.costPer1000)}</td><td>${seconds(summary.latency)}</td><td>${summary.reasoningTokens.toLocaleString()}</td>`;
+        return;
+      }
+      // Until every answer is in, the numbers cover the answers graded so far.
+      const latencies = graded.map((item) => item.latency).filter((value) => value !== null).sort((a, b) => a - b);
+      const reasoning = graded.length ? Math.round(graded.reduce((sum, item) => sum + item.reasoningTokens, 0) / graded.length).toLocaleString() : "–";
+      row.innerHTML = `<td><span class="effort">${effort}</span>${meter}</td><td class="acc pending">${graded.length ? percent((passed / graded.length) * 100) : "–"}</td><td class="pending">${graded.length ? dollars(costPer1000(graded)) : "–"}</td><td class="pending">${latencies.length ? seconds(latencies[Math.floor(latencies.length / 2)]) : "–"}</td><td class="pending">${reasoning}</td>`;
+    });
+  }
+
+  // Each effort's point shows the answers graded so far, dashed, until all of them are in.
+  function pointFor(effort) {
+    const summary = run.summaries.get(effort);
+    if (summary) return { effort, accuracy: summary.accuracy, cost: summary.costPer1000, final: true };
+    const graded = gradedFor(effort);
+    if (graded.length < 3) return null;
+    return { effort, accuracy: (graded.filter((item) => item.passed).length / graded.length) * 100, cost: costPer1000(graded), final: false, count: graded.length };
+  }
+
+  function renderChart() {
+    const svg = $("chart");
+    const { width, height } = $("chart-wrap").getBoundingClientRect();
+    if (!width || !height) return;
+    svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+    const pad = { left: 48, right: 24, top: 18, bottom: 40 };
+    const points = run.efforts.map(pointFor).filter(Boolean);
+    const xMax = niceCeil(Math.max(1, ...points.map((point) => point.cost)) * 1.25);
+    const yMin = Math.max(0, Math.min(60, Math.floor((Math.min(100, ...points.map((point) => point.accuracy)) - 10) / 10) * 10));
+    const x = (value) => pad.left + (value / xMax) * (width - pad.left - pad.right);
+    const y = (value) => pad.top + ((100 - value) / (100 - yMin)) * (height - pad.top - pad.bottom);
+
+    const parts = [];
+    for (let value = yMin; value <= 100; value += 10) {
+      parts.push(`<line class="grid" x1="${pad.left}" x2="${width - pad.right}" y1="${y(value)}" y2="${y(value)}"/><text x="${pad.left - 10}" y="${y(value) + 4}" text-anchor="end">${value}%</text>`);
+    }
+    for (let index = 0; index <= 5; index++) {
+      const value = (xMax / 5) * index;
+      parts.push(`<line class="grid" x1="${x(value)}" x2="${x(value)}" y1="${pad.top}" y2="${height - pad.bottom}"/><text x="${x(value)}" y="${height - pad.bottom + 18}" text-anchor="middle">$${value.toFixed(xMax >= 10 ? 0 : 2)}</text>`);
+    }
+    parts.push(`<text class="axis-title" x="${width - pad.right}" y="${height - 4}" text-anchor="end">Cost per 1,000 answers</text>`);
+    const finals = points.filter((point) => point.final);
+    if (finals.length) {
+      const best = Math.max(...finals.map((point) => point.accuracy));
+      const floor = Math.max(yMin, best - run.tolerance);
+      parts.unshift(`<rect class="band" x="${pad.left}" y="${y(best)}" width="${width - pad.left - pad.right}" height="${Math.max(2, y(floor) - y(best))}" rx="3"/>`);
+    }
+    $("band-text").textContent = `Within ${run.tolerance} points of the best`;
+    $("band-key").hidden = !finals.length;
+    $("axes").innerHTML = parts.join("");
+
+    const dots = points.map((point) => ({ effort: point.effort, x: x(point.cost), y: y(point.accuracy) }));
+    for (const effort of run.efforts) {
+      const point = points.find((item) => item.effort === effort);
+      const group = pointGroup(effort);
+      group.style.opacity = point ? "1" : "0";
+      if (!point) continue;
+      group.style.transform = `translate(${x(point.cost)}px, ${y(point.accuracy)}px)`;
+      group.setAttribute("class", `point ${point.final ? "final" : "provisional"}${run.pick === effort ? " pick" : ""}${run.selected === effort ? " selected" : ""}`);
+      group.querySelector(".name").textContent = run.pick === effort ? `${effort} · good enough` : effort;
+      group.querySelector(".sub").textContent = point.final ? `${percent(point.accuracy)} at ${dollars(point.cost)}` : `${point.count} of ${run.cases.length} graded`;
+    }
+
+    // Points often bunch up, so each label takes the spot around its point that overlaps the other labels and
+    // points the least, preferring spots close by. The picked effort's label goes first.
+    const spots = [];
+    for (const dy of [-12, -40, 14, -68, 42]) for (const dx of [16, -16]) spots.push([dx, dy]);
+    for (const dx of [64, -64, 110, -110]) for (const dy of [-12, -44, 20]) spots.push([dx, dy]);
+    const boxes = [];
+    for (const dot of [...dots].sort((a, b) => (b.effort === run.pick) - (a.effort === run.pick))) {
+      const group = pointGroup(dot.effort);
+      const [name, sub] = [group.querySelector(".name"), group.querySelector(".sub")];
+      const w = Math.max(name.getComputedTextLength(), sub.getComputedTextLength()) + 6;
+      let best;
+      for (const [dx, dy] of spots) {
+        const box = { x1: dx > 0 ? dot.x + dx : dot.x + dx - w, y1: dot.y + dy, x2: dx > 0 ? dot.x + dx + w : dot.x + dx, y2: dot.y + dy + 28 };
+        let score = Math.hypot(dx, dy) / 4;
+        if (box.x1 < pad.left || box.x2 > width - 4 || box.y1 < 0 || box.y2 > height - pad.bottom) score += 10000;
+        for (const other of boxes) score += Math.max(0, Math.min(box.x2, other.x2) - Math.max(box.x1, other.x1)) * Math.max(0, Math.min(box.y2, other.y2) - Math.max(box.y1, other.y1));
+        for (const other of dots) if (other !== dot && other.x > box.x1 - 10 && other.x < box.x2 + 10 && other.y > box.y1 - 10 && other.y < box.y2 + 10) score += 2000;
+        if (!best || score < best.score) best = { score, box, dx, dy };
+      }
+      boxes.push(best.box);
+      for (const [text, offset] of [[name, 10], [sub, 24]]) {
+        text.setAttribute("x", best.dx);
+        text.setAttribute("y", best.dy + offset);
+        text.setAttribute("text-anchor", best.dx > 0 ? "start" : "end");
+      }
+      // A label that ended up away from its point gets a line back to it.
+      const far = Math.abs(best.dx) > 16 || best.dy < -40 || best.dy > 14;
+      const leader = group.querySelector(".leader");
+      leader.setAttribute("x2", far ? best.dx - Math.sign(best.dx) * 4 : 0);
+      leader.setAttribute("y2", far ? best.dy + 14 : 0);
+    }
+  }
+
+  function pointGroup(effort) {
+    let group = $("points").querySelector(`[data-effort="${effort}"]`);
+    if (group) return group;
+    group = document.createElementNS(SVG, "g");
+    group.dataset.effort = effort;
+    group.style.opacity = "0";
+    group.innerHTML = `<line class="leader" x1="0" y1="0" x2="0" y2="0"/><circle class="halo" r="12"/><circle class="ring" r="15"/><circle class="dot" r="7"/><text class="name"></text><text class="sub"></text>`;
+    group.onclick = () => select(effort);
+    $("points").append(group);
+    return group;
+  }
+
+  function select(effort) {
+    const previous = run.focus;
+    run.selected = effort;
+    run.view = "effort";
+    run.focus = null;
+    if (previous) renderCell(...previous.split("\u0000"));
+    renderTable();
+    renderChart();
+    renderInspector();
+  }
+
+  function showCase(effort, caseId) {
+    const previous = run.focus;
+    run.selected = effort;
+    run.view = "case";
+    run.focus = key(effort, caseId);
+    if (previous) renderCell(...previous.split("\u0000"));
+    renderCell(effort, caseId);
+    renderTable();
+    renderChart();
+    renderInspector();
+  }
+
+  function renderInspector() {
+    const head = $("inspector-head");
+    const body = $("inspector");
+    // Until the first answer is graded there's nothing to show, but the panel keeps its space.
+    head.parentElement.style.visibility = run.view === "feed" && !run.feed.length ? "hidden" : "visible";
+    if (run.view === "feed") {
+      head.innerHTML = `<p class="label">Latest answers</p>`;
+      body.innerHTML = `<div class="feed">${run.feed.map(feedItem).join("")}</div>`;
+      body.querySelectorAll(".feed-item").forEach((item) => (item.onclick = () => showCase(item.dataset.effort, item.dataset.case)));
+      body.scrollTop = 0;
+      return;
+    }
+    if (run.view === "case") {
+      const [effort, caseId] = run.focus.split("\u0000");
+      const graded = run.graded.get(run.focus);
+      head.innerHTML = `<button type="button" class="back" id="back">${ICONS.back}Wrong at ${effort}</button><span class="spacer"></span><span class="note">${escapeHtml(caseId)} at ${effort}</span>`;
+      $("back").onclick = () => select(effort);
+      body.innerHTML = graded ? missCard(graded) : `<div class="misses">${pendingCard(effort, caseId)}</div>`;
+      body.scrollTop = 0;
+      return;
+    }
+    const effort = run.selected;
+    const graded = gradedFor(effort);
+    const wrong = graded.filter((item) => !item.passed);
+    const done = run.summaries.has(effort);
+    head.innerHTML = `<p class="label">Wrong at ${effort}</p><span class="spacer"></span><span class="note">${wrong.length} of ${done ? run.cases.length : `${graded.length} graded`}</span>${events ? '<button type="button" class="back" id="live">Latest answers</button>' : ""}`;
+    $("live")?.addEventListener("click", () => {
+      run.view = "feed";
+      run.selected = null;
+      renderTable();
+      renderChart();
+      renderInspector();
+    });
+    body.innerHTML = wrong.length
+      ? `<div class="misses">${wrong.sort((a, b) => order(a) - order(b)).map(missCard).join("")}</div>`
+      : `<p class="empty-note">${done ? `Every answer at ${effort} passed its checks.` : `No wrong answers at ${effort} so far.`}</p>`;
+    body.querySelectorAll(".miss").forEach((card) => (card.onclick = () => showCase(effort, card.dataset.case)));
+  }
+
+  function feedItem(graded) {
+    const failed = graded.checks.find((check) => !check.pass);
+    const text = failed ? `${failed.name}: ${failed.note}` : summarizeAnswer(graded.answer);
+    return `<div class="feed-item ${graded.passed ? "pass" : "fail"}" data-effort="${graded.effort}" data-case="${escapeHtml(graded.caseId)}"><header><span class="tag">${graded.effort}</span><b>${escapeHtml(graded.caseId)}</b><span class="mark">${graded.passed ? "Correct" : "Wrong"}</span></header><p>${escapeHtml(text)}</p></div>`;
+  }
+
+  function missCard(graded) {
+    const item = run.cases.find((entry) => entry.id === graded.caseId);
+    const meta = [dollars(graded.cost, true), graded.latency === null ? null : seconds(graded.latency), `${graded.reasoningTokens.toLocaleString()} reasoning tokens`].filter(Boolean).join(" · ");
+    const checks = graded.checks
+      .map((check) => `<li class="${check.pass ? "good" : "bad"}"><span class="chip ${check.pass ? "good" : "bad"}">${escapeHtml(check.name)}</span><span>${escapeHtml(check.note)} <span class="by">· ${check.by === "judge" ? "judge" : "code check"}</span></span></li>`)
+      .join("");
+    const text = graded.answer
+      ? freeText(graded.answer).map(([name, value]) => `<p class="answer-text"><b>${escapeHtml(name)}</b>${escapeHtml(value)}</p>`).join("")
+      : "";
+    const reasoning = graded.reasoning ? `<details class="reasoning"><summary>How Grok got there</summary><pre>${escapeHtml(graded.reasoning)}</pre></details>` : "";
+    return `<article class="miss${run.focus === key(graded.effort, graded.caseId) ? " focus" : ""}" data-case="${escapeHtml(graded.caseId)}"><header><b>${escapeHtml(graded.caseId)}</b><span class="tag">${graded.effort}</span><span class="meta">${meta}</span></header><p class="input">${escapeHtml(item?.input ?? "")}</p><ul class="checks">${checks}</ul>${text}${reasoning}</article>`;
+  }
+
+  function pendingCard(effort, caseId) {
+    const item = run.cases.find((entry) => entry.id === caseId);
+    const status = run.answering.has(key(effort, caseId)) ? "Grok is answering this one." : "Waiting for its turn.";
+    return `<article class="miss"><header><b>${escapeHtml(caseId)}</b><span class="tag">${effort}</span></header><p class="input">${escapeHtml(item?.input ?? "")}</p><p class="empty-note">${status}</p></article>`;
+  }
+
+  function summarizeAnswer(answer) {
+    if (!answer) return "";
+    const choices = Object.entries(answer).filter(([name]) => run.fields[name]?.options).map(([, value]) => value);
+    return [choices.join(" · "), freeText(answer)[0]?.[1]].filter(Boolean).join(": ");
+  }
+
+  // Fields without options are free text, like the reply in the sample.
+  function freeText(answer) {
+    return Object.entries(answer).filter(([name]) => !run.fields[name]?.options);
+  }
+
+  function openEditor() {
+    if (events) return;
+    fillEditor(task);
+    $("editor").hidden = false;
+    $("prompt-input").focus();
+    $("prompt-input").setSelectionRange(0, 0);
+    $("prompt-input").scrollTop = 0;
+  }
+
+  function fillEditor(source) {
+    const { prompt, ...rest } = source;
+    $("prompt-input").value = joinPrompt(prompt);
+    $("task-input").value = formatJson(rest);
+    $("editor-error").hidden = true;
+  }
+
+  // Like JSON.stringify with indentation, but with short lists and small objects on one line each.
+  function formatJson(value) {
+    const string = String.raw`"(?:[^"\\]|\\.)*"`;
+    const item = String.raw`(?:${string}|-?\d+(?:\.\d+)?|true|false|null|\[[^\[\]\n]*\])`;
+    const join = (match, items, open, close) => {
+      const line = `${open}${items.split(/,\s*\n\s*/).join(", ")}${close}`;
+      return line.length <= 110 ? line : match;
+    };
+    return JSON.stringify(value, null, 2)
+      .replace(new RegExp(String.raw`\[\s*(${item}(?:,\s*${item})*)\s*\]`, "g"), (match, items) => join(match, items, "[", "]"))
+      .replace(new RegExp(String.raw`\{\s*(${string}: ${item}(?:,\s*${string}: ${item})*)\s*\}`, "g"), (match, items) => join(match, items, "{ ", " }"));
+  }
+
+  // The server checks the task the same way it does before a run, so mistakes show up here.
+  async function saveEditor() {
+    let next;
+    try {
+      next = { ...JSON.parse($("task-input").value), prompt: $("prompt-input").value };
+    } catch (error) {
+      return showEditorError(`That isn't valid JSON: ${error.message}`);
+    }
+    const response = await fetch("/api/tasks", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(next) });
+    if (!response.ok) return showEditorError(await response.text());
+    useTask(JSON.stringify(next) === JSON.stringify(sample) ? sample : next);
+    $("editor").hidden = true;
+  }
+
+  function showEditorError(message) {
+    $("editor-error").textContent = message;
+    $("editor-error").hidden = false;
+  }
+
+  function gradedFor(effort) {
+    return run.cases.map((item) => run.graded.get(key(effort, item.id))).filter(Boolean);
+  }
+
+  function order(graded) {
+    return run.cases.findIndex((item) => item.id === graded.caseId);
+  }
+
+  function costPer1000(graded) {
+    return (graded.reduce((sum, item) => sum + item.cost, 0) / graded.length) * 1000;
+  }
+
+  function key(effort, caseId) {
+    return `${effort}\u0000${caseId}`;
+  }
+
+  function niceCeil(value) {
+    const step = 10 ** Math.floor(Math.log10(value));
+    return [1, 2, 2.5, 5, 10].map((multiple) => multiple * step).find((nice) => nice >= value);
+  }
+
+  function joinPrompt(prompt) {
+    return Array.isArray(prompt) ? prompt.join("\n") : prompt;
+  }
+
+  function percent(value) {
+    return `${Math.round(value)}%`;
+  }
+
+  function dollars(value, precise = false) {
+    return `$${value.toFixed(precise && value < 1 ? (value < 0.1 ? 4 : 2) : 2)}`;
+  }
+
+  function seconds(ms) {
+    return ms === null || ms === undefined ? "–" : `${(ms / 1000).toFixed(1)} s`;
+  }
+
+  function duration(total) {
+    return total < 60 ? `${total} s` : `${Math.floor(total / 60)} min ${String(total % 60).padStart(2, "0")} s`;
+  }
+
+  function plural(count, word) {
+    return `${count} ${word}${count === 1 ? "" : "s"}`;
+  }
+
+  function escapeHtml(text) {
+    return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,533 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Database over MCP</title>
+<style>
+  /* The look every SpaceXAI Cookbook page shares, after x.ai. */
+  :root {
+    --bg: #fff;
+    --card: #f9f8f6;
+    --secondary: #f2f1ef;
+    --secondary-hover: #e9e8e5;
+    --tint: rgb(10 10 10 / 0.04);
+    --line: rgb(10 10 10 / 0.08);
+    --border: rgb(10 10 10 / 0.15);
+    --fg: #0a0a0a;
+    --muted: rgb(10 10 10 / 0.6);
+    --faint: rgb(10 10 10 / 0.36);
+    --accent: #ff6308;
+    --accent-soft: rgb(255 99 8 / 0.1);
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; font: 14px/22px var(--sans); background: var(--bg); color: var(--fg); -webkit-font-smoothing: antialiased; }
+  button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
+  a { color: inherit; }
+  svg { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  @keyframes blink { 50% { opacity: 0.3; } }
+  @keyframes pulse { to { background-color: var(--secondary-hover); } }
+  @keyframes appear { from { opacity: 0; transform: translateY(4px); } }
+
+  .site { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 12px; height: 60px; padding: 0 20px; background: rgb(255 255 255 / 0.85); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+  .logo { flex: none; margin-right: 4px; color: var(--fg); }
+  .logo svg { display: block; width: 52px; height: 20px; fill: currentColor; stroke: none; }
+  .crumbs { display: flex; align-items: center; gap: 8px; min-width: 0; color: var(--muted); white-space: nowrap; }
+  .crumbs svg { width: 12px; height: 12px; color: var(--faint); }
+  .crumbs h1 { margin: 0; overflow: hidden; text-overflow: ellipsis; font-size: inherit; line-height: inherit; font-weight: 500; color: var(--fg); }
+  .site .pill { flex: none; margin-left: auto; }
+  .models { flex: none; height: 26px; padding: 0 10px; border-radius: 9999px; box-shadow: inset 0 0 0 1px var(--line); font-size: 12px; font-weight: 500; line-height: 26px; color: var(--muted); }
+  .pill { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 40px; padding: 0 18px; border-radius: 9999px; font-size: 14px; font-weight: 500; white-space: nowrap; text-decoration: none; }
+  .pill-sm { height: 32px; padding: 0 14px; font-size: 13px; }
+  .pill-primary { background: var(--fg); color: #fff; }
+  .pill-primary:hover { background: #202329; }
+  .pill-secondary { background: var(--secondary); color: var(--fg); }
+  .pill-secondary:hover { background: var(--secondary-hover); }
+  .pill:disabled { opacity: 0.4; cursor: default; }
+  .pill svg { width: 14px; height: 14px; }
+  .field { min-width: 0; height: 40px; padding: 0 18px; border: 1px solid var(--border); border-radius: 9999px; background: var(--bg); color: var(--fg); font: inherit; outline: none; }
+  .field:focus { border-color: var(--fg); }
+  .field::placeholder { color: var(--faint); }
+  .surface { display: flex; flex-direction: column; gap: 8px; height: calc(100vh - 72px); min-height: 560px; margin: 0 12px 12px; padding: 8px; border-radius: 20px; background: var(--card); }
+  .panel { min-width: 0; padding: 20px 22px; border-radius: 16px; background: var(--bg); }
+  .label { margin: 0; font-size: 13px; font-weight: 500; color: var(--muted); }
+  @media (max-width: 900px) {
+    .models { display: none; }
+  }
+  @media (max-width: 640px) {
+    .site { padding: 0 16px; }
+    .crumbs > span, .crumbs > svg { display: none; }
+    .surface { margin: 0 8px 8px; }
+  }
+
+  /* Database over MCP */
+  :root {
+    --bad: #e5484d;
+    --bad-soft: rgb(229 72 77 / 0.1);
+    --good: #16a34a;
+  }
+  @keyframes flow { to { background-position: 12px 0; } }
+  .workspace { flex-direction: row; }
+  .notebook { flex: 1; display: flex; flex-direction: column; min-height: 0; padding: 0; overflow: hidden; }
+  .ask { display: flex; align-items: center; gap: 8px; padding: 12px; border-bottom: 1px solid var(--line); }
+  .ask label { position: relative; flex: 1; display: flex; min-width: 0; }
+  .ask label svg { position: absolute; left: 16px; top: 12px; width: 16px; height: 16px; color: var(--faint); }
+  .ask .field { flex: 1; padding-left: 42px; }
+  #go svg { fill: currentColor; stroke: none; }
+  #go.stop { background: var(--secondary); color: var(--fg); }
+
+  #log { flex: 1; display: flex; flex-direction: column; gap: 14px; min-height: 0; padding: 22px 24px 28px; overflow-y: auto; scroll-padding-bottom: 28px; }
+  .start { display: grid; place-content: center; justify-items: center; gap: 16px; min-height: 100%; padding: 24px; text-align: center; }
+  .start h2 { margin: 0; font-size: 40px; line-height: 1.1; font-weight: 450; letter-spacing: -0.02em; }
+  .start p { max-width: 580px; margin: 0 0 8px; font-size: 16px; line-height: 26px; color: var(--muted); }
+  .samples { display: grid; justify-items: center; gap: 10px; max-width: 720px; }
+  .samples .label { margin-top: 6px; }
+  .questions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+  /* The same samples again under each answer, so you can try one after another. */
+  .more { display: grid; gap: 10px; margin-top: 6px; padding-top: 18px; border-top: 1px solid var(--line); animation: appear 0.3s ease-out; }
+  .more .samples { justify-items: start; max-width: none; }
+  .more .questions { justify-content: flex-start; }
+
+  .question { margin: 0 0 4px; font-size: 24px; line-height: 32px; font-weight: 450; letter-spacing: -0.015em; animation: appear 0.3s ease-out; }
+  .thought { display: flex; gap: 10px; margin: 0; color: var(--muted); font-size: 13px; line-height: 20px; animation: appear 0.3s ease-out; }
+  .thought svg { flex: none; width: 14px; height: 14px; margin-top: 3px; color: var(--faint); }
+  .thought.live svg { color: var(--accent); animation: blink 1s ease-in-out infinite; }
+  .thought span { white-space: pre-wrap; }
+
+  .cell { flex: none; overflow: hidden; border: 1px solid var(--line); border-radius: 14px; background: var(--bg); animation: appear 0.3s ease-out; }
+  .cell > header { display: flex; align-items: center; gap: 10px; padding: 9px 14px; background: var(--card); }
+  .cell.running > header { animation: pulse 1s ease-in-out infinite alternate; }
+  .cell .n { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--bg); color: var(--muted); font-size: 11px; font-weight: 600; box-shadow: inset 0 0 0 1px var(--line); }
+  .cell .tool { font: 500 13px/20px var(--mono); }
+  .cell .prefix { color: var(--faint); }
+  .cell .target { font: 13px/20px var(--mono); color: var(--accent); }
+  .cell .status { margin-left: auto; font-size: 12px; color: var(--faint); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .cell.failed .status { color: var(--bad); }
+  .sql { margin: 0; padding: 12px 16px; border-top: 1px solid var(--line); font: 12.5px/20px var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; color: var(--fg); }
+  .sql .kw { color: #c2410c; font-weight: 500; }
+  .sql .fn { color: #7c3aed; }
+  .sql .str { color: #15803d; }
+  .sql .num { color: #1d4ed8; }
+  .sql .cm { color: var(--faint); }
+  .refusal { margin: 0; padding: 10px 16px; border-top: 1px solid var(--line); background: var(--bad-soft); color: var(--bad); font-size: 13px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 12px 14px; border-top: 1px solid var(--line); }
+  .chip { display: inline-flex; align-items: baseline; gap: 6px; height: 28px; padding: 0 12px; border-radius: 9999px; background: var(--secondary); font: 12.5px/28px var(--mono); }
+  .chip small { font: 12px var(--sans); color: var(--faint); font-variant-numeric: tabular-nums; }
+  .rows { overflow-x: auto; border-top: 1px solid var(--line); }
+  .grid { width: 100%; border-collapse: collapse; font-size: 13px; line-height: 18px; }
+  .grid th { padding: 7px 16px; border-bottom: 1px solid var(--line); background: var(--card); color: var(--muted); font-size: 12px; font-weight: 500; text-align: left; white-space: nowrap; }
+  .grid td { padding: 7px 16px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  .grid tr:last-child td { border-bottom: 0; }
+  .grid .num { text-align: right; font-variant-numeric: tabular-nums; }
+  .grid .null { color: var(--faint); }
+  .more-rows { display: block; width: 100%; padding: 8px 16px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; text-align: left; }
+  .more-rows:hover { background: var(--tint); }
+  details.sample summary { padding: 8px 16px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; cursor: pointer; }
+
+  .answer { flex: none; padding: 20px 22px; border-radius: 14px; background: var(--card); animation: appear 0.3s ease-out; }
+  .answer .label { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .answer .label svg { width: 14px; height: 14px; color: var(--accent); }
+  #answer-text { margin: 0; font-size: 16px; line-height: 26px; white-space: pre-wrap; }
+  .chart { display: grid; grid-template-columns: minmax(0, max-content) minmax(120px, 1fr) max-content; align-items: center; gap: 8px 14px; margin: 18px 0 0; padding: 16px 18px; border-radius: 12px; background: var(--bg); }
+  .chart .caption { grid-column: 1 / -1; margin: 0 0 2px; font-size: 12px; color: var(--faint); }
+  .chart .name { overflow: hidden; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+  .chart .bar { height: 8px; border-radius: 4px; background: rgb(10 10 10 / 0.75); transform-origin: left; transition: transform 0.6s ease-out; }
+  .chart .bar.top { background: var(--accent); }
+  .chart .value { font-size: 13px; color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
+  .receipt { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 16px 0 0; padding: 12px 0 0; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); }
+  .receipt b { font-weight: 500; color: var(--fg); font-variant-numeric: tabular-nums; }
+  .problem { margin: 0; padding: 12px 16px; border-radius: 12px; background: var(--bad-soft); color: var(--bad); }
+
+  .side { flex: none; display: flex; flex-direction: column; gap: 20px; width: 400px; min-height: 0; overflow: hidden; }
+  .server-head { display: flex; align-items: center; gap: 8px; }
+  .server-head h2 { margin: 0; font-size: 15px; line-height: 22px; font-weight: 500; }
+  .online { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; font-size: 12px; color: var(--muted); }
+  .online i { width: 7px; height: 7px; border-radius: 50%; background: var(--good); }
+  .route { display: grid; grid-template-columns: 1fr 28px 1fr 28px 1fr; align-items: center; margin-top: 14px; }
+  .hop { display: grid; justify-items: center; gap: 2px; padding: 12px 6px 10px; border-radius: 12px; background: var(--card); text-align: center; }
+  .hop svg { width: 20px; height: 20px; margin-bottom: 4px; color: var(--muted); }
+  .hop b { font-size: 12px; line-height: 16px; font-weight: 500; }
+  .hop span { font-size: 11px; line-height: 15px; color: var(--faint); }
+  .hop.me { box-shadow: inset 0 0 0 1px var(--accent); background: var(--accent-soft); }
+  .hop.me svg { color: var(--accent); }
+  .wire { height: 2px; background: linear-gradient(90deg, var(--border) 50%, transparent 50%) 0 0 / 6px 2px; }
+  .route.busy .wire { background-image: linear-gradient(90deg, var(--accent) 50%, transparent 50%); animation: flow 0.5s linear infinite; }
+  #url { display: block; margin-top: 12px; padding: 8px 12px; border-radius: 10px; background: var(--card); font: 12px/18px var(--mono); color: var(--muted); overflow-wrap: anywhere; }
+  .facts { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 8px 14px; margin: 0; font-size: 13px; line-height: 19px; }
+  .facts dt { color: var(--faint); }
+  .facts dd { margin: 0; }
+  .tools { display: grid; gap: 2px; margin: 10px 0 0; padding: 0; list-style: none; }
+  .tools li { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 0 8px; padding: 7px 10px; border-radius: 10px; }
+  .tools li svg { width: 14px; height: 14px; margin-top: 3px; color: var(--good); }
+  .tools li b { font: 500 13px/20px var(--mono); }
+  .tools li span { grid-column: 2; overflow: hidden; font-size: 12px; line-height: 18px; color: var(--muted); text-overflow: ellipsis; white-space: nowrap; }
+  .tools li.used { background: var(--card); }
+  .tools li.blocked { opacity: 0.5; }
+  .tools li.blocked svg { color: var(--faint); }
+  #traffic { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+  .traffic-head { display: flex; align-items: baseline; gap: 8px; }
+  .traffic-head span { margin-left: auto; font-size: 12px; color: var(--faint); font-variant-numeric: tabular-nums; }
+  .requests { flex: 1; display: flex; flex-direction: column; gap: 1px; min-height: 0; margin: 10px 0 0; padding: 0; overflow-y: auto; list-style: none; font: 12px/18px var(--mono); }
+  .requests li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 0 8px; padding: 5px 10px; border-radius: 8px; animation: appear 0.3s ease-out; }
+  .requests li:nth-child(odd) { background: var(--card); }
+  .requests .tool { overflow: hidden; color: var(--accent); text-overflow: ellipsis; white-space: nowrap; }
+  .requests .ms { color: var(--faint); font-variant-numeric: tabular-nums; }
+  .requests .why { grid-column: 1 / -1; color: var(--bad); font-family: var(--sans); }
+
+  @media (max-width: 1100px) {
+    .workspace { flex-direction: column; height: auto; }
+    .notebook { min-height: 70vh; }
+    .side { width: auto; overflow: visible; }
+    .requests { max-height: 320px; }
+  }
+</style>
+</head>
+<body>
+<header class="site">
+  <a class="logo" href="https://x.ai" target="_blank" rel="noopener" aria-label="SpaceXAI"><svg viewBox="0 0 759 290.2" aria-hidden="true"><g transform="translate(-674.5,-388.5)"><path d="M1433.19 388.934C1345.69 396.068 1001.73 438.71 763.235 678.467H674.732L684.62 668.612C734.53 620.395 955.373 416.045 1433.19 388.668V388.934Z"/><path d="M1133.66 678.467H1064.29L927.618 578.979C940.213 571.058 952.888 563.515 965.603 556.33L1133.66 678.467Z"/><path d="M1022.8 678.468H953.463L932.43 663.169H814.998C823.265 655.828 831.635 648.702 840.092 641.784H902.996L870.444 618.106C882.079 609.448 893.843 601.155 905.701 593.211L1022.8 678.468Z"/><path d="M770.433 495.02L823.901 533.876C810.594 541.712 798.139 549.468 786.514 557.055L701.158 494.986L770.433 495.02Z"/></g></svg></a>
+  <nav class="crumbs"><span>Cookbook</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg><h1>Database over MCP</h1></nav>
+  <span class="models">grok-4.7 with a remote MCP server</span>
+  <a class="pill pill-secondary pill-sm" href="https://github.com/xai-org/xai-cookbook/tree/main/examples/database-over-mcp" target="_blank" rel="noopener">View code</a>
+</header>
+
+<main class="surface workspace">
+  <section class="panel notebook">
+    <form class="ask" id="form">
+      <label>
+        <svg viewBox="0 0 16 16" aria-hidden="true"><ellipse cx="8" cy="3.5" rx="5" ry="2"/><path d="M3 3.5v9c0 1.1 2.2 2 5 2s5-.9 5-2v-9M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/></svg>
+        <input id="question" class="field" required value="Which products sold best last month?" aria-label="Question" placeholder="Ask a question about the store">
+      </label>
+      <button id="go" class="pill pill-primary"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3.5v9l7.5-4.5z"/></svg><span>Ask</span></button>
+    </form>
+    <div id="log">
+      <div class="start" id="start">
+        <h2>Ask the store's database</h2>
+        <p>Grok reaches a SQLite database on this machine through a small MCP server. It lists the tables, reads their schemas, and runs read-only SQL until it can answer, and every query shows up here with its rows.</p>
+        <div class="samples" id="samples">
+          <p class="label">Ask about the store</p>
+          <div class="questions">
+            <button type="button" class="pill pill-secondary pill-sm">Which products sold best last month?</button>
+            <button type="button" class="pill pill-secondary pill-sm">Who are our best customers?</button>
+            <button type="button" class="pill pill-secondary pill-sm">How did revenue change month by month?</button>
+            <button type="button" class="pill pill-secondary pill-sm">How is the Barrel-Aged Guatemala doing since it launched?</button>
+            <button type="button" class="pill pill-secondary pill-sm">Which category brings in the most revenue?</button>
+            <button type="button" class="pill pill-secondary pill-sm">Which cities spend the most?</button>
+            <button type="button" class="pill pill-secondary pill-sm">Which day of the week gets the most orders?</button>
+            <button type="button" class="pill pill-secondary pill-sm">How much did discounts cost us last month?</button>
+            <button type="button" class="pill pill-secondary pill-sm">Which products are bought together most often?</button>
+            <button type="button" class="pill pill-secondary pill-sm">Which of our best customers haven't ordered in the last 30 days?</button>
+            <button type="button" class="pill pill-secondary pill-sm">How many orders were refunded or cancelled?</button>
+          </div>
+          <p class="label">Test the server's guards</p>
+          <div class="questions">
+            <button type="button" class="pill pill-secondary pill-sm" data-question="To test the server's guard, call run_query with exactly this SQL and tell me what the server replied: UPDATE products SET price_cents = 0 WHERE id = 1">Try to change a price</button>
+            <button type="button" class="pill pill-secondary pill-sm" data-question="To test the server's guard, call run_query with exactly this SQL, two read-only statements in one call, and tell me what the server replied: SELECT count(*) FROM orders; SELECT count(*) FROM customers">Send two statements at once</button>
+            <button type="button" class="pill pill-secondary pill-sm" data-question="To test the server's 5-second time limit, call run_query with exactly this SQL, which counts every combination of three order items, and tell me what the server replied: SELECT count(*) FROM order_items a, order_items b, order_items c">Run a query that's too slow</button>
+            <button type="button" class="pill pill-secondary pill-sm" data-question="To test the server's guard, call run_query with exactly this SQL and tell me how many rows came back and whether the server said there were more: SELECT * FROM order_items">Fetch every row</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <aside class="panel side">
+    <section>
+      <div class="server-head">
+        <h2>Your MCP server</h2>
+        <span class="online" id="online" hidden><i></i>Listening</span>
+      </div>
+      <div class="route" id="route">
+        <div class="hop"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 18a4.5 4.5 0 0 1-.6-8.96A6 6 0 0 1 18 9.5a4.25 4.25 0 0 1-.5 8.5z"/></svg><b>Grok</b><span>SpaceXAI</span></div>
+        <i class="wire"></i>
+        <div class="hop"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.5 2.6 3.5 5.4 3.5 8.5s-1 5.9-3.5 8.5c-2.5-2.6-3.5-5.4-3.5-8.5s1-5.9 3.5-8.5z"/></svg><b>Tunnel</b><span>Cloudflare</span></div>
+        <i class="wire"></i>
+        <div class="hop me"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="11" rx="1.5"/><path d="M2.5 19h19"/></svg><b>MCP server</b><span id="port">this machine</span></div>
+      </div>
+      <code id="url" hidden></code>
+    </section>
+
+    <dl class="facts" id="facts" hidden>
+      <dt>Transport</dt><dd>Streamable HTTP</dd>
+      <dt>Auth</dt><dd>A new bearer token for each answer</dd>
+      <dt>Database</dt><dd>store.db, opened read-only</dd>
+      <dt>Queries</dt><dd id="limits"></dd>
+    </dl>
+
+    <section id="tools-card" hidden>
+      <p class="label">Tools Grok may call</p>
+      <ul class="tools" id="tools"></ul>
+    </section>
+
+    <section id="traffic" hidden>
+      <div class="traffic-head"><p class="label">Requests from SpaceXAI</p><span id="traffic-count"></span></div>
+      <ol class="requests" id="requests"></ol>
+    </section>
+  </aside>
+</main>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  const ICONS = {
+    play: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3.5v9l7.5-4.5z"/></svg>',
+    stop: '<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="4" y="4" width="8" height="8" rx="1.5"/></svg>',
+    thought: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5l1.6 4.9 4.9 1.6-4.9 1.6L8 14.5l-1.6-4.9L1.5 8l4.9-1.6z"/></svg>',
+    check: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="m3.5 8.5 3 3 6-7"/></svg>',
+    cross: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4.5 4.5 7 7m0-7-7 7"/></svg>',
+  };
+  const SQL = /(--[^\n]*)|('(?:[^']|'')*')|\b(SELECT|FROM|WHERE|JOIN|LEFT|INNER|OUTER|ON|AND|OR|NOT|IN|IS|NULL|AS|GROUP|BY|ORDER|HAVING|LIMIT|OFFSET|DESC|ASC|WITH|CASE|WHEN|THEN|ELSE|END|DISTINCT|BETWEEN|LIKE|UNION|ALL|CREATE|TABLE|PRIMARY|KEY|REFERENCES|INTEGER|TEXT|REAL|UNIQUE|INSERT|INTO|VALUES|UPDATE|SET|DELETE|DROP|ALTER|ATTACH|PRAGMA)\b|\b([a-z_]+)(?=\()|\b(\d+(?:\.\d+)?)\b/gi;
+  const ROWS_SHOWN = 8;
+  let events;
+  let calls = 0;
+  let thought = null;
+  let lastRows = null;
+  let requests = 0;
+  let wireTimer = 0;
+
+  fetch("/api/connection").then((response) => response.json()).then(showConnection);
+
+  // The sample questions are on the start screen and again under each answer.
+  const SAMPLES = $("samples").outerHTML.replace(' id="samples"', "");
+  $("log").onclick = (event) => {
+    const button = event.target.closest(".questions button");
+    if (!button || events) return;
+    $("question").value = button.dataset.question ?? button.textContent;
+    $("form").requestSubmit();
+  };
+
+  $("form").onsubmit = (event) => {
+    event.preventDefault();
+    if (events) return stop("Stopped.");
+    const question = $("question").value.trim();
+    reset(question);
+    setRunning(true);
+    events = new EventSource(`/api/ask?question=${encodeURIComponent(question)}`);
+    const on = (name, handler) => events.addEventListener(name, (message) => handler(JSON.parse(message.data)));
+
+    on("reasoning", ({ text }) => {
+      if (!thought || thought.dataset.waiting) {
+        thought?.remove();
+        thought = append(`<p class="thought live">${ICONS.thought}<span></span></p>`);
+      }
+      thought.querySelector("span").textContent += text;
+      keepInView(thought);
+    });
+    on("calling", ({ id, tool }) => {
+      endThought();
+      cellFor(id, tool);
+    });
+    on("called", (step) => {
+      endThought();
+      fillCell(cellFor(step.id, step.tool), step);
+    });
+    on("text", ({ text }) => {
+      endThought();
+      if ($("answer-text")) $("answer-text").textContent += text;
+      else showAnswer(text);
+    });
+    on("request", showRequest);
+    on("done", ({ cost, calls: count, seconds }) => {
+      if (!$("answer-text")) showAnswer("Grok didn't write an answer.");
+      $("receipt").innerHTML = `<span>Cost <b>$${cost.toFixed(4)}</b></span><span><b>${count}</b> ${count === 1 ? "call" : "calls"} to your MCP server</span><span><b>${seconds.toFixed(1)}</b> seconds</span>`;
+      $("receipt").hidden = false;
+      drawChart();
+      keepInView($("answer"));
+      stop();
+    });
+    on("failure", ({ message }) => stop(`Couldn't answer: ${message}`));
+    events.onerror = () => stop("Lost the connection to the server.");
+  };
+
+  function showConnection({ url, port, tools, maxRows, timeoutSeconds }) {
+    $("url").textContent = url;
+    $("url").hidden = false;
+    $("port").textContent = `127.0.0.1:${port}`;
+    $("online").hidden = false;
+    $("limits").textContent = `One SELECT, at most ${maxRows} rows, ${timeoutSeconds} s`;
+    $("facts").hidden = false;
+    $("tools").innerHTML = tools
+      .map(({ name, description, allowed }) => `<li class="${allowed ? "" : "blocked"}" data-tool="${name}" title="${escapeHtml(description)}">${allowed ? ICONS.check : ICONS.cross}<b>${name}</b><span>${escapeHtml(description)}</span></li>`)
+      .join("");
+    $("tools-card").hidden = false;
+  }
+
+  // Each MCP call is a cell, numbered in the order Grok made them. A call can be reported when it starts
+  // or only once it's done, so either one creates it.
+  function cellFor(id, tool) {
+    const existing = $("log").querySelector(`[data-id="${CSS.escape(id)}"]`);
+    if (existing) return existing;
+    calls++;
+    const cell = append(`<article class="cell running" data-id="${escapeHtml(id)}">
+      <header><span class="n">${calls}</span><span class="tool"><span class="prefix">store.</span>${tool}</span><span class="target"></span><span class="status">Running</span></header>
+    </article>`);
+    $("tools").querySelector(`[data-tool="${tool}"]`)?.classList.add("used");
+    $("route").classList.add("busy");
+    keepInView(cell);
+    return cell;
+  }
+
+  function fillCell(cell, { tool, arguments: args, output, error }) {
+    if (!cell.classList.contains("running")) return;
+    cell.classList.remove("running");
+    if (!$("log").querySelector(".cell.running")) $("route").classList.remove("busy");
+    if (args.table) cell.querySelector(".target").textContent = args.table;
+    if (args.sql) cell.insertAdjacentHTML("beforeend", `<pre class="sql">${highlight(args.sql.trim())}</pre>`);
+    const status = cell.querySelector(".status");
+    if (error) {
+      cell.classList.add("failed");
+      status.textContent = "Error";
+      cell.insertAdjacentHTML("beforeend", `<p class="refusal">${escapeHtml(error)}</p>`);
+    } else if (tool === "list_tables") {
+      status.textContent = `${output.tables.length} tables`;
+      cell.insertAdjacentHTML("beforeend", `<div class="chips">${output.tables.map(({ name, rows }) => `<span class="chip">${escapeHtml(name)}<small>${rows.toLocaleString("en")} rows</small></span>`).join("")}</div>`);
+    } else if (tool === "describe_table") {
+      status.textContent = "Schema and first rows";
+      const columns = output.rows.length ? Object.keys(output.rows[0]) : [];
+      cell.insertAdjacentHTML("beforeend", `<pre class="sql">${highlight(output.sql)}</pre><details class="sample"><summary>First ${output.rows.length} rows</summary>${grid(columns, output.rows.map(Object.values))}</details>`);
+    } else if (tool === "run_query") {
+      status.textContent = `${output.rows.length.toLocaleString("en")} ${output.rows.length === 1 ? "row" : "rows"}${output.truncated ? ", capped by the server" : ""}`;
+      cell.insertAdjacentHTML("beforeend", grid(output.columns, output.rows));
+      if (output.rows.length > ROWS_SHOWN) {
+        cell.insertAdjacentHTML("beforeend", `<button type="button" class="more-rows">Show all ${output.rows.length} rows</button>`);
+        cell.querySelector(".more-rows").onclick = (event) => {
+          cell.querySelectorAll("tr[hidden]").forEach((row) => (row.hidden = false));
+          event.target.remove();
+        };
+      }
+      if (output.rows.length > 1) lastRows = { ...output, call: cell.querySelector(".n").textContent };
+    }
+    keepInView(cell);
+  }
+
+  function grid(columns, rows) {
+    if (!columns.length) return `<div class="rows"><p class="more-rows">No rows</p></div>`;
+    const numeric = columns.map((_, index) => rows.some((row) => typeof row[index] === "number"));
+    const head = columns.map((column, index) => `<th class="${numeric[index] ? "num" : ""}">${escapeHtml(column)}</th>`).join("");
+    const body = rows
+      .map((row, index) => `<tr${index >= ROWS_SHOWN ? " hidden" : ""}>${row.map((value, column) => `<td class="${value === null ? "null" : numeric[column] ? "num" : ""}">${formatValue(value)}</td>`).join("")}</tr>`)
+      .join("");
+    return `<div class="rows"><table class="grid"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
+  }
+
+  function showAnswer(text) {
+    append(`<article class="answer" id="answer">
+      <p class="label">${ICONS.thought}Answer</p>
+      <p id="answer-text"></p>
+      <div id="chart" hidden></div>
+      <div class="receipt" id="receipt" hidden></div>
+    </article>`);
+    $("answer-text").textContent = text;
+    keepInView($("answer"));
+  }
+
+  // Bars for the last query that returned a few rows with a name and a number, which is usually the one
+  // the answer comes from.
+  function drawChart() {
+    if (!lastRows) return;
+    const { columns, rows, call } = lastRows;
+    // Every text column goes into the label, so a pair of products reads as the pair.
+    const labels = columns.map((_, index) => index).filter((index) => rows.every((row) => typeof row[index] === "string"));
+    const value = columns.findIndex((_, index) => rows.every((row) => typeof row[index] === "number"));
+    if (!labels.length || value < 0) return;
+    const shown = rows.slice(0, 8);
+    const max = Math.max(...shown.map((row) => row[value]), 1);
+    $("chart").className = "chart";
+    $("chart").innerHTML = `<p class="caption">${escapeHtml(columns[value])} by ${escapeHtml(labels.map((index) => columns[index]).join(" and "))}, from call ${call}</p>${shown
+      .map((row) => `<span class="name">${escapeHtml(labels.map((index) => row[index]).join(" + "))}</span><i class="bar${row[value] === max ? " top" : ""}" style="transform: scaleX(0)" data-scale="${Math.max(row[value] / max, 0.01)}"></i><span class="value">${formatValue(row[value])}</span>`)
+      .join("")}`;
+    $("chart").hidden = false;
+    // Laid out at zero first, so the bars grow to their length instead of appearing at it.
+    $("chart").getBoundingClientRect();
+    $("chart").querySelectorAll(".bar").forEach((bar) => (bar.style.transform = `scaleX(${bar.dataset.scale})`));
+  }
+
+  function showRequest({ method, tool, ms, error }) {
+    requests++;
+    $("traffic").hidden = false;
+    $("traffic-count").textContent = `${requests} ${requests === 1 ? "request" : "requests"}`;
+    const timing = method.startsWith("notifications/") ? "" : `${ms} ms`;
+    $("requests").insertAdjacentHTML("beforeend", `<li><span>${escapeHtml(method)}</span><span class="tool">${escapeHtml(tool ?? "")}</span><span class="ms">${timing}</span>${error ? `<span class="why">${escapeHtml(error)}</span>` : ""}</li>`);
+    $("requests").scrollTop = $("requests").scrollHeight;
+    // The wire runs for a moment after each request, so calls that finish quickly still show.
+    $("route").classList.add("busy");
+    clearTimeout(wireTimer);
+    wireTimer = setTimeout(() => {
+      if (!$("log").querySelector(".cell.running")) $("route").classList.remove("busy");
+    }, 900);
+  }
+
+  function endThought() {
+    if (thought?.dataset.waiting) thought.remove();
+    thought?.classList.remove("live");
+    thought = null;
+  }
+
+  function append(html) {
+    $("log").insertAdjacentHTML("beforeend", html);
+    return $("log").lastElementChild;
+  }
+
+  function keepInView(element) {
+    element.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }
+
+  function stop(message) {
+    events?.close();
+    events = undefined;
+    setRunning(false);
+    endThought();
+    $("route").classList.remove("busy");
+    $("log").querySelectorAll(".cell.running").forEach((cell) => {
+      cell.classList.remove("running");
+      cell.querySelector(".status").textContent = "Stopped";
+    });
+    if (message) keepInView(append(`<p class="problem">${escapeHtml(message)}</p>`));
+    append(`<div class="more">${SAMPLES}</div>`);
+  }
+
+  function setRunning(running) {
+    $("go").innerHTML = running ? `${ICONS.stop}<span>Stop</span>` : `${ICONS.play}<span>Ask</span>`;
+    $("go").classList.toggle("stop", running);
+  }
+
+  function reset(question) {
+    calls = 0;
+    thought = null;
+    lastRows = null;
+    requests = 0;
+    $("log").innerHTML = "";
+    append(`<h2 class="question">${escapeHtml(question)}</h2>`);
+    thought = append(`<p class="thought live" data-waiting="true">${ICONS.thought}<span>Connecting to your MCP server</span></p>`);
+    $("requests").innerHTML = "";
+    $("traffic").hidden = true;
+    $("tools").querySelectorAll("li").forEach((item) => item.classList.remove("used"));
+  }
+
+  function highlight(sql) {
+    let html = "";
+    let last = 0;
+    for (const match of sql.matchAll(SQL)) {
+      const [token, comment, string, keyword, call] = match;
+      const kind = comment ? "cm" : string ? "str" : keyword ? "kw" : call ? "fn" : "num";
+      html += `${escapeHtml(sql.slice(last, match.index))}<span class="${kind}">${escapeHtml(token)}</span>`;
+      last = match.index + token.length;
+    }
+    return html + escapeHtml(sql.slice(last));
+  }
+
+  function formatValue(value) {
+    if (value === null) return "null";
+    if (typeof value === "number") return value.toLocaleString("en", { maximumFractionDigits: 2 });
+    return escapeHtml(String(value));
+  }
+
+  function escapeHtml(text) {
+    return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+</script>
+</body>
+</html>

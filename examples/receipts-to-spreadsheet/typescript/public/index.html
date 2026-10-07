@@ -1,0 +1,989 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Receipts to Spreadsheet</title>
+<style>
+  /* The look every SpaceXAI Cookbook page shares, after x.ai. */
+  :root {
+    --bg: #fff;
+    --card: #f9f8f6;
+    --secondary: #f2f1ef;
+    --secondary-hover: #e9e8e5;
+    --tint: rgb(10 10 10 / 0.04);
+    --line: rgb(10 10 10 / 0.08);
+    --border: rgb(10 10 10 / 0.15);
+    --fg: #0a0a0a;
+    --muted: rgb(10 10 10 / 0.6);
+    --faint: rgb(10 10 10 / 0.36);
+    --accent: #ff6308;
+    --accent-soft: rgb(255 99 8 / 0.1);
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; font: 14px/22px var(--sans); background: var(--bg); color: var(--fg); -webkit-font-smoothing: antialiased; }
+  button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
+  a { color: inherit; }
+  svg { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  @keyframes blink { 50% { opacity: 0.3; } }
+  @keyframes pulse { to { background-color: var(--secondary-hover); } }
+  @keyframes appear { from { opacity: 0; transform: translateY(4px); } }
+
+  .site { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 12px; height: 60px; padding: 0 20px; background: rgb(255 255 255 / 0.85); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+  .logo { flex: none; margin-right: 4px; color: var(--fg); }
+  .logo svg { display: block; width: 52px; height: 20px; fill: currentColor; stroke: none; }
+  .crumbs { display: flex; align-items: center; gap: 8px; min-width: 0; color: var(--muted); white-space: nowrap; }
+  .crumbs svg { width: 12px; height: 12px; color: var(--faint); }
+  .crumbs h1 { margin: 0; overflow: hidden; text-overflow: ellipsis; font-size: inherit; line-height: inherit; font-weight: 500; color: var(--fg); }
+  .site .pill { flex: none; margin-left: auto; }
+  .models { flex: none; height: 26px; padding: 0 10px; border-radius: 9999px; box-shadow: inset 0 0 0 1px var(--line); font-size: 12px; font-weight: 500; line-height: 26px; color: var(--muted); }
+  .pill { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 40px; padding: 0 18px; border-radius: 9999px; font-size: 14px; font-weight: 500; white-space: nowrap; text-decoration: none; }
+  .pill-sm { height: 32px; padding: 0 14px; font-size: 13px; }
+  .pill-primary { background: var(--fg); color: #fff; }
+  .pill-primary:hover { background: #202329; }
+  .pill-secondary { background: var(--secondary); color: var(--fg); }
+  .pill-secondary:hover { background: var(--secondary-hover); }
+  .pill:disabled { opacity: 0.4; cursor: default; }
+  .pill svg { width: 14px; height: 14px; }
+  .field { min-width: 0; height: 40px; padding: 0 18px; border: 1px solid var(--border); border-radius: 9999px; background: var(--bg); color: var(--fg); font: inherit; outline: none; }
+  .field:focus { border-color: var(--fg); }
+  .field::placeholder { color: var(--faint); }
+  .surface { display: flex; flex-direction: column; gap: 8px; height: calc(100vh - 72px); min-height: 560px; margin: 0 12px 12px; padding: 8px; border-radius: 20px; background: var(--card); }
+  .panel { min-width: 0; padding: 20px 22px; border-radius: 16px; background: var(--bg); }
+  .label { margin: 0; font-size: 13px; font-weight: 500; color: var(--muted); }
+  @media (max-width: 900px) {
+    .models { display: none; }
+  }
+  @media (max-width: 640px) {
+    .site { padding: 0 16px; }
+    .crumbs > span, .crumbs > svg { display: none; }
+    .surface { margin: 0 8px 8px; }
+  }
+
+  /* Receipts to Spreadsheet */
+  :root {
+    --good: #16a34a;
+    --bad: #e5484d;
+    --bad-soft: rgb(229 72 77 / 0.1);
+    --amber: #d97706;
+    --disagree: #fff2c2;
+    --disagree-strong: #ffe58a;
+  }
+  .toolbar { display: flex; align-items: center; gap: 8px; padding: 8px; border-radius: 16px; background: var(--bg); }
+  .toolbar .divider { width: 1px; height: 24px; margin: 0 4px; background: var(--line); }
+  .toolbar .spacer { flex: 1; }
+  .toolbar label.pill { cursor: pointer; }
+  .toolbar input[type="file"] { display: none; }
+  .switch { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 6px; color: var(--muted); font-size: 13px; font-weight: 500; cursor: pointer; user-select: none; }
+  .switch input { position: absolute; opacity: 0; pointer-events: none; }
+  .switch i { position: relative; width: 30px; height: 18px; border-radius: 9999px; background: var(--secondary-hover); transition: background 0.2s; }
+  .switch i::after { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgb(0 0 0 / 0.2); transition: transform 0.2s; }
+  .switch input:checked + i { background: var(--fg); }
+  .switch input:checked + i::after { transform: translateX(12px); }
+  .switch input:disabled ~ * { opacity: 0.5; }
+  #status { overflow: hidden; color: var(--muted); font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+  #status .live { display: inline-block; width: 6px; height: 6px; margin-right: 8px; border-radius: 50%; background: var(--accent); vertical-align: 1px; animation: blink 1s ease-in-out infinite; }
+  #go { min-width: 168px; }
+  #go.stop { background: var(--secondary); color: var(--fg); }
+  #go svg { fill: currentColor; stroke: none; width: 12px; height: 12px; }
+
+  .intro { flex: 1; display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: 24px; padding: 28px; }
+  .drop { display: grid; place-content: center; justify-items: center; gap: 14px; padding: 32px; border: 1.5px dashed var(--border); border-radius: 16px; text-align: center; transition: border-color 0.2s, background 0.2s; }
+  .drop.over { border-color: var(--accent); background: var(--accent-soft); }
+  .drop > svg { width: 34px; height: 34px; color: var(--faint); }
+  .drop h2 { margin: 0; font-size: 34px; line-height: 40px; font-weight: 450; letter-spacing: -0.02em; }
+  .drop p { max-width: 600px; margin: 0 0 6px; font-size: 16px; line-height: 26px; color: var(--muted); }
+  .drop .buttons { display: flex; gap: 8px; }
+  .drop .cost { margin: 4px 0 0; font-size: 13px; color: var(--faint); }
+  .shelf { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 12px; }
+  .shelf figure { margin: 0; display: grid; gap: 6px; }
+  .shelf .card { height: 132px; overflow: hidden; border-radius: 10px; background: var(--card); box-shadow: inset 0 0 0 1px var(--line); display: grid; place-items: center; }
+  .shelf img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
+  .shelf figcaption { overflow: hidden; font-size: 12px; color: var(--muted); text-overflow: ellipsis; white-space: nowrap; text-align: center; }
+  .doc { display: grid; justify-items: center; gap: 4px; color: var(--muted); font-size: 11px; font-weight: 600; letter-spacing: 0.06em; }
+  .doc svg { width: 28px; height: 28px; color: var(--faint); }
+
+  .formula { display: flex; align-items: center; gap: 10px; height: 44px; padding: 0 8px 0 6px; border-radius: 14px; background: var(--bg); }
+  #ref { flex: none; min-width: 56px; max-width: 240px; height: 30px; padding: 0 10px; border-radius: 8px; background: var(--card); font: 500 12px/30px var(--mono); color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .fx { flex: none; font: italic 600 13px var(--sans); color: var(--faint); }
+  #formula { flex: 1; min-width: 80px; height: 30px; padding: 0 10px; border: 0; border-radius: 8px; background: none; font: 14px var(--sans); color: var(--fg); outline: none; }
+  #formula:focus { background: var(--card); }
+  #formula:disabled { color: var(--muted); }
+  .reads-pick { display: flex; align-items: center; gap: 6px; flex: none; }
+  .reads-pick > span { font-size: 12px; color: var(--muted); }
+  .chip { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border-radius: 9999px; background: var(--card); box-shadow: inset 0 0 0 1px var(--line); font-size: 13px; white-space: nowrap; }
+  .chip b { font-weight: 500; color: var(--faint); font-size: 11px; }
+  button.chip:hover { background: var(--disagree); box-shadow: inset 0 0 0 1px var(--disagree-strong); }
+  #problem { flex: none; max-width: 42%; overflow: hidden; color: var(--bad); font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+
+  .workspace { flex: 1; display: grid; grid-template-columns: minmax(0, 1fr) 344px; gap: 8px; min-height: 0; }
+  .sheet { padding: 0; overflow: auto; }
+  .grid { width: 100%; min-width: 1000px; border-collapse: separate; border-spacing: 0; table-layout: fixed; font-size: 13px; }
+  .grid th, .grid td { position: relative; height: 40px; padding: 0 10px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; }
+  .grid thead th { position: sticky; z-index: 2; background: var(--card); font-weight: 500; color: var(--muted); }
+  .grid .letters th { top: 0; height: 24px; font-size: 11px; font-weight: 500; color: var(--faint); text-align: center; }
+  .grid .names th { top: 24px; height: 34px; color: var(--fg); }
+  .grid .names th.n { text-align: right; }
+  .grid tbody th { position: sticky; left: 0; z-index: 1; background: var(--card); color: var(--faint); font-weight: 500; text-align: center; font-size: 12px; }
+  .grid thead th:first-child { left: 0; z-index: 3; }
+  .grid col.num { width: 36px; }
+  .grid col.date { width: 108px; }
+  .grid col.currency { width: 78px; }
+  .grid col.items { width: 56px; }
+  .grid col.money { width: 88px; }
+  .grid col.tax { width: 100px; }
+  .grid col.tip { width: 64px; }
+  .grid col.check { width: 126px; }
+  .grid td[data-path] { cursor: cell; }
+  #filler th { color: rgb(10 10 10 / 0.2); }
+  .grid td.n { text-align: right; font-variant-numeric: tabular-nums; }
+  .grid td.items { text-align: right; color: var(--muted); }
+  .grid tr.viewing th { background: var(--accent-soft); color: var(--accent); }
+  .grid tr.waiting td { color: var(--faint); }
+  .grid tr.reading td:not(.file):not(.check), .grid tr.retrying td:not(.file):not(.check) { background: var(--tint); }
+  .grid td.selected { box-shadow: inset 0 0 0 2px var(--accent); }
+  .grid td.disagree, .items-table td.disagree { background: var(--disagree); transition: background 0.4s; }
+  .grid td.disagree::after, .grid td.problem::after, .items-table td.disagree::after, .items-table td.problem::after { content: ""; position: absolute; top: 0; right: 0; border-style: solid; border-width: 0 8px 8px 0; border-color: transparent var(--amber) transparent transparent; }
+  .grid td.problem::after, .items-table td.problem::after { border-right-color: var(--bad); }
+  .grid td.problem, .items-table td.problem { color: var(--bad); }
+  .grid td.edited::before, .items-table td.edited::before { content: ""; position: absolute; left: 0; top: 8px; bottom: 8px; width: 2px; border-radius: 1px; background: var(--good); }
+  .skel { display: inline-block; width: 70%; height: 10px; border-radius: 5px; background: var(--secondary); vertical-align: -1px; animation: pulse 1s ease-in-out infinite alternate; }
+  td.n .skel { width: 48px; }
+  @keyframes flag { from { background-color: transparent; } }
+  .grid tr.fresh td.disagree, .grid tr.fresh td.problem { animation: flag 0.9s ease-out; }
+  .file-cell { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .thumb { flex: none; display: grid; place-items: center; width: 26px; height: 30px; overflow: hidden; border-radius: 4px; background: var(--card); box-shadow: inset 0 0 0 1px var(--line); }
+  .thumb img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
+  .thumb svg { width: 15px; height: 15px; color: var(--faint); }
+  .file-cell span { overflow: hidden; text-overflow: ellipsis; }
+  .cell-input { position: absolute; inset: 0; width: 100%; height: 100%; padding: 0 10px; border: 0; outline: 2px solid var(--accent); outline-offset: -2px; background: #fff; font: inherit; color: var(--fg); text-align: inherit; }
+  .state { display: inline-flex; align-items: center; gap: 6px; font-weight: 500; }
+  .state svg { width: 13px; height: 13px; }
+  .state.waiting { color: var(--faint); font-weight: 400; }
+  .state.reading, .state.retrying { color: var(--accent); }
+  .state.reading i, .state.retrying i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; animation: blink 1s ease-in-out infinite; }
+  .state.ok { color: var(--good); }
+  .state.review { color: var(--amber); }
+  .state.error { color: var(--bad); }
+
+  .viewer { display: flex; flex-direction: column; gap: 16px; padding: 16px; overflow: auto; }
+  .viewer-head { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  #viewer-name { overflow: hidden; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
+  .badge { flex: none; height: 22px; padding: 0 8px; border-radius: 9999px; background: var(--card); box-shadow: inset 0 0 0 1px var(--line); font-size: 11px; font-weight: 500; line-height: 22px; color: var(--muted); }
+  #viewer-state { margin-left: auto; font-size: 13px; }
+  .preview { flex: none; position: relative; height: 250px; overflow: hidden; border-radius: 12px; background: var(--card); }
+  .preview img { width: 100%; height: 100%; object-fit: contain; animation: appear 0.25s ease-out; }
+  .preview iframe { width: 100%; height: 100%; border: 0; background: #fff; }
+  .reads { display: grid; gap: 6px; }
+  .read { display: grid; grid-template-columns: 54px minmax(0, 1fr); gap: 8px; font-size: 13px; line-height: 19px; animation: appear 0.25s ease-out; }
+  .read b { font-weight: 500; color: var(--muted); }
+  .read span { color: var(--muted); }
+  .read.active span { color: var(--accent); }
+  .read.active span::before { content: ""; display: inline-block; width: 6px; height: 6px; margin-right: 7px; border-radius: 50%; background: currentColor; vertical-align: 1px; animation: blink 1s ease-in-out infinite; }
+  .read .why { display: block; color: var(--faint); }
+  .viewer section { display: grid; gap: 8px; animation: appear 0.25s ease-out; }
+  .items-table { width: 100%; border-collapse: separate; border-spacing: 0; table-layout: fixed; font-size: 13px; }
+  .items-table th { height: 28px; padding: 0 8px; color: var(--faint); font-size: 12px; font-weight: 500; text-align: left; border-bottom: 1px solid var(--line); }
+  .items-table td { position: relative; height: 34px; padding: 0 8px; border-bottom: 1px solid var(--line); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: cell; }
+  .items-table .n { text-align: right; font-variant-numeric: tabular-nums; }
+  .items-table col.qty { width: 46px; }
+  .items-table col.price, .items-table col.amount { width: 76px; }
+  .items-table td.selected { box-shadow: inset 0 0 0 2px var(--accent); }
+  .items-table tfoot td { height: 30px; border: 0; color: var(--muted); cursor: default; }
+  .add-line { justify-self: start; display: inline-flex; align-items: center; gap: 6px; height: 28px; margin-top: -4px; padding: 0 10px 0 8px; border-radius: 9999px; color: var(--muted); font-size: 13px; }
+  .add-line:hover { background: var(--secondary); color: var(--fg); }
+  .add-line svg { width: 13px; height: 13px; }
+  .checks { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; font-size: 13px; line-height: 19px; }
+  .checks li { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 6px; }
+  .checks svg { width: 14px; height: 14px; margin-top: 2px; }
+  .checks .ok svg { color: var(--good); }
+  .checks .fail { color: var(--bad); }
+  .checks .warn svg { color: var(--amber); }
+  .checks small { display: block; color: var(--muted); font-size: 12px; }
+  #notes summary { color: var(--muted); font-size: 13px; cursor: pointer; }
+  #reasoning { max-height: 160px; margin-top: 8px; overflow: auto; white-space: pre-wrap; font: 11px/17px var(--mono); color: var(--faint); }
+
+  .statusbar { display: flex; align-items: center; gap: 10px; min-height: 38px; padding: 0 8px 0 4px; font-size: 13px; color: var(--muted); }
+  .tab { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border-radius: 9px; background: var(--bg); box-shadow: 0 1px 2px rgb(0 0 0 / 0.06); color: var(--fg); font-weight: 500; }
+  .tab svg { width: 13px; height: 13px; color: var(--muted); }
+  #summary b { font-weight: 500; color: var(--fg); }
+  #totals { display: flex; flex-wrap: wrap; gap: 6px; margin-left: auto; }
+  #totals .chip { height: 26px; background: var(--bg); font-variant-numeric: tabular-nums; }
+  #run-cost { color: var(--fg); font-weight: 500; white-space: nowrap; }
+  #message { margin: 0; padding: 10px 14px; border-radius: 12px; background: var(--bad-soft); color: var(--bad); }
+
+  @media (max-width: 1100px) {
+    .workspace { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(320px, 1fr) auto; }
+    .surface { height: auto; }
+    .shelf { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  }
+</style>
+</head>
+<body>
+<header class="site">
+  <a class="logo" href="https://x.ai" target="_blank" rel="noopener" aria-label="SpaceXAI"><svg viewBox="0 0 759 290.2" aria-hidden="true"><g transform="translate(-674.5,-388.5)"><path d="M1433.19 388.934C1345.69 396.068 1001.73 438.71 763.235 678.467H674.732L684.62 668.612C734.53 620.395 955.373 416.045 1433.19 388.668V388.934Z"/><path d="M1133.66 678.467H1064.29L927.618 578.979C940.213 571.058 952.888 563.515 965.603 556.33L1133.66 678.467Z"/><path d="M1022.8 678.468H953.463L932.43 663.169H814.998C823.265 655.828 831.635 648.702 840.092 641.784H902.996L870.444 618.106C882.079 609.448 893.843 601.155 905.701 593.211L1022.8 678.468Z"/><path d="M770.433 495.02L823.901 533.876C810.594 541.712 798.139 549.468 786.514 557.055L701.158 494.986L770.433 495.02Z"/></g></svg></a>
+  <nav class="crumbs"><span>Cookbook</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg><h1>Receipts to Spreadsheet</h1></nav>
+  <span class="models">grok-4.7 with the Files API, or grok-4.3 with the Batch API</span>
+  <a class="pill pill-secondary pill-sm" href="https://github.com/xai-org/xai-cookbook/tree/main/examples/receipts-to-spreadsheet" target="_blank" rel="noopener">View code</a>
+</header>
+
+<main class="surface">
+  <div class="toolbar">
+    <label class="pill pill-secondary" id="add-label"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg>Add receipts<input id="add" type="file" multiple accept="image/jpeg,image/png,image/webp,application/pdf"></label>
+    <button type="button" class="pill pill-secondary" id="sample-top">Read the samples</button>
+    <span class="divider"></span>
+    <label class="switch" title="Send every read as one Batch API job with grok-4.3. Results usually take minutes, but can take up to a day."><input type="checkbox" id="batch"><i></i><span>Batch API</span></label>
+    <span class="spacer"></span>
+    <span id="status"></span>
+    <button type="button" class="pill pill-secondary" id="export" disabled><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.5v8M4.5 7 8 10.5 11.5 7M2.5 13.5h11"/></svg>Export CSV</button>
+    <button type="button" class="pill pill-primary" id="go" disabled></button>
+  </div>
+
+  <section class="panel intro" id="intro">
+    <div class="drop" id="drop">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-2-1.5-2 1.5-2-1.5-2 1.5-2-1.5L6 21z"/><path d="M9 8h6M9 11.5h6M9 15h3.5"/></svg>
+      <h2>Receipts in, a spreadsheet that adds up out</h2>
+      <p>Drop receipt photos and PDF invoices anywhere on the page. Grok reads each one twice, checks that the line items, tax, and tip add up to the total, and marks every cell where the two reads disagree.</p>
+      <div class="buttons">
+        <button type="button" class="pill pill-primary" id="sample"><svg viewBox="0 0 16 16" aria-hidden="true" style="fill: currentColor; stroke: none; width: 12px; height: 12px"><path d="M4 2.5v11l9.5-5.5z"/></svg>Read the samples</button>
+        <label class="pill pill-secondary" style="cursor: pointer">Choose files<input id="choose" type="file" multiple accept="image/jpeg,image/png,image/webp,application/pdf" hidden></label>
+      </div>
+      <p class="cost">The eight samples take under a minute and cost about 9 cents.</p>
+    </div>
+    <div class="shelf" id="shelf"></div>
+  </section>
+
+  <div class="formula" id="formula-bar" hidden>
+    <span id="ref"></span>
+    <span class="fx">fx</span>
+    <input id="formula" aria-label="Cell value" disabled>
+    <span class="reads-pick" id="pick" hidden></span>
+    <span id="problem" hidden></span>
+  </div>
+
+  <div class="workspace" id="workspace" hidden>
+    <section class="panel sheet" id="sheet">
+      <table class="grid" id="grid">
+        <colgroup><col class="num"><col class="file"><col class="vendor"><col class="date"><col class="currency"><col class="items"><col class="money"><col class="tax"><col class="tip"><col class="money"><col class="check"></colgroup>
+        <thead>
+          <tr class="letters"><th></th><th>A</th><th>B</th><th>C</th><th>D</th><th>E</th><th>F</th><th>G</th><th>H</th><th>I</th><th>J</th></tr>
+          <tr class="names"><th></th><th>Receipt</th><th>Vendor</th><th>Date</th><th>Currency</th><th class="n">Items</th><th class="n">Subtotal</th><th class="n">Tax</th><th class="n">Tip</th><th class="n">Total</th><th>Check</th></tr>
+        </thead>
+        <tbody id="rows"></tbody>
+        <tbody id="filler"></tbody>
+      </table>
+    </section>
+
+    <aside class="panel viewer" id="viewer">
+      <div class="viewer-head"><span id="viewer-name"></span><span class="badge" id="viewer-kind"></span><span id="viewer-state"></span></div>
+      <div class="preview" id="preview"></div>
+      <div class="reads" id="reads"></div>
+      <section id="items-card" hidden>
+        <p class="label">Line items</p>
+        <table class="items-table">
+          <colgroup><col><col class="qty"><col class="price"><col class="amount"></colgroup>
+          <thead><tr><th>Item</th><th class="n">Qty</th><th class="n">Price</th><th class="n">Amount</th></tr></thead>
+          <tbody id="items"></tbody>
+          <tfoot><tr><td colspan="3">Lines add up to</td><td class="n" id="items-sum"></td></tr></tfoot>
+        </table>
+        <button type="button" class="add-line" id="add-line" hidden><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3.5v9M3.5 8h9"/></svg>Add a line</button>
+      </section>
+      <section id="checks-card" hidden>
+        <p class="label">Checks</p>
+        <ul class="checks" id="checks"></ul>
+      </section>
+      <details id="notes" hidden><summary>What Grok noted while reading</summary><div id="reasoning"></div></details>
+    </aside>
+  </div>
+
+  <div class="statusbar" id="statusbar" hidden>
+    <span class="tab"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2.5" y="2.5" width="11" height="11" rx="1.5"/><path d="M2.5 6.5h11M6.5 6.5v7"/></svg>Receipts</span>
+    <span id="summary"></span>
+    <span id="totals"></span>
+    <span id="run-cost"></span>
+  </div>
+  <p id="message" hidden></p>
+</main>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  // The samples, in the order the demo reads them.
+  const SAMPLES = ["taqueria-photo.jpg", "harbor-coffee.png", "noordlicht-invoice.pdf", "lindqvists-livs.png", "hardware-photo.jpg", "menya-sakura.png", "ledgerly-invoice.pdf", "farm-stand.jpg"];
+  const TYPES = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
+  const COLUMNS = [
+    { key: "file" },
+    { key: "vendor", type: "text" },
+    { key: "date", type: "text" },
+    { key: "currency", type: "text" },
+    { key: "items" },
+    { key: "subtotal", type: "number" },
+    { key: "tax", type: "number" },
+    { key: "tip", type: "number" },
+    { key: "total", type: "number" },
+    { key: "check" },
+  ];
+  const ITEM_COLUMNS = [
+    { key: "description", type: "text", label: "Item" },
+    { key: "quantity", type: "number", label: "Qty" },
+    { key: "unit_price", type: "number", label: "Price" },
+    { key: "amount", type: "number", label: "Amount" },
+  ];
+  const ICONS = {
+    pdf: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 1.5h5.5L12.5 4.5v10h-8.5z"/><path d="M9.5 1.5v3h3"/></svg>',
+    check: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5 6.5 12 13 4.5"/></svg>',
+    cross: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg>',
+    flag: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.5 14.5 13.5h-13z"/><path d="M8 6.5v3.2M8 11.6v.1"/></svg>',
+    play: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9.5-5.5z"/></svg>',
+    stop: '<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3.5" y="3.5" width="9" height="9" rx="1.5"/></svg>',
+  };
+
+  let receipts = [];
+  let selected = null;
+  let viewing = 0;
+  let running = false;
+  let events = null;
+  let clock = 0;
+  let picked = false;
+  const queued = new Set();
+  // What swap() last put in each element.
+  const drawn = new WeakMap();
+
+  renderShelf();
+  renderButton();
+
+  // Files dropped anywhere on the page are added, since otherwise the tab would open them.
+  document.ondragover = (event) => {
+    event.preventDefault();
+    $("drop").classList.add("over");
+  };
+  document.ondragleave = (event) => {
+    if (!event.relatedTarget) $("drop").classList.remove("over");
+  };
+  document.ondrop = (event) => {
+    event.preventDefault();
+    $("drop").classList.remove("over");
+    if (!running) addFiles([...event.dataTransfer.files]);
+  };
+  $("add").onchange = () => addFiles([...$("add").files]);
+  $("choose").onchange = () => addFiles([...$("choose").files]);
+  $("sample").onclick = $("sample-top").onclick = readSamples;
+  $("batch").onchange = renderButton;
+  $("go").onclick = () => (running ? stop("Stopped.") : read());
+  $("export").onclick = exportCsv;
+
+  async function readSamples() {
+    if (running) return;
+    const files = await Promise.all(
+      SAMPLES.map(async (name) => new File([await (await fetch(`/samples/${name}`)).blob()], name, { type: typeOf(name) })),
+    );
+    receipts = [];
+    selected = null;
+    viewing = 0;
+    picked = false;
+    $("rows").innerHTML = "";
+    $("pick").hidden = $("problem").hidden = true;
+    addFiles(files);
+    read();
+  }
+
+  function addFiles(files) {
+    const usable = files.filter((file) => TYPES.includes(file.type) && file.size <= 10 * 1024 * 1024);
+    if (usable.length < files.length) note("Some files were skipped: receipts have to be JPEG, PNG, or WebP photos, or PDFs, of at most 10 MB.");
+    for (const file of usable) {
+      receipts.push({ name: file.name, file, url: URL.createObjectURL(file), pdf: file.type === "application/pdf", status: "waiting", reads: {} });
+      renderRow(receipts.length - 1);
+    }
+    // Empty rows below the receipts, like any spreadsheet has.
+    $("filler").innerHTML = Array.from({ length: Math.max(0, 18 - receipts.length) }, (_, row) => `<tr><th>${receipts.length + row + 1}</th>${"<td></td>".repeat(COLUMNS.length)}</tr>`).join("");
+    if (!receipts.length) return;
+    showWorkspace();
+    renderViewer();
+    renderSummary();
+    renderButton();
+  }
+
+  // Uploads the receipts that haven't been read yet, then opens the event stream for them.
+  async function read() {
+    const pending = receipts.map((_, index) => index).filter((index) => !receipts[index].receipt);
+    if (!pending.length) return;
+    note("");
+    const batch = $("batch").checked;
+    for (const index of pending) Object.assign(receipts[index], { status: batch ? "queued" : "waiting", reads: {}, partial: null, reasoning: "", error: "" });
+    pending.forEach(renderRow);
+    if (!picked) view(pending[0]);
+    setRunning(true);
+    setStatus("Uploading", true);
+    let ids;
+    try {
+      ids = await Promise.all(
+        pending.map(async (index) => {
+          const upload = await fetch(`/api/receipts?name=${encodeURIComponent(receipts[index].name)}`, { method: "POST", body: receipts[index].file });
+          if (!upload.ok) throw new Error(await upload.text());
+          return (await upload.json()).id;
+        }),
+      );
+    } catch (error) {
+      return stop(`Couldn't upload the receipts: ${error.message}`);
+    }
+    if (!running) return;
+
+    events = new EventSource(`/api/read?ids=${ids.join(",")}&batch=${batch ? 1 : 0}`);
+    const started = Date.now();
+    const at = (index) => receipts[pending[index]];
+    const on = (name, handler) => events.addEventListener(name, (message) => handler(JSON.parse(message.data)));
+    let model = "";
+    clock = setInterval(() => {
+      if (!batch) setStatus(`Reading ${plural(pending.length, "receipt")} twice each with ${model} · ${Math.round((Date.now() - started) / 1000)} s`, true);
+    }, 1000);
+
+    on("model", (event) => {
+      model = event.model;
+      setStatus(batch ? `Sending ${pending.length * 2} reads to the Batch API with ${model}` : `Reading ${plural(pending.length, "receipt")} twice each with ${model}`, true);
+    });
+    on("batch", ({ id }) => setStatus(`Batch ${id.slice(0, 14)}… queued`, true));
+    on("progress", ({ done, total }) => setStatus(`Batch: ${done} of ${total} reads done · ${Math.round((Date.now() - started) / 1000)} s`, true));
+    on("start", ({ index }) => {
+      Object.assign(at(index), { status: "reading", reads: { 1: { state: "reading" }, 2: { state: "reading" } } });
+      update(pending[index]);
+      $("rows").children[pending[index]]?.scrollIntoView({ block: "nearest" });
+    });
+    on("partial", ({ index, receipt }) => {
+      at(index).partial = receipt;
+      update(pending[index]);
+    });
+    on("reasoning", ({ index, text }) => {
+      at(index).reasoning += text;
+      if (pending[index] === viewing) renderNotes();
+    });
+    on("retry", ({ index, read, problems }) => {
+      Object.assign(at(index), { status: "retrying" });
+      at(index).reads[read] = { state: "retry", why: problems.replace(/^Structured output doesn't match the schema: /, "") };
+      update(pending[index]);
+    });
+    on("read", ({ index, read }) => {
+      at(index).reads[read] = { ...at(index).reads[read], state: "done" };
+      update(pending[index]);
+    });
+    on("row", ({ index, ...row }) => {
+      Object.assign(at(index), row, { status: "done", partial: null, edited: [], fresh: true });
+      update(pending[index]);
+      renderSummary();
+      // The yellow cells fade in once, when the row is first done, and not every time it's drawn again.
+      setTimeout(() => {
+        at(index).fresh = false;
+        if (!document.querySelector(".cell-input")) renderRow(pending[index]);
+      }, 1500);
+    });
+    on("unreadable", ({ index, message }) => {
+      Object.assign(at(index), { status: "error", error: message });
+      update(pending[index]);
+      renderSummary();
+    });
+    on("done", ({ cost, seconds }) => {
+      const retries = pending.reduce((sum, index) => sum + (receipts[index].retries ?? 0), 0);
+      $("run-cost").textContent = `$${cost.toFixed(2)} · ${plural(seconds, "second")} · ${plural(retries, "retry", "retries")}`;
+      finish();
+      // Point at the first cell that needs a look, unless the person has already picked one.
+      const first = receipts.findIndex((receipt) => flags(receipt).length);
+      if (!picked && first >= 0) {
+        const path = flags(receipts[first])[0];
+        view(first);
+        select(first, path === "line_items" ? "items" : path);
+      }
+    });
+    on("failure", ({ message }) => stop(`Couldn't read the receipts: ${message}`));
+    events.onerror = () => stop("Lost the connection to the server.");
+  }
+
+  function finish() {
+    clearInterval(clock);
+    events?.close();
+    events = null;
+    setRunning(false);
+    setStatus("");
+    renderSummary();
+  }
+
+  function stop(message) {
+    for (const [index, receipt] of receipts.entries()) {
+      if (["reading", "retrying", "queued", "waiting"].includes(receipt.status) && !receipt.receipt) {
+        receipt.status = "stopped";
+        renderRow(index);
+      }
+    }
+    finish();
+    renderViewer();
+    note(message);
+  }
+
+  // Partial results arrive many times a second, so each row redraws at most once a frame.
+  function update(index) {
+    if (queued.has(index)) return;
+    queued.add(index);
+    requestAnimationFrame(() => {
+      queued.delete(index);
+      renderRow(index);
+      if (index === viewing) renderViewer();
+    });
+  }
+
+  function renderRow(index) {
+    const receipt = receipts[index];
+    let tr = $("rows").children[index];
+    if (!tr) {
+      tr = document.createElement("tr");
+      $("rows").append(tr);
+    }
+    const data = receipt.receipt ?? receipt.partial ?? {};
+    tr.className = `${receipt.status}${index === viewing ? " viewing" : ""}${receipt.fresh ? " fresh" : ""}`;
+    tr.innerHTML = `<th>${index + 1}</th>${COLUMNS.map((column) => cell(receipt, data, column, index)).join("")}`;
+  }
+
+  function cell(receipt, data, column, index) {
+    const reading = ["reading", "retrying"].includes(receipt.status);
+    const at = `data-index="${index}" data-path="${column.key}"`;
+    const chosen = selected?.index === index && selected.path === column.key ? " selected" : "";
+    if (column.key === "file") {
+      const thumb = receipt.pdf ? ICONS.pdf : `<img src="${receipt.url}" alt="">`;
+      return `<td class="file${chosen}" ${at} title="${escapeHtml(receipt.name)}"><div class="file-cell"><span class="thumb">${thumb}</span><span>${escapeHtml(receipt.name)}</span></div></td>`;
+    }
+    if (column.key === "check") return `<td class="check${chosen}" ${at}>${state(receipt)}</td>`;
+    if (column.key === "items") {
+      const marks = cellFlags(receipt, (path) => path.startsWith("line_items"));
+      const count = data.line_items?.length;
+      return `<td class="items${marks}${chosen}" ${at}>${count ?? (reading ? '<i class="skel" style="width: 20px"></i>' : "")}</td>`;
+    }
+    const value = data[column.key];
+    const marks = cellFlags(receipt, (path) => path === column.key) + (receipt.edited?.includes(column.key) ? " edited" : "");
+    const shown = value === undefined ? (reading ? '<i class="skel"></i>' : "") : escapeHtml(display(value, column, data));
+    const extra = column.key === "tax" && data.tax_included ? ' <span style="color: var(--faint)">incl.</span>' : "";
+    return `<td class="${column.type === "number" ? "n" : ""}${marks}${chosen}" ${at}>${shown}${value === undefined ? "" : extra}</td>`;
+  }
+
+  function state(receipt) {
+    if (receipt.status === "waiting") return '<span class="state waiting">Waiting</span>';
+    if (receipt.status === "queued") return '<span class="state reading"><i></i>In the batch</span>';
+    if (receipt.status === "reading") return '<span class="state reading"><i></i>Reading twice</span>';
+    if (receipt.status === "retrying") return '<span class="state retrying"><i></i>Second look</span>';
+    if (receipt.status === "stopped") return '<span class="state waiting">Stopped</span>';
+    if (receipt.status === "error") return `<span class="state error" title="${escapeHtml(receipt.error)}">${ICONS.cross}Couldn't read</span>`;
+    const count = flags(receipt).length;
+    return count ? `<span class="state review">${ICONS.flag}Review ${count}</span>` : `<span class="state ok">${ICONS.check}Checks out</span>`;
+  }
+
+  // The paths a person should look at: checks that fail, and fields the two reads disagree on.
+  function flags(receipt) {
+    if (!receipt.receipt) return [];
+    return [...new Set([...receipt.problems.map((problem) => problem.path), ...receipt.disagreements.map((disagreement) => disagreement.path)])];
+  }
+
+  function cellFlags(receipt, match) {
+    if (!receipt.receipt) return "";
+    const disagree = receipt.disagreements.some((disagreement) => match(disagreement.path));
+    const problem = receipt.problems.some((problem) => match(problem.path));
+    return `${disagree ? " disagree" : ""}${problem ? " problem" : ""}`;
+  }
+
+  function display(value, column, data) {
+    if (value === null) return "";
+    if (column.key === "quantity" && typeof value === "number") return value.toLocaleString("en", { maximumFractionDigits: 3 });
+    if (column.type === "number" && typeof value === "number") return money(value, data.currency);
+    return String(value);
+  }
+
+  // Amounts show as many decimals as the currency uses: 2 for USD, 0 for JPY.
+  function money(value, currency) {
+    const places = decimals(currency);
+    return value.toLocaleString("en", { minimumFractionDigits: places, maximumFractionDigits: places });
+  }
+
+  function decimals(currency) {
+    try {
+      return new Intl.NumberFormat("en", { style: "currency", currency }).resolvedOptions().maximumFractionDigits;
+    } catch {
+      return 2;
+    }
+  }
+
+  // The receipt on the right: the photo or PDF, how each read went, the line items, and the checks.
+  function renderViewer() {
+    const receipt = receipts[viewing];
+    if (!receipt) return;
+    [...$("rows").children].forEach((row, index) => row.classList.toggle("viewing", index === viewing));
+    $("viewer-name").textContent = receipt.name;
+    $("viewer-kind").textContent = receipt.pdf ? "PDF" : "Photo";
+    swap($("viewer-state"), state(receipt));
+    if ($("preview").dataset.url !== receipt.url) {
+      $("preview").dataset.url = receipt.url;
+      $("preview").innerHTML = receipt.pdf
+        ? `<iframe src="${receipt.url}#toolbar=0&navpanes=0&view=FitH" title="${escapeHtml(receipt.name)}"></iframe>`
+        : `<img src="${receipt.url}" alt="${escapeHtml(receipt.name)}">`;
+    }
+    renderReads(receipt);
+    renderItems(receipt);
+    renderChecks(receipt);
+    renderNotes();
+  }
+
+  function renderReads(receipt) {
+    const html = [1, 2]
+      .filter((read) => receipt.reads[read])
+      .map((read) => {
+        const { state: phase, why } = receipt.reads[read];
+        const text = phase === "reading" ? "Reading" : phase === "retry" ? "Didn't check out, so Grok is taking a second look" : receipt.shown === read ? "Done · shown in the sheet" : "Done";
+        const detail = why ? `<small class="why">${phase === "done" ? "First try: " : ""}${escapeHtml(why)}</small>` : "";
+        return `<div class="read${phase === "done" ? "" : " active"}"><b>Read ${read}</b><span>${text}${detail}</span></div>`;
+      })
+      .join("");
+    swap($("reads"), html);
+  }
+
+  // The viewer is drawn again for every piece of JSON that streams in. Markup is only replaced when it
+  // changes, so fade-ins and blinking dots don't start over many times a second.
+  function swap(element, html) {
+    if (drawn.get(element) === html) return;
+    element.innerHTML = html;
+    drawn.set(element, html);
+  }
+
+  function renderItems(receipt) {
+    const data = receipt.receipt ?? receipt.partial ?? {};
+    const items = data.line_items ?? [];
+    $("items-card").hidden = !items.length;
+    $("items").innerHTML = items
+      .map((item, row) =>
+        `<tr>${ITEM_COLUMNS.map((column) => {
+          const path = `line_items.${row}.${column.key}`;
+          const marks = cellFlags(receipt, (other) => other === path) + (receipt.edited?.includes(path) ? " edited" : "");
+          const chosen = selected?.index === viewing && selected.path === path ? " selected" : "";
+          const value = item[column.key];
+          const shown = value === undefined || value === null ? "" : display(value, column, data);
+          return `<td class="${column.type === "number" ? "n" : ""}${marks}${chosen}" data-index="${viewing}" data-path="${path}">${escapeHtml(shown)}</td>`;
+        }).join("")}</tr>`,
+      )
+      .join("");
+    const sum = items.reduce((total, item) => total + (typeof item.amount === "number" ? item.amount : 0), 0);
+    $("items-sum").textContent = money(sum, data.currency);
+    $("add-line").hidden = !receipt.receipt;
+  }
+
+  // A line that both reads missed, like one under a stain, can be added by hand.
+  $("add-line").onclick = () => {
+    const receipt = receipts[viewing];
+    if (!receipt?.receipt) return;
+    const row = receipt.receipt.line_items.push({ description: "", quantity: 1, unit_price: null, amount: 0 }) - 1;
+    receipt.disagreements = receipt.disagreements.filter((disagreement) => disagreement.path !== "line_items");
+    picked = true;
+    select(viewing, `line_items.${row}.description`);
+    startEdit();
+  };
+
+  function renderChecks(receipt) {
+    $("checks-card").hidden = !receipt.receipt;
+    if (!receipt.receipt) return;
+    const { receipt: data, problems, disagreements } = receipt;
+    const rules = [
+      ["Each line is its quantity times its price", (path) => path.startsWith("line_items")],
+      ["The lines add up to the subtotal", (path) => path === "subtotal"],
+      [data.tax_included ? "The subtotal and tip add up to the total, with the tax in the prices" : "The subtotal, tax, and tip add up to the total", (path) => path === "total"],
+      [`${data.currency} is a currency code, and ${data.date} is a real date`, (path) => path === "currency" || path === "date"],
+    ];
+    const other = problems.filter((problem) => !rules.some(([, match]) => match(problem.path)));
+    if (other.length) rules.push(["The other fields have the right kind of value", (path) => other.some((problem) => problem.path === path)]);
+    const agree = disagreements.length
+      ? `<li class="warn">${ICONS.flag}<span>The two reads disagree on ${plural(disagreements.length, "field")}<small>They're the yellow cells. Pick a read in the formula bar, or type the right value.</small></span></li>`
+      : `<li class="ok">${ICONS.check}<span>The two reads agree on every field</span></li>`;
+    $("checks").innerHTML = [
+      agree,
+      ...rules.map(([label, match]) => {
+        const failed = problems.filter((problem) => match(problem.path));
+        const detail = failed.map((problem) => `<small>${escapeHtml(`${problem.path}: ${problem.message}`)}</small>`).join("");
+        return `<li class="${failed.length ? "fail" : "ok"}">${failed.length ? ICONS.cross : ICONS.check}<span>${escapeHtml(label)}${detail}</span></li>`;
+      }),
+    ].join("");
+  }
+
+  function renderNotes() {
+    const receipt = receipts[viewing];
+    $("notes").hidden = !receipt?.reasoning;
+    $("reasoning").textContent = receipt?.reasoning ?? "";
+  }
+
+  function renderSummary() {
+    const done = receipts.filter((receipt) => receipt.receipt);
+    const review = done.filter((receipt) => flags(receipt).length).length;
+    $("summary").innerHTML = done.length
+      ? `<b>${plural(receipts.length, "receipt")}</b> · ${done.length - review} check out · ${review} to review`
+      : plural(receipts.length, "receipt");
+    // Different currencies can't be added together, so each gets its own total.
+    const totals = new Map();
+    for (const { receipt } of done) {
+      if (typeof receipt.total === "number") totals.set(receipt.currency, (totals.get(receipt.currency) ?? 0) + receipt.total);
+    }
+    $("totals").innerHTML = [...totals].map(([currency, total]) => `<span class="chip"><b>${escapeHtml(currency)}</b>${money(total, currency)}</span>`).join("");
+    $("export").disabled = !done.length;
+  }
+
+  // Clicking a cell selects it and shows its receipt on the right. Double-clicking, Enter, or typing edits it.
+  document.addEventListener("click", (event) => {
+    const td = event.target.closest("td[data-path]");
+    if (!td || td.querySelector(".cell-input")) return;
+    picked = true;
+    const index = Number(td.dataset.index);
+    if (index !== viewing) view(index);
+    select(index, td.dataset.path);
+  });
+  document.addEventListener("dblclick", (event) => {
+    const td = event.target.closest("td[data-path]");
+    if (td && editable(td.dataset.path)) startEdit();
+  });
+  document.addEventListener("keydown", (event) => {
+    if (!selected || event.target.closest("input")) return;
+    if (event.key === "Enter") {
+      event.preventDefault();
+      if (editable(selected.path)) startEdit();
+    } else if (event.key.startsWith("Arrow")) {
+      event.preventDefault();
+      move(event.key);
+    } else if (event.key.length === 1 && !event.metaKey && !event.ctrlKey && editable(selected.path)) {
+      event.preventDefault();
+      startEdit(event.key);
+    }
+  });
+
+  function view(index) {
+    viewing = index;
+    renderViewer();
+  }
+
+  function select(index, path) {
+    const previous = selected?.index;
+    selected = { index, path };
+    if (previous !== undefined && previous !== index) renderRow(previous);
+    renderRow(index);
+    renderViewer();
+    renderFormula();
+  }
+
+  function move(key) {
+    const { index, path } = selected;
+    const item = path.match(/^line_items\.(\d+)\.(\w+)$/);
+    if (item) {
+      const row = Number(item[1]);
+      const column = ITEM_COLUMNS.findIndex((other) => other.key === item[2]);
+      const count = (receipts[index].receipt ?? receipts[index].partial)?.line_items?.length ?? 0;
+      const next = { ArrowUp: [row - 1, column], ArrowDown: [row + 1, column], ArrowLeft: [row, column - 1], ArrowRight: [row, column + 1] }[key];
+      if (next[0] >= 0 && next[0] < count && next[1] >= 0 && next[1] < ITEM_COLUMNS.length) select(index, `line_items.${next[0]}.${ITEM_COLUMNS[next[1]].key}`);
+      return;
+    }
+    const column = COLUMNS.findIndex((other) => other.key === path);
+    const [row, col] = { ArrowUp: [index - 1, column], ArrowDown: [index + 1, column], ArrowLeft: [index, column - 1], ArrowRight: [index, column + 1] }[key];
+    if (row < 0 || row >= receipts.length || col < 0 || col >= COLUMNS.length) return;
+    if (row !== viewing) view(row);
+    select(row, COLUMNS[col].key);
+  }
+
+  // The formula bar shows the selected cell's value. Where the reads disagree, it offers both, and where a
+  // check fails, it says why.
+  function renderFormula() {
+    const receipt = receipts[selected.index];
+    const data = receipt.receipt ?? receipt.partial ?? {};
+    const item = selected.path.match(/^line_items\.(\d+)\.(\w+)$/);
+    const column = item ? ITEM_COLUMNS.find((other) => other.key === item[2]) : COLUMNS.find((other) => other.key === selected.path);
+    const letter = String.fromCharCode(65 + COLUMNS.indexOf(column));
+    $("ref").textContent = item ? `${receipt.name.replace(/\.\w+$/, "")} · ${column.label} ${Number(item[1]) + 1}` : `${letter}${selected.index + 1}`;
+    const value = valueAt(data, selected.path);
+    $("formula").disabled = !editable(selected.path) || !receipt.receipt;
+    $("formula").value = selected.path === "file" ? receipt.name : selected.path === "check" ? flags(receipt).map((path) => path.replace(/_/g, " ")).join(", ") : value === undefined || value === null ? "" : String(value);
+    // The Items cell stands for a line that only the other read found, which has no cell of its own.
+    const path = selected.path === "items" ? "line_items" : selected.path;
+    const disagreement = receipt.disagreements?.find((other) => other.path === path);
+    $("pick").hidden = !disagreement;
+    if (disagreement) {
+      const label = path === "line_items" ? "Only one read found a line. Add it below the line items if it's there:" : "The reads disagree:";
+      $("pick").innerHTML = `<span>${label}</span>${disagreement.values
+        .map((choice, read) => {
+          const text = `<b>READ ${read + 1}</b>${escapeHtml(choice === null ? "nothing" : display(choice, column ?? {}, data))}`;
+          return choice === null || path === "line_items" ? `<span class="chip">${text}</span>` : `<button type="button" class="chip" data-value='${escapeHtml(JSON.stringify(choice))}'>${text}</button>`;
+        })
+        .join("")}`;
+    }
+    const problems = receipt.problems?.filter((problem) => problem.path === selected.path) ?? [];
+    $("problem").hidden = !problems.length;
+    $("problem").textContent = problems.map((problem) => problem.message).join("; ");
+  }
+
+  $("pick").onclick = (event) => {
+    const chip = event.target.closest("button[data-value]");
+    if (chip) commit(selected, JSON.parse(chip.dataset.value));
+  };
+  $("formula").onkeydown = (event) => {
+    if (event.key === "Enter") {
+      commit(selected, parse($("formula").value, selected.path));
+      $("formula").blur();
+    } else if (event.key === "Escape") {
+      renderFormula();
+      $("formula").blur();
+    }
+  };
+
+  function editable(path) {
+    return !["file", "items", "check", "line_items"].includes(path);
+  }
+
+  function startEdit(initial) {
+    const receipt = receipts[selected.index];
+    if (!receipt.receipt) return;
+    const td = document.querySelector(`td.selected[data-path="${selected.path}"]`);
+    if (!td) return;
+    const value = valueAt(receipt.receipt, selected.path);
+    const input = document.createElement("input");
+    input.className = "cell-input";
+    input.value = initial ?? (value === null || value === undefined ? "" : String(value));
+    td.append(input);
+    input.focus();
+    if (initial === undefined) input.select();
+    const target = { ...selected };
+    let done = false;
+    const finishEdit = (save, then) => {
+      if (done) return;
+      done = true;
+      if (save) commit(target, parse(input.value, target.path));
+      else input.remove();
+      if (then) move(then);
+    };
+    input.onkeydown = (event) => {
+      event.stopPropagation();
+      if (event.key === "Enter") finishEdit(true, "ArrowDown");
+      else if (event.key === "Tab") {
+        event.preventDefault();
+        finishEdit(true, event.shiftKey ? "ArrowLeft" : "ArrowRight");
+      } else if (event.key === "Escape") finishEdit(false);
+    };
+    input.onblur = () => finishEdit(true);
+  }
+
+  // Saves a value someone typed or picked, clears the disagreement on that cell, and has the server run the
+  // checks on the row again, which updates its status and the totals.
+  async function commit(target, value) {
+    const receipt = receipts[target.index];
+    if (!receipt.receipt || !editable(target.path)) return;
+    setAt(receipt.receipt, target.path, value);
+    receipt.disagreements = receipt.disagreements.filter((disagreement) => disagreement.path !== target.path);
+    if (!receipt.edited.includes(target.path)) receipt.edited.push(target.path);
+    renderRow(target.index);
+    renderViewer();
+    renderSummary();
+    const response = await fetch("/api/check", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(receipt.receipt) });
+    if (response.ok) receipt.problems = (await response.json()).problems;
+    renderRow(target.index);
+    if (target.index === viewing) renderViewer();
+    renderSummary();
+    if (selected) renderFormula();
+  }
+
+  function parse(text, path) {
+    const key = path.split(".").pop();
+    const column = [...COLUMNS, ...ITEM_COLUMNS].find((other) => other.key === key);
+    if (key === "unit_price" && !text.trim()) return null;
+    if (column?.type !== "number") return key === "currency" ? text.trim().toUpperCase() : text.trim();
+    const number = Number(text.replace(/[^\d.,-]/g, "").replace(/,/g, ""));
+    return text.trim() && Number.isFinite(number) ? number : text.trim();
+  }
+
+  function valueAt(data, path) {
+    return path.split(".").reduce((value, key) => (value == null ? undefined : value[key]), data);
+  }
+
+  function setAt(data, path, value) {
+    const keys = path.split(".");
+    const last = keys.pop();
+    keys.reduce((value, key) => value[key], data)[last] = value;
+  }
+
+  function exportCsv() {
+    const header = ["file", "vendor", "date", "currency", "subtotal", "tax", "tax_included", "tip", "total", "items", "status", "notes"];
+    const lines = receipts.map(({ name, receipt, problems, disagreements }) => {
+      if (!receipt) return [name, "", "", "", "", "", "", "", "", "", "unread", ""];
+      const notes = [
+        ...problems.map((problem) => `${problem.path}: ${problem.message}`),
+        ...disagreements.map((disagreement) => `the reads disagree on ${disagreement.path}`),
+      ];
+      return [name, receipt.vendor, receipt.date, receipt.currency, receipt.subtotal, receipt.tax, receipt.tax_included, receipt.tip, receipt.total, receipt.line_items.map((item) => item.description).join("; "), notes.length ? "review" : "checks out", notes.join("; ")];
+    });
+    const csv = [header, ...lines].map((line) => line.map(csvField).join(",")).join("\n") + "\n";
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+    link.download = "receipts.csv";
+    link.click();
+  }
+
+  function csvField(value) {
+    const text = String(value ?? "");
+    return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+  }
+
+  function renderShelf() {
+    $("shelf").innerHTML = SAMPLES.map((name) => {
+      const card = name.endsWith(".pdf") ? `<div class="doc">${ICONS.pdf}PDF</div>` : `<img src="/samples/${name}" alt="">`;
+      return `<figure><div class="card">${card}</div><figcaption>${name}</figcaption></figure>`;
+    }).join("");
+  }
+
+  function showWorkspace() {
+    $("intro").hidden = true;
+    $("formula-bar").hidden = false;
+    $("workspace").hidden = false;
+    $("statusbar").hidden = false;
+    if (!selected) {
+      $("ref").textContent = "A1";
+      $("formula").value = "";
+    }
+  }
+
+  function setRunning(value) {
+    running = value;
+    $("batch").disabled = running;
+    $("sample-top").disabled = running;
+    $("add-label").style.pointerEvents = running ? "none" : "";
+    $("add-label").style.opacity = running ? "0.4" : "";
+    if (running) $("run-cost").textContent = "";
+    renderButton();
+  }
+
+  // The button shows the action it takes: stop while reading, read otherwise.
+  function renderButton() {
+    const unread = receipts.filter((receipt) => !receipt.receipt).length;
+    $("go").classList.toggle("stop", running);
+    $("go").disabled = !running && !unread;
+    $("go").innerHTML = running ? `${ICONS.stop}Stop` : `${ICONS.play}${$("batch").checked ? "Send as a batch" : unread ? `Read ${plural(unread, "receipt")}` : "Read receipts"}`;
+  }
+
+  function setStatus(text, live) {
+    swap($("status"), text ? `${live ? '<span class="live"></span>' : ""}${escapeHtml(text)}` : "");
+  }
+
+  function note(text) {
+    $("message").textContent = text;
+    $("message").hidden = !text;
+  }
+
+  function typeOf(name) {
+    return { jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", webp: "image/webp", pdf: "application/pdf" }[name.split(".").pop().toLowerCase()];
+  }
+
+  function plural(count, word, many = `${word}s`) {
+    return `${count} ${count === 1 ? word : many}`;
+  }
+
+  function escapeHtml(text) {
+    return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+</script>
+</body>
+</html>

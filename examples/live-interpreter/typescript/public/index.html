@@ -1,0 +1,493 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Live Interpreter</title>
+<style>
+  /* The look every SpaceXAI Cookbook page shares, after x.ai. */
+  :root {
+    --bg: #fff;
+    --card: #f9f8f6;
+    --secondary: #f2f1ef;
+    --secondary-hover: #e9e8e5;
+    --tint: rgb(10 10 10 / 0.04);
+    --line: rgb(10 10 10 / 0.08);
+    --border: rgb(10 10 10 / 0.15);
+    --fg: #0a0a0a;
+    --muted: rgb(10 10 10 / 0.6);
+    --faint: rgb(10 10 10 / 0.36);
+    --accent: #ff6308;
+    --accent-soft: rgb(255 99 8 / 0.1);
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; font: 14px/22px var(--sans); background: var(--bg); color: var(--fg); -webkit-font-smoothing: antialiased; }
+  button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
+  a { color: inherit; }
+  svg { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  @keyframes blink { 50% { opacity: 0.3; } }
+  @keyframes appear { from { opacity: 0; transform: translateY(4px); } }
+  @keyframes eq { 0%, 100% { transform: scaleY(0.3); } 50% { transform: scaleY(1); } }
+  @keyframes breathe { 50% { opacity: 0.45; } }
+
+  .site { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 12px; height: 60px; padding: 0 20px; background: rgb(255 255 255 / 0.85); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+  .logo { flex: none; margin-right: 4px; color: var(--fg); }
+  .logo svg { display: block; width: 52px; height: 20px; fill: currentColor; stroke: none; }
+  .crumbs { display: flex; align-items: center; gap: 8px; min-width: 0; color: var(--muted); white-space: nowrap; }
+  .crumbs svg { width: 12px; height: 12px; color: var(--faint); }
+  .crumbs h1 { margin: 0; overflow: hidden; text-overflow: ellipsis; font-size: inherit; line-height: inherit; font-weight: 500; color: var(--fg); }
+  .site .pill { flex: none; margin-left: auto; }
+  .models { flex: none; height: 26px; padding: 0 10px; border-radius: 9999px; box-shadow: inset 0 0 0 1px var(--line); font-size: 12px; font-weight: 500; line-height: 26px; color: var(--muted); }
+  .pill { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 40px; padding: 0 18px; border-radius: 9999px; font-size: 14px; font-weight: 500; white-space: nowrap; text-decoration: none; }
+  .pill-sm { height: 32px; padding: 0 14px; font-size: 13px; }
+  .pill-primary { background: var(--fg); color: #fff; }
+  .pill-primary:hover { background: #202329; }
+  .pill-secondary { background: var(--secondary); color: var(--fg); }
+  .pill-secondary:hover { background: var(--secondary-hover); }
+  .pill:disabled { opacity: 0.4; cursor: default; }
+  .pill svg { width: 14px; height: 14px; }
+  .surface { display: flex; flex-direction: column; gap: 8px; height: calc(100vh - 72px); min-height: 560px; margin: 0 12px 12px; padding: 8px; border-radius: 20px; background: var(--card); }
+  .panel { min-width: 0; padding: 20px 22px; border-radius: 16px; background: var(--bg); }
+  .label { margin: 0; font-size: 13px; font-weight: 500; color: var(--muted); }
+  @media (max-width: 900px) {
+    .models { display: none; }
+  }
+  @media (max-width: 640px) {
+    .site { padding: 0 16px; }
+    .crumbs > span, .crumbs > svg { display: none; }
+    .surface { margin: 0 8px 8px; }
+  }
+
+  /* Live Interpreter */
+  .stage { position: relative; flex: 1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; min-height: 0; }
+  .side { position: relative; min-width: 0; padding: 0; overflow: hidden; }
+  .side-head { display: flex; align-items: center; gap: 10px; height: 64px; padding: 0 28px; }
+  .side:first-child .side-head { padding-right: 40px; }
+  .lang { position: relative; display: inline-flex; align-items: center; }
+  .lang select { appearance: none; height: 32px; padding: 0 30px 0 13px; border: 0; border-radius: 9999px; background: var(--secondary); color: var(--fg); font: 500 13px/32px var(--sans); cursor: pointer; outline: none; }
+  .lang select:hover { background: var(--secondary-hover); }
+  .lang select:focus-visible { box-shadow: 0 0 0 2px var(--fg); }
+  .lang select:disabled { background: var(--secondary); cursor: default; }
+  .lang svg { position: absolute; right: 11px; width: 12px; height: 12px; color: var(--muted); pointer-events: none; }
+  .lang select:disabled + svg { display: none; }
+  .lang select:disabled { padding-right: 13px; }
+  .chip { display: inline-flex; align-items: center; gap: 7px; margin-left: auto; font-size: 13px; font-weight: 500; color: var(--muted); animation: appear 0.2s ease-out; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); animation: blink 1s ease-in-out infinite; }
+  .eq { display: inline-flex; align-items: flex-end; gap: 2px; height: 11px; color: var(--accent); }
+  .eq i { width: 2px; height: 100%; border-radius: 1px; background: currentColor; animation: eq 0.9s ease-in-out infinite; }
+  .eq i:nth-child(2) { animation-delay: 0.15s; }
+  .eq i:nth-child(3) { animation-delay: 0.3s; }
+
+  .swap { position: absolute; z-index: 2; top: 16px; left: 50%; display: grid; place-items: center; width: 32px; height: 32px; margin-left: -16px; border-radius: 50%; background: var(--bg); box-shadow: 0 0 0 4px var(--card), inset 0 0 0 1px var(--line); color: var(--muted); }
+  .swap:hover:not(:disabled) { color: var(--fg); }
+  .swap:disabled { cursor: default; opacity: 0.4; }
+  .swap svg { width: 14px; height: 14px; }
+
+  .hello { position: absolute; inset: 64px 28px 72px; display: grid; place-items: center; margin: 0; font-size: 84px; line-height: 1.1; font-weight: 450; letter-spacing: -0.035em; text-align: center; overflow-wrap: anywhere; }
+  .hello.to { color: var(--accent); }
+  .live .hello.from { animation: breathe 2.4s ease-in-out infinite; }
+
+  /* One grid row per turn across both sides, so each translation lines up with what was said. */
+  .captions {
+    position: absolute; inset: 64px 0 0; display: flex; flex-direction: column; gap: 30px; padding: 16px 0 56px; overflow-y: auto; scrollbar-width: none;
+    -webkit-mask-image: linear-gradient(to bottom, transparent, #000 40px);
+    mask-image: linear-gradient(to bottom, transparent, #000 40px);
+  }
+  .captions::-webkit-scrollbar { display: none; }
+  .turn { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; animation: appear 0.3s ease-out; }
+  .turn p { min-height: 35px; margin: 0; padding: 0 28px; font-size: 25px; line-height: 35px; font-weight: 450; letter-spacing: -0.015em; overflow-wrap: anywhere; transition: color 0.3s; }
+  .turn:not(:last-child) p { color: var(--faint); }
+  .turn.hearing .said::after, .turn.translating .heard::after { content: ""; display: inline-block; width: 9px; height: 9px; margin-left: 9px; border-radius: 50%; background: var(--accent); vertical-align: 3px; animation: blink 1s ease-in-out infinite; }
+  .turn .said:empty::after, .turn .heard:empty::after { margin-left: 0; }
+
+  .dock { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 24px; height: 92px; padding: 0 28px; }
+  .status { margin: 0; color: var(--muted); }
+  .mic { position: relative; display: grid; place-items: center; width: 60px; height: 60px; border-radius: 50%; background: var(--fg); color: #fff; }
+  .mic:hover:not(:disabled) { background: #202329; }
+  .mic:disabled { opacity: 0.3; cursor: default; }
+  .mic svg { position: relative; width: 22px; height: 22px; }
+  /* A ring that grows with your voice while Grok is listening. */
+  .mic::before { content: ""; position: absolute; inset: -9px; border-radius: 50%; background: var(--accent-soft); opacity: 0; transform: scale(var(--ring, 0.85)); transition: transform 0.12s ease-out, opacity 0.3s; }
+  .listening .mic::before { opacity: 1; }
+  .connecting .mic::before { opacity: 1; animation: breathe 1.2s ease-in-out infinite; }
+  .meter { display: grid; justify-items: end; justify-self: end; animation: appear 0.3s ease-out; }
+  .meter .label { font-size: 12px; font-weight: 400; color: var(--faint); }
+  .meter strong { font-size: 18px; line-height: 26px; font-weight: 500; font-variant-numeric: tabular-nums; }
+
+  @media (max-width: 900px) {
+    .side-head { padding: 0 18px; }
+    .role { display: none; }
+    .turn p { padding: 0 18px; font-size: 18px; line-height: 27px; }
+    .hello { font-size: 48px; }
+    .dock { gap: 12px; padding: 0 18px; }
+  }
+</style>
+</head>
+<body>
+<header class="site">
+  <a class="logo" href="https://x.ai" target="_blank" rel="noopener" aria-label="SpaceXAI"><svg viewBox="0 0 759 290.2" aria-hidden="true"><g transform="translate(-674.5,-388.5)"><path d="M1433.19 388.934C1345.69 396.068 1001.73 438.71 763.235 678.467H674.732L684.62 668.612C734.53 620.395 955.373 416.045 1433.19 388.668V388.934Z"/><path d="M1133.66 678.467H1064.29L927.618 578.979C940.213 571.058 952.888 563.515 965.603 556.33L1133.66 678.467Z"/><path d="M1022.8 678.468H953.463L932.43 663.169H814.998C823.265 655.828 831.635 648.702 840.092 641.784H902.996L870.444 618.106C882.079 609.448 893.843 601.155 905.701 593.211L1022.8 678.468Z"/><path d="M770.433 495.02L823.901 533.876C810.594 541.712 798.139 549.468 786.514 557.055L701.158 494.986L770.433 495.02Z"/></g></svg></a>
+  <nav class="crumbs"><span>Cookbook</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg><h1>Live Interpreter</h1></nav>
+  <span class="models">grok-voice-think-fast-2.0</span>
+  <a class="pill pill-secondary pill-sm" href="https://github.com/xai-org/xai-cookbook/tree/main/examples/live-interpreter" target="_blank" rel="noopener">View code</a>
+</header>
+
+<main class="surface" id="surface">
+  <div class="stage">
+    <section class="panel side">
+      <div class="side-head">
+        <span class="label role">You speak</span>
+        <label class="lang"><select id="from" aria-label="The language you speak"></select><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4"/></svg></label>
+        <span class="chip" id="listening" hidden><i class="dot"></i>Listening</span>
+      </div>
+      <p class="hello from" id="hello-from"></p>
+    </section>
+    <section class="panel side">
+      <div class="side-head">
+        <span class="label role">Grok says it in</span>
+        <label class="lang"><select id="to" aria-label="The language Grok speaks"></select><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 6 4 4 4-4"/></svg></label>
+        <span class="chip" id="translating" hidden><i class="dot"></i>Translating</span>
+        <span class="chip" id="speaking" hidden><span class="eq"><i></i><i></i><i></i></span>Speaking</span>
+      </div>
+      <p class="hello to" id="hello-to"></p>
+    </section>
+    <button type="button" class="swap" id="swap" aria-label="Swap the languages"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 5.5h11M10.5 2.5l3 3-3 3M13.5 10.5h-11M5.5 7.5l-3 3 3 3"/></svg></button>
+    <div class="captions" id="captions" aria-live="polite"></div>
+  </div>
+
+  <div class="panel dock">
+    <p class="status" id="status"></p>
+    <button type="button" class="mic" id="mic"></button>
+    <div class="meter" id="meter" hidden><span class="label" id="meter-label"></span><strong id="meter-value"></strong></div>
+  </div>
+</main>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  const REALTIME_URL = "wss://api.x.ai/v1/realtime";
+  const RATE = 24000;
+  const PRICE_PER_MINUTE = 0.08;
+  // The same codes as LANGUAGES in src/interpreter.ts, each with its name and a hello in that language.
+  const LANGUAGES = {
+    en: ["English", "Hello"],
+    "es-MX": ["Spanish", "Hola"],
+    fr: ["French", "Bonjour"],
+    de: ["German", "Hallo"],
+    it: ["Italian", "Ciao"],
+    "pt-BR": ["Portuguese", "Olá"],
+    ja: ["Japanese", "こんにちは"],
+    ko: ["Korean", "안녕하세요"],
+    zh: ["Chinese", "你好"],
+    hi: ["Hindi", "नमस्ते"],
+    ru: ["Russian", "Привет"],
+    tr: ["Turkish", "Merhaba"],
+    vi: ["Vietnamese", "Xin chào"],
+    id: ["Indonesian", "Halo"],
+  };
+  const ICONS = {
+    mic: '<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5.5" y="1.5" width="5" height="8.5" rx="2.5"/><path d="M3 7.5a5 5 0 0 0 10 0M8 12.5v2"/></svg>',
+    stop: '<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="4" y="4" width="8" height="8" rx="1.5" fill="currentColor" stroke="none"/></svg>',
+  };
+  // Runs on the audio thread and hands each block of microphone samples to the page.
+  const CAPTURE = URL.createObjectURL(new Blob([`registerProcessor("capture", class extends AudioWorkletProcessor {
+    process([input]) {
+      if (input[0]) this.port.postMessage(input[0]);
+      return true;
+    }
+  });`], { type: "text/javascript" }));
+
+  let session;
+  let listening = false;
+  let playhead = 0;
+  let startedAt = 0;
+  let turn;
+  let level = 0;
+  let notice = { text: "", until: 0 };
+  const chunk = new Int16Array(RATE / 10);
+  let filled = 0;
+
+  for (const select of [$("from"), $("to")]) {
+    select.innerHTML = Object.entries(LANGUAGES).map(([code, [name]]) => `<option value="${code}">${name}</option>`).join("");
+    select.onchange = showLanguages;
+  }
+  $("from").value = "en";
+  $("to").value = "es-MX";
+  showLanguages();
+  showMic(false);
+
+  $("swap").onclick = () => {
+    [$("from").value, $("to").value] = [$("to").value, $("from").value];
+    showLanguages();
+  };
+  $("mic").onclick = () => (session ? stop("Session ended.") : start());
+
+  async function start() {
+    const from = $("from").value;
+    const to = $("to").value;
+    // Created during the click, since browsers only let a page play sound once the user has done something.
+    const current = (session = { audio: new AudioContext({ sampleRate: RATE }), to: LANGUAGES[to][0] });
+    current.audio.resume();
+    $("captions").replaceChildren();
+    turn = undefined;
+    showLanguages();
+    setLive("connecting");
+    try {
+      setText($("status"), "Waiting for the microphone");
+      const mic = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
+      if (session !== current) return mic.getTracks().forEach((track) => track.stop());
+      current.mic = mic;
+      await current.audio.audioWorklet.addModule(CAPTURE);
+      const { socket, settings } = await connect(from, to, current);
+      if (session !== current) return socket?.close();
+      current.socket = socket;
+      socket.onmessage = (message) => handle(JSON.parse(message.data));
+      socket.onclose = (event) => stop(event.reason ? `The session ended: ${event.reason}` : "The session ended.");
+      socket.send(JSON.stringify({ type: "session.update", session: settings }));
+      setText($("status"), "Setting up the session");
+    } catch (error) {
+      if (session !== current) return;
+      stop(error.name === "NotAllowedError" ? "The page needs your microphone. Allow it in the address bar and try again." : error.message);
+    }
+  }
+
+  // About one connection in ten opens and then never starts a session, so each try gets five seconds.
+  // Every try needs a new token, since a token opens only one session.
+  async function connect(from, to, current) {
+    for (let attempt = 0; attempt < 3 && session === current; attempt++) {
+      setText($("status"), attempt ? "Trying again with a new token" : "Getting a token");
+      const response = await fetch("/api/session", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ from, to }) });
+      if (!response.ok) throw new Error(await response.text());
+      const { token, settings } = await response.json();
+      if (session !== current) break;
+      setText($("status"), "Connecting to Grok");
+      // Browsers can't set headers on a WebSocket, so the token goes in as a subprotocol.
+      const socket = new WebSocket(REALTIME_URL, [`xai-client-secret.${token}`]);
+      const started = await new Promise((resolve) => {
+        const timer = setTimeout(() => resolve(false), 5000);
+        socket.onmessage = (message) => {
+          if (JSON.parse(message.data).type !== "session.created") return;
+          clearTimeout(timer);
+          resolve(true);
+        };
+        socket.onclose = () => {
+          clearTimeout(timer);
+          resolve(false);
+        };
+      });
+      if (started) return { socket, settings };
+      socket.onmessage = socket.onclose = null;
+      socket.close();
+    }
+    if (session === current) throw new Error("Grok didn't start the session. Try again in a moment.");
+    return {};
+  }
+
+  function handle(event) {
+    switch (event.type) {
+      case "session.updated":
+        // The token's own settings arrive first, in an update without instructions.
+        if (event.session.instructions && !listening) listen();
+        break;
+      case "input_audio_buffer.speech_started":
+        startTurn(event.item_id);
+        break;
+      case "conversation.item.input_audio_transcription.updated":
+      case "conversation.item.input_audio_transcription.completed":
+        if (turn?.id !== event.item_id) break;
+        turn.said.textContent = event.transcript;
+        if (event.status === "completed") turn.row.classList.remove("hearing");
+        scrollDown();
+        break;
+      case "input_audio_buffer.committed":
+        if (turn?.id === event.item_id) turn.committed = true;
+        break;
+      case "response.created":
+        turn?.row.classList.add("translating");
+        break;
+      case "response.output_audio_transcript.delta":
+        if (!turn) break;
+        turn.row.classList.remove("translating");
+        turn.heard.textContent += event.delta;
+        scrollDown();
+        break;
+      case "response.output_audio.delta":
+        play(event.delta);
+        break;
+      case "response.done":
+        endTurn();
+        break;
+      case "error":
+        notice = { text: event.error.message, until: performance.now() + 5000 };
+        break;
+    }
+  }
+
+  function listen() {
+    const { audio, mic } = session;
+    const capture = new AudioWorkletNode(audio, "capture", { numberOfOutputs: 0 });
+    capture.port.onmessage = (message) => record(message.data);
+    audio.createMediaStreamSource(mic).connect(capture);
+    listening = true;
+    startedAt = performance.now();
+    setLive("listening");
+    setText($("meter-label"), "This session");
+    $("meter").hidden = false;
+    requestAnimationFrame(tick);
+  }
+
+  // Sends the microphone to Grok in 100 ms chunks of 16-bit PCM. While Grok is speaking, and for a
+  // moment after, the microphone is left out, so Grok never hears and translates its own voice.
+  function record(samples) {
+    const socket = session?.socket;
+    if (socket?.readyState !== WebSocket.OPEN || session.audio.currentTime < playhead + 0.3) {
+      level = 0;
+      return;
+    }
+    let sum = 0;
+    for (const sample of samples) {
+      sum += sample * sample;
+      chunk[filled++] = Math.max(-1, Math.min(1, sample)) * 0x7fff;
+      if (filled < chunk.length) continue;
+      socket.send(JSON.stringify({ type: "input_audio_buffer.append", audio: toBase64(new Uint8Array(chunk.buffer)) }));
+      filled = 0;
+    }
+    level = level * 0.7 + Math.sqrt(sum / samples.length) * 0.3;
+  }
+
+  // Grok's audio arrives faster than it plays, so each chunk is scheduled to start where the last one ends.
+  function play(base64) {
+    const bytes = Uint8Array.from(atob(base64), (char) => char.charCodeAt(0));
+    const samples = new Int16Array(bytes.buffer, 0, bytes.length >> 1);
+    const { audio } = session;
+    const buffer = audio.createBuffer(1, samples.length, RATE);
+    const channel = buffer.getChannelData(0);
+    for (let i = 0; i < samples.length; i++) channel[i] = samples[i] / 0x8000;
+    const source = audio.createBufferSource();
+    source.buffer = buffer;
+    source.connect(audio.destination);
+    playhead = Math.max(playhead, audio.currentTime + 0.05);
+    source.start(playhead);
+    playhead += buffer.duration;
+  }
+
+  // Each turn is a row with what was said on the left and Grok's translation on the right.
+  function startTurn(id) {
+    // A row is reused when it has no words yet, or when the speaker went on before Grok committed
+    // the turn. Grok drops that turn, and the next one's transcript starts with the same words.
+    if (!turn || turn.heard.textContent || (turn.committed && turn.said.textContent)) {
+      turn?.row.classList.remove("hearing", "translating");
+      const row = document.createElement("div");
+      row.className = "turn";
+      row.innerHTML = '<p class="said"></p><p class="heard"></p>';
+      $("captions").append(row);
+      turn = { row, said: row.firstChild, heard: row.lastChild };
+    }
+    turn.id = id;
+    turn.committed = false;
+    turn.row.classList.remove("translating");
+    turn.row.classList.add("hearing");
+    showLanguages();
+    scrollDown();
+  }
+
+  function endTurn() {
+    if (!turn) return;
+    turn.row.classList.remove("hearing", "translating");
+    if (turn.said.textContent || turn.heard.textContent) return;
+    turn.row.remove();
+    turn = undefined;
+    showLanguages();
+  }
+
+  function tick() {
+    if (!session) return;
+    const now = session.audio.currentTime;
+    const speaking = now < playhead;
+    const translating = !speaking && !!turn?.row.classList.contains("translating");
+    $("listening").hidden = speaking || translating;
+    $("translating").hidden = !translating;
+    $("speaking").hidden = !speaking;
+    $("mic").style.setProperty("--ring", Math.min(0.85 + level * 6, 1.35));
+    if (performance.now() < notice.until) setText($("status"), notice.text);
+    else if (speaking) setText($("status"), `Grok is speaking ${session.to}. Your microphone is paused until it's done.`);
+    else if (translating) setText($("status"), `Translating into ${session.to}`);
+    else setText($("status"), `Listening. Pause, and Grok says it in ${session.to}.`);
+    setText($("meter-value"), cost(performance.now() - startedAt));
+    requestAnimationFrame(tick);
+  }
+
+  function stop(message) {
+    if (!session) return;
+    const { socket, audio, mic } = session;
+    session = undefined;
+    listening = false;
+    if (socket) {
+      socket.onmessage = socket.onclose = null;
+      socket.close();
+    }
+    mic?.getTracks().forEach((track) => track.stop());
+    audio.close();
+    playhead = 0;
+    filled = 0;
+    level = 0;
+    notice.until = 0;
+    endTurn();
+    setLive(false);
+    setText($("status"), message);
+    if (!startedAt) return;
+    setText($("meter-label"), "Last session");
+    setText($("meter-value"), cost(performance.now() - startedAt));
+    startedAt = 0;
+  }
+
+  function setLive(state) {
+    $("from").disabled = $("to").disabled = $("swap").disabled = !!state;
+    $("surface").classList.toggle("live", !!state);
+    $("surface").classList.toggle("connecting", state === "connecting");
+    $("surface").classList.toggle("listening", state === "listening");
+    if (!state) ["listening", "translating", "speaking"].forEach((id) => ($(id).hidden = true));
+    showMic(!!state);
+  }
+
+  function showMic(live) {
+    $("mic").innerHTML = live ? ICONS.stop : ICONS.mic;
+    $("mic").setAttribute("aria-label", live ? "Stop interpreting" : "Start interpreting");
+  }
+
+  // Shows a hello in each language until the first words arrive.
+  function showLanguages() {
+    const [fromName, fromHello] = LANGUAGES[$("from").value];
+    const [toName, toHello] = LANGUAGES[$("to").value];
+    const empty = !$("captions").children.length;
+    $("hello-from").textContent = fromHello;
+    $("hello-to").textContent = toHello;
+    $("hello-from").hidden = $("hello-to").hidden = !empty;
+    if (session) return;
+    const same = fromName === toName;
+    $("mic").disabled = same;
+    setText($("status"), same ? "Pick two different languages." : `Click the microphone and speak ${fromName}. Grok says it in ${toName}.`);
+  }
+
+  function scrollDown() {
+    $("captions").scrollTo({ top: $("captions").scrollHeight, behavior: "smooth" });
+  }
+
+  function cost(ms) {
+    const seconds = Math.floor(ms / 1000);
+    return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")} · $${((seconds / 60) * PRICE_PER_MINUTE).toFixed(2)}`;
+  }
+
+  function setText(element, text) {
+    if (element.textContent !== text) element.textContent = text;
+  }
+
+  function toBase64(bytes) {
+    return btoa(String.fromCharCode(...bytes));
+  }
+</script>
+</body>
+</html>

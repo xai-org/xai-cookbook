@@ -1,0 +1,695 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Photo to Time-Lapse</title>
+<style>
+  /* The look every SpaceXAI Cookbook page shares, after x.ai. */
+  :root {
+    --bg: #fff;
+    --card: #f9f8f6;
+    --secondary: #f2f1ef;
+    --secondary-hover: #e9e8e5;
+    --tint: rgb(10 10 10 / 0.04);
+    --line: rgb(10 10 10 / 0.08);
+    --border: rgb(10 10 10 / 0.15);
+    --fg: #0a0a0a;
+    --muted: rgb(10 10 10 / 0.6);
+    --faint: rgb(10 10 10 / 0.36);
+    --accent: #ff6308;
+    --accent-soft: rgb(255 99 8 / 0.1);
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; font: 14px/22px var(--sans); background: var(--bg); color: var(--fg); -webkit-font-smoothing: antialiased; }
+  button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
+  a { color: inherit; }
+  svg { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  @keyframes blink { 50% { opacity: 0.3; } }
+  @keyframes pulse { to { background-color: var(--secondary-hover); } }
+  @keyframes fade { from { opacity: 0; } }
+
+  .site { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 12px; height: 60px; padding: 0 20px; background: rgb(255 255 255 / 0.85); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+  .logo { flex: none; margin-right: 4px; color: var(--fg); }
+  .logo svg { display: block; width: 52px; height: 20px; fill: currentColor; stroke: none; }
+  .crumbs { display: flex; align-items: center; gap: 8px; min-width: 0; color: var(--muted); white-space: nowrap; }
+  .crumbs svg { width: 12px; height: 12px; color: var(--faint); }
+  .crumbs h1 { margin: 0; overflow: hidden; text-overflow: ellipsis; font-size: inherit; line-height: inherit; font-weight: 500; color: var(--fg); }
+  .site .pill { flex: none; margin-left: auto; }
+  .models { flex: none; height: 26px; padding: 0 10px; border-radius: 9999px; box-shadow: inset 0 0 0 1px var(--line); font-size: 12px; font-weight: 500; line-height: 26px; color: var(--muted); }
+  .pill { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 40px; padding: 0 18px; border-radius: 9999px; font-size: 14px; font-weight: 500; white-space: nowrap; text-decoration: none; }
+  .pill-sm { height: 32px; padding: 0 14px; font-size: 13px; }
+  .pill-primary { background: var(--fg); color: #fff; }
+  .pill-primary:hover { background: #202329; }
+  .pill-secondary { background: var(--secondary); color: var(--fg); }
+  .pill-secondary:hover { background: var(--secondary-hover); }
+  .pill:disabled { opacity: 0.4; cursor: default; }
+  .pill svg { width: 14px; height: 14px; }
+  .field { min-width: 0; height: 40px; padding: 0 18px; border: 1px solid var(--border); border-radius: 9999px; background: var(--bg); color: var(--fg); font: inherit; outline: none; }
+  .field:focus { border-color: var(--fg); }
+  .field::placeholder { color: var(--faint); }
+  .surface { display: flex; flex-direction: column; gap: 8px; height: calc(100vh - 72px); min-height: 560px; margin: 0 12px 12px; padding: 8px; border-radius: 20px; background: var(--card); }
+  .panel { min-width: 0; padding: 20px 22px; border-radius: 16px; background: var(--bg); }
+  .label { margin: 0; font-size: 13px; font-weight: 500; color: var(--muted); }
+  @media (max-width: 900px) {
+    .models { display: none; }
+  }
+  @media (max-width: 640px) {
+    .site { padding: 0 16px; }
+    .crumbs > span, .crumbs > svg { display: none; }
+    .surface { margin: 0 8px 8px; }
+  }
+
+  /* Photo to Time-Lapse */
+  :root {
+    --bad: #e5484d;
+  }
+  @keyframes pop { from { opacity: 0; transform: scale(0.96); } }
+  @keyframes ring { from { box-shadow: 0 0 0 0 rgb(255 99 8 / 0.5); } to { box-shadow: 0 0 0 10px rgb(255 99 8 / 0); } }
+  .studio { display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: 8px; }
+
+  .side { display: flex; flex-direction: column; gap: 20px; overflow: hidden; }
+  .side .label { margin-bottom: 10px; }
+  form { display: grid; gap: 16px; }
+  fieldset { display: grid; gap: 20px; min-width: 0; margin: 0; padding: 0; border: 0; }
+  .source { position: relative; display: flex; align-items: center; gap: 12px; padding: 7px 12px 7px 7px; border: 1.5px dashed var(--border); border-radius: 14px; cursor: pointer; }
+  .source:hover, .source.over { border-color: var(--accent); background: var(--accent-soft); }
+  fieldset:disabled .source { border-style: solid; border-color: var(--line); background: none; cursor: default; }
+  .source input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+  .source img { flex: none; width: 104px; aspect-ratio: 16 / 9; border-radius: 8px; object-fit: cover; background: var(--secondary); }
+  .source img:not([src]) { visibility: hidden; }
+  .source span { min-width: 0; }
+  .source strong { display: block; overflow: hidden; font-weight: 500; white-space: nowrap; text-overflow: ellipsis; }
+  .source small { display: block; font-size: 13px; line-height: 19px; color: var(--muted); }
+  .presets { display: flex; flex-wrap: wrap; gap: 6px; }
+  .presets button { flex: 1 1 auto; height: 32px; padding: 0 12px; border-radius: 9999px; background: var(--secondary); font-size: 13px; font-weight: 500; white-space: nowrap; }
+  .presets button:hover { background: var(--secondary-hover); }
+  .presets button.selected { background: var(--fg); color: #fff; }
+  fieldset:disabled .presets button { cursor: default; }
+  #custom { width: 100%; margin-top: 10px; }
+  #go { width: 100%; }
+  #go.stop { background: var(--secondary); color: var(--fg); }
+  .cost { margin: 10px 0 0; font-size: 13px; color: var(--faint); text-align: center; }
+  #message { margin: 10px 0 0; color: var(--muted); text-align: center; }
+  #message.bad { color: var(--bad); }
+
+  .plan { position: relative; flex: 1; min-height: 0; margin: 0 -22px -20px; padding: 20px 22px; overflow: auto; border-top: 1px solid var(--line); }
+  #thinking summary { display: flex; align-items: center; gap: 6px; color: var(--muted); list-style: none; cursor: pointer; }
+  #thinking summary::-webkit-details-marker { display: none; }
+  #thinking summary svg { width: 12px; height: 12px; transition: transform 0.2s; }
+  #thinking[open] summary svg { transform: rotate(90deg); }
+  #thinking:has(#reasoning:empty) { display: none; }
+  #reasoning { max-height: 160px; margin-top: 8px; overflow: auto; white-space: pre-wrap; font: 11px/18px var(--mono); color: var(--faint); }
+  #title { margin: 14px 0 0; font-size: 18px; line-height: 24px; font-weight: 500; letter-spacing: -0.01em; animation: fade 0.3s ease-out; }
+  .stage-list { display: grid; gap: 2px; margin: 10px -10px 0; padding: 0; list-style: none; }
+  .stage-list li { display: grid; grid-template-columns: 42px minmax(0, 1fr); gap: 4px; padding: 10px; border-radius: 12px; cursor: pointer; animation: fade 0.3s ease-out; }
+  .stage-list li:hover { background: var(--card); }
+  .stage-list li.current { background: var(--accent-soft); }
+  .stage-list .mark { font: 12px/22px var(--mono); color: var(--faint); }
+  .stage-list li.current .mark { color: var(--accent); }
+  .stage-list p { margin: 0; }
+  .stage-list .name { font-weight: 500; }
+  .stage-list li.editing .name::after { content: "editing"; margin-left: 8px; font-size: 12px; font-weight: 400; color: var(--faint); animation: blink 1s ease-in-out infinite; }
+  .stage-list .edit { margin-top: 2px; font-size: 13px; line-height: 19px; color: var(--muted); }
+
+  .stage { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto auto; gap: 12px; min-height: 0; padding: 12px 12px 18px; }
+  .monitor { display: grid; place-items: center; min-height: 0; container-type: size; }
+  .screen { position: relative; width: min(100cqw, 100cqh * 16 / 9); aspect-ratio: 16 / 9; overflow: hidden; border-radius: 12px; background: #0a0a0a; }
+  .screen img, .screen video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+  .badge { position: absolute; left: 14px; top: 14px; display: inline-flex; align-items: center; gap: 8px; height: 30px; padding: 0 13px; border-radius: 9999px; background: rgb(10 10 10 / 0.55); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); color: #fff; font-size: 13px; font-weight: 500; }
+  .badge:empty { display: none; }
+  .badge .mark { font: 12px var(--mono); color: rgb(255 255 255 / 0.7); }
+  .badge.pop { animation: pop 0.3s ease-out; }
+  .render { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 4px; background: rgb(10 10 10 / 0.5); color: #fff; text-align: center; }
+  .render-title { font-size: 15px; font-weight: 500; }
+  #render-percent { font-size: 48px; line-height: 56px; font-weight: 450; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+  .render.starting #render-percent { animation: blink 2s ease-in-out infinite; }
+  .render-note { max-width: 440px; padding: 0 24px; color: rgb(255 255 255 / 0.65); font-variant-numeric: tabular-nums; }
+  .render-bar { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: rgb(255 255 255 / 0.15); }
+  .render-bar i { display: block; width: 0; height: 100%; background: var(--accent); transition: width 0.8s ease-out; }
+
+  .transport { display: flex; align-items: center; gap: 12px; min-height: 36px; padding: 0 2px; }
+  #play { flex: none; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: var(--fg); color: #fff; }
+  #play:disabled { opacity: 0.2; cursor: default; }
+  #play svg { width: 12px; height: 12px; fill: currentColor; stroke: none; }
+  #timecode { flex: none; font: 12px var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+  #caption { flex: 1; min-width: 0; overflow: hidden; color: var(--muted); white-space: nowrap; text-overflow: ellipsis; }
+  #download { flex: none; }
+
+  .timeline { padding: 0 6px; }
+  .timeline-head { display: flex; align-items: center; gap: 16px; margin-bottom: 6px; }
+  .steps { flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 20px; margin: 0; padding: 0; list-style: none; font-size: 13px; color: var(--faint); }
+  .steps li { display: flex; align-items: center; gap: 7px; }
+  .steps i { width: 7px; height: 7px; border-radius: 50%; border: 1.5px solid currentColor; }
+  .steps .active { color: var(--fg); }
+  .steps .active i { border-color: var(--accent); background: var(--accent); animation: blink 1s ease-in-out infinite; }
+  .steps .done { color: var(--muted); }
+  .steps .done i { border-color: var(--fg); background: var(--fg); }
+  .steps .detail { color: var(--faint); font-variant-numeric: tabular-nums; }
+  #summary { flex: 1; min-width: 0; overflow: hidden; font-size: 13px; color: var(--muted); text-align: right; white-space: nowrap; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+  .track { position: relative; container-type: inline-size; }
+  .track.seekable { cursor: col-resize; }
+  .ruler { position: relative; height: 26px; }
+  .ruler span { position: absolute; top: 0; font: 11px/14px var(--mono); color: var(--faint); }
+  /* A short tick every third of a second, the grid keyframes snap to, and a tall one every second. */
+  .ruler::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 9px; background: linear-gradient(to right, var(--border) 1px, transparent 1px) 0 100% / calc(100% / 30) 4px repeat-x, linear-gradient(to right, var(--faint) 1px, transparent 1px) 0 100% / 10% 9px repeat-x; box-shadow: inset -1px 0 var(--faint); }
+  .pins { position: relative; height: calc(13cqw * 9 / 16 + 44px); }
+  .pin { position: absolute; top: 0; }
+  .diamond { position: absolute; top: -5px; left: -5px; width: 10px; height: 10px; border: 1.5px solid var(--faint); border-radius: 2px; background: var(--bg); transform: rotate(45deg); transition: background-color 0.2s, border-color 0.2s; }
+  .stem { position: absolute; top: 6px; left: -0.5px; width: 1px; height: 8px; background: var(--border); }
+  .card { position: absolute; top: 15px; left: 0; display: block; width: 13cqw; padding: 0; text-align: left; animation: fade 0.3s ease-out; }
+  .thumb { position: relative; display: block; aspect-ratio: 16 / 9; overflow: hidden; border-radius: 8px; background: var(--secondary); outline: 2px solid transparent; outline-offset: 2px; transition: outline-color 0.2s; }
+  .thumb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; animation: pop 0.35s ease-out; }
+  /* Until its still arrives, a card shows the photo the still is edited from. */
+  .thumb .draft { opacity: 0.3; filter: grayscale(1); animation: fade 0.3s ease-out; }
+  .thumb.waiting .draft { animation: breathe 1s ease-in-out infinite alternate; }
+  @keyframes breathe { to { opacity: 0.5; } }
+  .card-text { display: flex; align-items: baseline; gap: 6px; margin-top: 7px; white-space: nowrap; }
+  .card-text b { overflow: hidden; font-size: 13px; font-weight: 500; text-overflow: ellipsis; }
+  .card-text .mark { font: 11px var(--mono); color: var(--faint); }
+  .pin.passed .diamond { border-color: var(--accent); background: var(--accent); }
+  .pin.current .thumb { outline-color: var(--accent); }
+  .pin.current .card-text .mark { color: var(--accent); }
+  .pin.lit .diamond { animation: ring 0.9s ease-out; }
+  #playhead { position: absolute; top: 12px; bottom: 0; left: 0; z-index: 2; width: 2px; margin-left: -1px; border-radius: 1px; background: var(--accent); pointer-events: none; }
+
+  @media (max-width: 1000px) {
+    .surface { height: auto; }
+    .studio { grid-template-columns: minmax(0, 1fr); }
+    .side, .plan { overflow: visible; }
+    .monitor { height: 56vw; }
+  }
+</style>
+</head>
+<body>
+<header class="site">
+  <a class="logo" href="https://x.ai" target="_blank" rel="noopener" aria-label="SpaceXAI"><svg viewBox="0 0 759 290.2" aria-hidden="true"><g transform="translate(-674.5,-388.5)"><path d="M1433.19 388.934C1345.69 396.068 1001.73 438.71 763.235 678.467H674.732L684.62 668.612C734.53 620.395 955.373 416.045 1433.19 388.668V388.934Z"/><path d="M1133.66 678.467H1064.29L927.618 578.979C940.213 571.058 952.888 563.515 965.603 556.33L1133.66 678.467Z"/><path d="M1022.8 678.468H953.463L932.43 663.169H814.998C823.265 655.828 831.635 648.702 840.092 641.784H902.996L870.444 618.106C882.079 609.448 893.843 601.155 905.701 593.211L1022.8 678.468Z"/><path d="M770.433 495.02L823.901 533.876C810.594 541.712 798.139 549.468 786.514 557.055L701.158 494.986L770.433 495.02Z"/></g></svg></a>
+  <nav class="crumbs"><span>Cookbook</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg><h1>Photo to Time-Lapse</h1></nav>
+  <span class="models">grok-4.7 and Grok Imagine</span>
+  <a class="pill pill-secondary pill-sm" href="https://github.com/xai-org/xai-cookbook/tree/main/examples/photo-to-time-lapse" target="_blank" rel="noopener">View code</a>
+</header>
+
+<main class="surface studio">
+  <aside class="panel side" id="side">
+    <form id="form">
+      <fieldset id="controls">
+        <section>
+          <p class="label">Photo</p>
+          <label class="source" id="source">
+            <input id="file" type="file" accept="image/jpeg,image/png,image/webp" aria-label="Photo">
+            <img id="source-image" alt="">
+            <span><strong id="source-name">Sample photo</strong><small>Drop a photo here, or click to choose one</small></span>
+          </label>
+        </section>
+        <section>
+          <p class="label">Change</p>
+          <div class="presets" id="presets">
+            <button type="button" data-change="seasons" class="selected">Four seasons</button>
+            <button type="button" data-change="construction">Empty lot to building</button>
+            <button type="button" data-change="day-to-night">Day to night</button>
+            <button type="button" data-change="sketch-to-painting">Sketch to painting</button>
+          </div>
+          <input id="custom" class="field" maxlength="300" aria-label="Your own change" placeholder="Or describe your own change">
+        </section>
+      </fieldset>
+      <div>
+        <button class="pill pill-primary" id="go">Make time-lapse</button>
+        <p class="cost">About $1.75 and two to three minutes a run</p>
+        <p id="message" hidden></p>
+      </div>
+    </form>
+    <section class="plan" id="plan" hidden>
+      <p class="label">Plan</p>
+      <details id="thinking" open>
+        <summary><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg><span id="thinking-label">Thinking</span></summary>
+        <div id="reasoning"></div>
+      </details>
+      <p id="title" hidden></p>
+      <ol class="stage-list" id="stage-list"></ol>
+    </section>
+  </aside>
+
+  <section class="panel stage">
+    <div class="monitor">
+      <div class="screen">
+        <img id="still" alt="">
+        <video id="video" playsinline loop hidden></video>
+        <span class="badge" id="badge"></span>
+        <div class="render" id="render" hidden>
+          <span class="render-title">Rendering the time-lapse</span>
+          <span id="render-percent"></span>
+          <span class="render-note" id="render-note"></span>
+          <div class="render-bar"><i id="render-bar"></i></div>
+        </div>
+      </div>
+    </div>
+    <div class="transport">
+      <button type="button" id="play" disabled aria-label="Play or pause"></button>
+      <span id="timecode"></span>
+      <span id="caption"></span>
+      <a class="pill pill-secondary pill-sm" id="download" download hidden><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.5v8M4.5 7 8 10.5 11.5 7M2.5 13.5h11"/></svg>Download MP4</a>
+    </div>
+    <div class="timeline">
+      <div class="timeline-head">
+        <ol class="steps" id="steps">
+          <li data-step="plan"><i></i>Plan<span class="detail"></span></li>
+          <li data-step="stills"><i></i>Stills<span class="detail"></span></li>
+          <li data-step="video"><i></i>Video<span class="detail"></span></li>
+        </ol>
+        <span id="summary"></span>
+      </div>
+      <div class="track" id="track">
+        <div class="ruler" id="ruler"></div>
+        <div class="pins" id="pins"></div>
+        <div id="playhead" hidden></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  const SECONDS = 10;
+  const STEPS = ["plan", "stills", "video"];
+  const TYPES = ["image/jpeg", "image/png", "image/webp"];
+  const ICONS = {
+    play: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9.5-5.5z"/></svg>',
+    pause: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 2.5h3v11h-3zM9.5 2.5h3v11h-3z"/></svg>',
+  };
+  const video = $("video");
+  let photo = null;
+  let photoUrl = "";
+  let preset = "seasons";
+  let events = null;
+  let running = false;
+  let stages = [];
+  let pins = [];
+  let items = [];
+  let current = -1;
+  let ready = false;
+  let thinkingSince = 0;
+  let renderingSince = 0;
+  let percent = 0;
+  let timer = 0;
+  let frame = 0;
+
+  $("ruler").innerHTML = Array.from({ length: SECONDS + 1 }, (_, second) => {
+    const left = (second / SECONDS) * 100;
+    return `<span style="left: ${left}%; transform: translateX(-${left}%)">${second}s</span>`;
+  }).join("");
+  fetch("/sample-street.jpg").then((response) => response.blob()).then((blob) => setPhoto(blob, "Sample photo"));
+
+  $("file").onchange = () => choose($("file").files[0]);
+  $("source").ondragenter = () => $("source").classList.add("over");
+  $("source").ondragleave = () => $("source").classList.remove("over");
+  // A file dropped anywhere else would open in the tab, so the whole page takes the drop.
+  document.ondragover = (event) => event.preventDefault();
+  document.ondrop = (event) => {
+    event.preventDefault();
+    $("source").classList.remove("over");
+    if (!running) choose(event.dataTransfer.files[0]);
+  };
+
+  document.querySelectorAll("#presets button").forEach((button) => {
+    button.onclick = () => {
+      preset = button.dataset.change;
+      $("custom").value = "";
+      showPreset();
+    };
+  });
+  $("custom").oninput = showPreset;
+
+  $("form").onsubmit = (event) => {
+    event.preventDefault();
+    if (running) return stop("Stopped.");
+    start();
+  };
+
+  async function start() {
+    const change = $("custom").value.trim() || preset;
+    reset();
+    setRunning(true);
+    let id;
+    try {
+      const upload = await fetch("/api/photos", { method: "POST", body: photo });
+      if (!upload.ok) throw new Error(await upload.text());
+      ({ id } = await upload.json());
+    } catch (error) {
+      return stop(`Couldn't upload the photo: ${error.message}`, true);
+    }
+    if (!running) return;
+
+    events = new EventSource(`/api/time-lapse?photo=${id}&change=${encodeURIComponent(change)}`);
+    const on = (name, handler) => events.addEventListener(name, (message) => handler(JSON.parse(message.data)));
+
+    on("step", ({ step }) => {
+      setStep(step);
+      if (step === "plan") {
+        thinkingSince = Date.now();
+        $("plan").hidden = false;
+        tickPlan();
+        timer = setInterval(tickPlan, 1000);
+      }
+      if (step === "stills") {
+        setDetail("plan", plural(stages.length, "stage"));
+        setDetail("stills", `0 of ${stages.length}`);
+        stages.forEach((stage) => (stage.editing = true));
+        updateStages();
+      }
+      if (step === "video") {
+        setDetail("stills", "");
+        renderingSince = Date.now();
+        percent = 0;
+        showStill(0);
+        $("render").hidden = false;
+        tickVideo();
+        timer = setInterval(tickVideo, 1000);
+      }
+    });
+    on("reasoning", ({ text }) => {
+      $("reasoning").textContent += text;
+      $("reasoning").scrollTop = $("reasoning").scrollHeight;
+    });
+    on("stage", ({ index, label, edit, at }) => {
+      stages[index] = { ...stages[index], label, edit, at };
+      updateStages();
+    });
+    on("plan", ({ title, stages: list }) => {
+      clearInterval(timer);
+      stages = list.map((stage, index) => ({ ...stages[index], ...stage }));
+      updateStages();
+      $("title").textContent = title;
+      $("title").hidden = false;
+      $("thinking").open = false;
+      $("thinking-label").textContent = `Thought for ${plural(Math.round((Date.now() - thinkingSince) / 1000), "second")}`;
+    });
+    on("still", ({ index, url }) => {
+      Object.assign(stages[index], { still: url, editing: false });
+      updateStages();
+      setDetail("stills", `${stages.filter((stage) => stage.still).length} of ${stages.length}`);
+      showStill(index);
+    });
+    on("progress", ({ percent: value }) => {
+      percent = value;
+      tickVideo();
+    });
+    on("done", ({ video: url, cost, dir }) => {
+      finish();
+      setStep("done");
+      setDetail("video", `rendered in ${elapsed(renderingSince)}`);
+      $("summary").textContent = `$${cost.toFixed(2)} for ${plural(stages.length, "still")} and the video · saved to ${dir}/`;
+      $("render").hidden = true;
+      $("still").hidden = true;
+      video.src = url;
+      video.hidden = false;
+      ready = true;
+      current = -1;
+      $("play").disabled = false;
+      $("playhead").hidden = false;
+      $("track").classList.add("seekable");
+      $("download").href = url;
+      $("download").download = `${dir.split("/").pop()}.mp4`;
+      $("download").hidden = false;
+      video.play().catch(() => {});
+    });
+    on("failure", ({ message }) => stop(`Couldn't make the time-lapse: ${message}`, true));
+    // Without this, the browser would reconnect and start a new run.
+    events.onerror = () => stop("Lost the connection to the server.", true);
+  }
+
+  // One pin on the timeline and one row in the plan for each stage, made once and updated in place, so
+  // a still doesn't fade in again on every update.
+  function updateStages() {
+    stages.forEach((stage, index) => {
+      const pin = pins[index] ?? addPin(index);
+      const item = items[index] ?? addItem(index);
+      const left = (stage.at / SECONDS) * 100;
+      // Each card sits as far along its own width as its pin is along the timeline, so the first card
+      // starts at 0 seconds, the last one ends at 10, and every card covers its pin.
+      pin.style.left = `${left}%`;
+      pin.querySelector(".card").style.transform = `translateX(-${left}%)`;
+      pin.querySelector(".card b").textContent = stage.label;
+      pin.querySelector(".card .mark").textContent = formatMark(stage.at);
+      pin.title = stage.edit;
+      const thumb = pin.querySelector(".thumb");
+      thumb.classList.toggle("waiting", Boolean(stage.editing));
+      if (stage.still && !thumb.querySelector(".still")) thumb.append(image(stage.still));
+      item.querySelector(".mark").textContent = formatMark(stage.at);
+      item.querySelector(".name").textContent = stage.label;
+      item.querySelector(".edit").textContent = stage.edit;
+      item.classList.toggle("editing", Boolean(stage.editing));
+    });
+    pins.splice(stages.length).forEach((pin) => pin.remove());
+    items.splice(stages.length).forEach((item) => item.remove());
+  }
+
+  function addPin(index) {
+    const pin = document.createElement("div");
+    pin.className = "pin";
+    pin.innerHTML = `<i class="diamond"></i><i class="stem"></i><button type="button" class="card"><span class="thumb"><img class="draft" src="${photoUrl}" alt=""></span><span class="card-text"><b></b><span class="mark"></span></span></button>`;
+    pin.querySelector(".card").onclick = (event) => {
+      event.stopPropagation();
+      pick(index);
+    };
+    $("pins").append(pin);
+    return (pins[index] = pin);
+  }
+
+  function addItem(index) {
+    const item = document.createElement("li");
+    item.innerHTML = `<span class="mark"></span><div><p class="name"></p><p class="edit"></p></div>`;
+    item.onclick = () => pick(index);
+    $("stage-list").append(item);
+    return (items[index] = item);
+  }
+
+  // Once the video is ready, a stage jumps to its pin. Until then, it shows its still in the monitor.
+  function pick(index) {
+    if (ready) video.currentTime = stages[index].at;
+    else if (stages[index].still) showStill(index);
+  }
+
+  function showStill(index) {
+    if (stages[index].still) $("still").src = stages[index].still;
+    light(index);
+  }
+
+  // Marks the stage on the monitor, the timeline, and the plan, and keeps its row in view.
+  function light(index) {
+    current = index;
+    const stage = stages[index];
+    $("badge").innerHTML = stage ? `${escapeHtml(stage.label)}<span class="mark">${formatMark(stage.at)}</span>` : "Source photo";
+    restart($("badge"), "pop");
+    pins.forEach((pin, i) => pin.classList.toggle("current", i === index));
+    items.forEach((item, i) => item.classList.toggle("current", i === index));
+    if (pins[index]) restart(pins[index], "lit");
+    if (items[index]) keepInView(items[index]);
+    $("caption").textContent = stage?.edit ?? "";
+  }
+
+  // Scrolls the plan, and only the plan, so the page doesn't jump on a narrow screen, where the plan
+  // doesn't scroll on its own.
+  function keepInView(item) {
+    const plan = $("plan");
+    const top = item.offsetTop - plan.scrollTop;
+    const below = top + item.offsetHeight - plan.clientHeight;
+    if (top < 0) plan.scrollBy({ top: top - 8, behavior: "smooth" });
+    else if (below > 0) plan.scrollBy({ top: below + 8, behavior: "smooth" });
+  }
+
+  $("play").onclick = () => (video.paused ? video.play() : video.pause());
+  addEventListener("keydown", (event) => {
+    if (event.code !== "Space" || event.target.closest("input, button") || !ready) return;
+    event.preventDefault();
+    $("play").click();
+  });
+  video.onplay = () => {
+    $("play").innerHTML = ICONS.pause;
+    follow();
+  };
+  video.onpause = () => ($("play").innerHTML = ICONS.play);
+  video.onseeked = video.onloadedmetadata = updatePlayback;
+
+  // Once the video is ready, the timeline is its scrubber: clicking anywhere seeks there.
+  $("track").onclick = (event) => {
+    if (!ready) return;
+    const { left, width } = $("track").getBoundingClientRect();
+    video.currentTime = Math.min(Math.max((event.clientX - left) / width, 0), 1) * SECONDS;
+  };
+
+  function follow() {
+    cancelAnimationFrame(frame);
+    updatePlayback();
+    if (!video.paused) frame = requestAnimationFrame(follow);
+  }
+
+  // A pin lights up when the playhead reaches it and stays lit until the video starts over.
+  function updatePlayback() {
+    const time = Math.min(video.currentTime, SECONDS);
+    $("playhead").style.left = `${(time / SECONDS) * 100}%`;
+    $("timecode").textContent = `${clock(time)} / ${clock(SECONDS)}`;
+    let reached = -1;
+    stages.forEach((stage, index) => {
+      const passed = stage.at <= time + 0.02;
+      pins[index].classList.toggle("passed", passed);
+      if (passed) reached = index;
+    });
+    if (reached !== current) light(reached);
+  }
+
+  function tickPlan() {
+    setDetail("plan", elapsed(thinkingSince));
+  }
+
+  // The server asks for the video's progress every five seconds, and for the first half minute or so the
+  // API reports 1%.
+  function tickVideo() {
+    $("render").classList.toggle("starting", percent <= 1);
+    $("render-percent").textContent = percent > 1 ? `${percent}%` : "Starting";
+    $("render-bar").style.width = `${percent}%`;
+    $("render-note").textContent = `${elapsed(renderingSince)} · pinning ${plural(stages.length, "still")} at their marks in one ${SECONDS}-second video`;
+    setDetail("video", percent > 1 ? `${percent}% · ${elapsed(renderingSince)}` : elapsed(renderingSince));
+  }
+
+  function setStep(step) {
+    const index = step === "done" ? STEPS.length : STEPS.indexOf(step);
+    $("steps").querySelectorAll("li").forEach((item, i) => {
+      item.classList.toggle("done", i < index);
+      item.classList.toggle("active", i === index);
+    });
+  }
+
+  function setDetail(step, text) {
+    $("steps").querySelector(`[data-step="${step}"] .detail`).textContent = text ? ` · ${text}` : "";
+  }
+
+  function choose(file) {
+    if (!file) return;
+    if (!TYPES.includes(file.type)) return showMessage("Choose a JPEG, PNG, or WebP photo.", true);
+    if (file.size > 10 * 1024 * 1024) return showMessage("Choose a photo of 10 MB or less.", true);
+    setPhoto(file, file.name);
+  }
+
+  function setPhoto(file, name) {
+    photo = file;
+    URL.revokeObjectURL(photoUrl);
+    photoUrl = URL.createObjectURL(file);
+    $("source-image").src = photoUrl;
+    $("source-name").textContent = name;
+    reset();
+  }
+
+  function showPreset() {
+    const custom = Boolean($("custom").value.trim());
+    document.querySelectorAll("#presets button").forEach((button) => button.classList.toggle("selected", !custom && button.dataset.change === preset));
+  }
+
+  function setRunning(on) {
+    running = on;
+    $("go").textContent = on ? "Stop" : "Make time-lapse";
+    $("go").classList.toggle("stop", on);
+    $("controls").disabled = on;
+  }
+
+  function finish() {
+    events?.close();
+    events = null;
+    clearInterval(timer);
+    setRunning(false);
+  }
+
+  function stop(message, bad = false) {
+    finish();
+    $("render").hidden = true;
+    stages.forEach((stage) => (stage.editing = false));
+    updateStages();
+    const active = $("steps").querySelector(".active");
+    if (active) {
+      active.classList.remove("active");
+      setDetail(active.dataset.step, bad ? "couldn't finish" : "stopped");
+    }
+    showMessage(message, bad);
+  }
+
+  function showMessage(text, bad = false) {
+    $("message").textContent = text;
+    $("message").classList.toggle("bad", bad);
+    $("message").hidden = false;
+  }
+
+  function reset() {
+    clearInterval(timer);
+    cancelAnimationFrame(frame);
+    video.pause();
+    video.removeAttribute("src");
+    video.load();
+    video.hidden = true;
+    ready = false;
+    stages = [];
+    updateStages();
+    $("still").src = photoUrl;
+    $("still").hidden = false;
+    light(-1);
+    $("render").hidden = true;
+    $("plan").hidden = true;
+    $("reasoning").textContent = "";
+    $("thinking").open = true;
+    $("thinking-label").textContent = "Thinking";
+    $("title").hidden = true;
+    STEPS.forEach((step) => setDetail(step, ""));
+    setStep("");
+    $("summary").textContent = "";
+    $("download").hidden = true;
+    $("playhead").hidden = true;
+    $("track").classList.remove("seekable");
+    $("play").disabled = true;
+    $("play").innerHTML = ICONS.play;
+    $("timecode").textContent = `${clock(0)} / ${clock(SECONDS)}`;
+    $("message").hidden = true;
+  }
+
+  function restart(element, className) {
+    element.classList.remove(className);
+    void element.offsetWidth;
+    element.classList.add(className);
+  }
+
+  function image(url) {
+    const img = new Image();
+    img.className = "still";
+    img.src = url;
+    img.alt = "";
+    return img;
+  }
+
+  // Times on the grid read as thirds, like 3⅔ s.
+  function formatMark(seconds) {
+    const thirds = Math.round(seconds * 3);
+    return `${Math.floor(thirds / 3)}${["", "⅓", "⅔"][thirds % 3]} s`;
+  }
+
+  function clock(seconds) {
+    const tenths = Math.floor(seconds * 10);
+    return `${Math.floor(tenths / 600)}:${String(Math.floor(tenths / 10) % 60).padStart(2, "0")}.${tenths % 10}`;
+  }
+
+  function elapsed(since) {
+    const seconds = Math.floor((Date.now() - since) / 1000);
+    return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+  }
+
+  function plural(count, word) {
+    return `${count} ${word}${count === 1 ? "" : "s"}`;
+  }
+
+  function escapeHtml(text) {
+    return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+</script>
+</body>
+</html>

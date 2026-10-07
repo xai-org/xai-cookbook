@@ -1,0 +1,764 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Meeting to Action Items</title>
+<style>
+  /* The look every SpaceXAI Cookbook page shares, after x.ai. */
+  :root {
+    --bg: #fff;
+    --card: #f9f8f6;
+    --secondary: #f2f1ef;
+    --secondary-hover: #e9e8e5;
+    --tint: rgb(10 10 10 / 0.04);
+    --line: rgb(10 10 10 / 0.08);
+    --border: rgb(10 10 10 / 0.15);
+    --fg: #0a0a0a;
+    --muted: rgb(10 10 10 / 0.6);
+    --faint: rgb(10 10 10 / 0.36);
+    --accent: #ff6308;
+    --accent-soft: rgb(255 99 8 / 0.1);
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; font: 14px/22px var(--sans); background: var(--bg); color: var(--fg); -webkit-font-smoothing: antialiased; }
+  button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
+  a { color: inherit; }
+  svg { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  @keyframes blink { 50% { opacity: 0.3; } }
+  @keyframes pulse { to { background-color: var(--secondary-hover); } }
+  @keyframes appear { from { opacity: 0; transform: translateY(4px); } }
+
+  .site { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 12px; height: 60px; padding: 0 20px; background: rgb(255 255 255 / 0.85); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+  .logo { flex: none; margin-right: 4px; color: var(--fg); }
+  .logo svg { display: block; width: 52px; height: 20px; fill: currentColor; stroke: none; }
+  .crumbs { display: flex; align-items: center; gap: 8px; min-width: 0; color: var(--muted); white-space: nowrap; }
+  .crumbs svg { width: 12px; height: 12px; color: var(--faint); }
+  .crumbs h1 { margin: 0; overflow: hidden; text-overflow: ellipsis; font-size: inherit; line-height: inherit; font-weight: 500; color: var(--fg); }
+  .site .pill { flex: none; margin-left: auto; }
+  .models { flex: none; height: 26px; padding: 0 10px; border-radius: 9999px; box-shadow: inset 0 0 0 1px var(--line); font-size: 12px; font-weight: 500; line-height: 26px; color: var(--muted); }
+  .pill { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 40px; padding: 0 18px; border-radius: 9999px; font-size: 14px; font-weight: 500; white-space: nowrap; text-decoration: none; }
+  .pill-sm { height: 32px; padding: 0 14px; font-size: 13px; }
+  .pill-primary { background: var(--fg); color: #fff; }
+  .pill-primary:hover { background: #202329; }
+  .pill-secondary { background: var(--secondary); color: var(--fg); }
+  .pill-secondary:hover { background: var(--secondary-hover); }
+  .pill:disabled { opacity: 0.4; cursor: default; }
+  .pill svg { width: 14px; height: 14px; }
+  .field { min-width: 0; height: 40px; padding: 0 18px; border: 1px solid var(--border); border-radius: 9999px; background: var(--bg); color: var(--fg); font: inherit; outline: none; }
+  .field:focus { border-color: var(--fg); }
+  .field::placeholder { color: var(--faint); }
+  .surface { display: flex; flex-direction: column; gap: 8px; height: calc(100vh - 72px); min-height: 560px; margin: 0 12px 12px; padding: 8px; border-radius: 20px; background: var(--card); }
+  .panel { min-width: 0; padding: 20px 22px; border-radius: 16px; background: var(--bg); }
+  .label { margin: 0; font-size: 13px; font-weight: 500; color: var(--muted); }
+  @media (max-width: 900px) {
+    .models { display: none; }
+  }
+  @media (max-width: 640px) {
+    .site { padding: 0 16px; }
+    .crumbs > span, .crumbs > svg { display: none; }
+    .surface { margin: 0 8px 8px; }
+  }
+
+  /* Meeting to Action Items */
+  :root {
+    --speaker-1: #0a0a0a;
+    --speaker-2: #ff6308;
+    --speaker-3: #6e56cf;
+    --speaker-4: #0f8f7e;
+    --bad: #e5484d;
+    --bad-soft: rgb(229 72 77 / 0.1);
+  }
+  @keyframes settle { from { background-color: var(--accent-soft); } }
+  @keyframes ring { 50% { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--ring, currentColor); } }
+  .fill { fill: currentColor; stroke: none; }
+
+  .start { flex: 1; display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); align-items: center; gap: 56px; padding: 48px 64px; }
+  .start h2 { margin: 0 0 18px; font-size: 52px; line-height: 1.04; font-weight: 450; letter-spacing: -0.03em; }
+  .start-copy > p { max-width: 520px; margin: 0 0 28px; font-size: 17px; line-height: 27px; color: var(--muted); }
+  .start-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+  .start-actions .pill { height: 46px; padding: 0 22px; font-size: 15px; }
+  .start .fineprint { max-width: 480px; margin: 18px 0 0; font-size: 13px; line-height: 20px; color: var(--faint); }
+  .how { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+  .how li { display: grid; grid-template-columns: 38px minmax(0, 1fr); gap: 2px 14px; padding: 18px 20px; border-radius: 16px; background: var(--card); }
+  .how-icon { grid-row: span 2; display: grid; place-items: center; width: 38px; height: 38px; border-radius: 12px; background: var(--bg); box-shadow: inset 0 0 0 1px var(--line); }
+  .how-icon svg { width: 18px; height: 18px; }
+  .how strong { font-weight: 500; }
+  .how span:last-child { color: var(--muted); }
+
+  .toolbar { flex: none; display: flex; align-items: center; gap: 16px; min-height: 56px; padding: 8px 10px 8px 18px; border-radius: 16px; background: var(--bg); }
+  .state { display: inline-flex; align-items: center; gap: 8px; font-weight: 500; white-space: nowrap; }
+  .state i { width: 8px; height: 8px; border-radius: 50%; background: var(--faint); }
+  .state.busy i { background: var(--fg); animation: blink 1s ease-in-out infinite; }
+  .state.live i { background: var(--accent); animation: blink 1.4s ease-in-out infinite; }
+  .clock { font: 500 13px/1 var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+  .wave { display: flex; align-items: center; gap: 2px; height: 28px; }
+  .wave span { width: 3px; min-height: 3px; border-radius: 2px; background: var(--border); }
+  .live-wave .wave span { background: var(--fg); }
+  .people { display: flex; gap: 6px; min-width: 0; overflow: hidden; }
+  .person { display: inline-flex; align-items: center; gap: 7px; height: 30px; padding: 0 12px 0 4px; border-radius: 9999px; background: var(--card); font-size: 13px; font-weight: 500; white-space: nowrap; animation: appear 0.3s ease-out; }
+  .person .avatar { width: 22px; height: 22px; font-size: 11px; }
+  .person.speaking .avatar { animation: ring 1.2s ease-in-out infinite; }
+  .spacer { flex: 1; }
+  .cost { color: var(--muted); font-size: 13px; white-space: nowrap; font-variant-numeric: tabular-nums; cursor: help; }
+  #error { margin: 0; padding: 10px 14px; border-radius: 12px; background: var(--bad-soft); color: var(--bad); }
+
+  .room { flex: 1; display: grid; grid-template-columns: minmax(0, 1fr) minmax(360px, 430px); gap: 8px; min-height: 0; }
+  .panel-head { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .panel-head .hint { margin-left: auto; font-size: 12px; color: var(--faint); }
+  .status { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; font-size: 12px; color: var(--faint); }
+  .status.on { color: var(--accent); }
+  .status.on i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; animation: blink 1s ease-in-out infinite; }
+
+  .transcript { position: relative; display: flex; flex-direction: column; min-height: 0; padding: 20px 0 0; }
+  .transcript .panel-head { padding: 0 24px; margin-bottom: 6px; }
+  .lines { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 20px; padding: 16px 24px 28px 36px; overflow-y: auto; -webkit-mask-image: linear-gradient(to bottom, transparent, #000 16px); mask-image: linear-gradient(to bottom, transparent, #000 16px); }
+  .line { position: relative; isolation: isolate; display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 12px; animation: appear 0.25s ease-out; }
+  .line::before { content: ""; position: absolute; inset: -8px -12px; z-index: -1; border-radius: 14px; transition: background-color 0.3s; }
+  .line.cited::before { background: var(--accent-soft); }
+  .line::after { content: ""; position: absolute; left: -16px; top: 6px; bottom: 6px; width: 2px; border-radius: 1px; transition: background-color 0.3s; }
+  .line.reading::after { background: var(--accent); animation: blink 1s ease-in-out infinite; }
+  .line.noted::after { background: var(--line); }
+  .avatar { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: var(--speaker-1); color: #fff; font-size: 13px; font-weight: 600; --ring: var(--speaker-1); }
+  .s2 .avatar { background: var(--speaker-2); --ring: var(--speaker-2); }
+  .s3 .avatar { background: var(--speaker-3); --ring: var(--speaker-3); }
+  .s4 .avatar { background: var(--speaker-4); --ring: var(--speaker-4); }
+  .line-head { display: flex; align-items: baseline; gap: 8px; height: 18px; }
+  .name { font-size: 13px; font-weight: 600; line-height: 18px; }
+  .time { padding: 0 5px; border-radius: 6px; font: 12px/18px var(--mono); color: var(--faint); font-variant-numeric: tabular-nums; }
+  .time:hover { background: var(--secondary); color: var(--fg); }
+  .text { max-width: 780px; margin: 4px 0 0; font-size: 16px; line-height: 26px; overflow-wrap: anywhere; }
+  .line.open .text::after { content: ""; display: inline-block; width: 6px; height: 6px; margin-left: 7px; border-radius: 50%; background: var(--faint); vertical-align: 2px; animation: blink 1s ease-in-out infinite; }
+  .pending .avatar { gap: 3px; display: flex; justify-content: center; align-items: center; background: var(--secondary); }
+  .pending .avatar i { width: 4px; height: 4px; border-radius: 50%; background: var(--faint); animation: blink 1s ease-in-out infinite; }
+  .pending .avatar i:nth-child(2) { animation-delay: 0.2s; }
+  .pending .avatar i:nth-child(3) { animation-delay: 0.4s; }
+  .pending .name { font-weight: 500; color: var(--faint); }
+  .pending .text { color: var(--faint); }
+  #back { position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%); box-shadow: 0 6px 20px -8px rgb(10 10 10 / 0.35); }
+
+  .side { display: flex; flex-direction: column; gap: 8px; min-height: 0; }
+  .notes { flex: 1; min-height: 0; display: flex; flex-direction: column; padding-bottom: 0; }
+  .notes .panel-head { margin-bottom: 0; }
+  .notes-body { flex: 1; min-height: 0; margin: 0 -22px; padding: 14px 22px 8px; overflow-y: auto; -webkit-mask-image: linear-gradient(to bottom, transparent, #000 14px); mask-image: linear-gradient(to bottom, transparent, #000 14px); }
+  .notes-skeleton { display: grid; gap: 10px; }
+  .notes-skeleton i { height: 12px; border-radius: 6px; background: var(--secondary); animation: pulse 1s ease-in-out infinite alternate; }
+  .notes-skeleton i:nth-child(1) { width: 92%; }
+  .notes-skeleton i:nth-child(2) { width: 74%; }
+  .notes-skeleton i:nth-child(3) { width: 84%; margin-top: 14px; }
+  .notes-skeleton i:nth-child(4) { width: 60%; }
+  #summary { margin: 0 0 22px; font-size: 15px; line-height: 24px; animation: appear 0.3s ease-out; }
+  .group { margin-bottom: 18px; animation: appear 0.3s ease-out; }
+  .group h3 { display: flex; align-items: center; gap: 8px; margin: 0 0 4px; font-size: 13px; font-weight: 500; color: var(--muted); }
+  .count { min-width: 20px; height: 20px; padding: 0 6px; border-radius: 9999px; background: var(--secondary); font-size: 12px; line-height: 20px; text-align: center; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .items { display: grid; margin: 0 -10px; padding: 0; list-style: none; }
+  .item { display: grid; grid-template-columns: 20px minmax(0, 1fr) auto; align-items: start; gap: 10px; padding: 9px 10px; border-radius: 12px; }
+  .item.fresh { animation: appear 0.35s ease-out, settle 2.5s ease-out; }
+  .item.changed { animation: settle 2.5s ease-out; }
+  .mark { display: grid; place-items: center; width: 20px; height: 20px; margin-top: 1px; color: var(--accent); }
+  .mark svg { width: 18px; height: 18px; }
+  .box { color: var(--faint); }
+  .item p { margin: 0; font-size: 14px; line-height: 21px; font-weight: 500; }
+  .meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .chip { display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 9px 0 3px; border-radius: 9999px; background: var(--card); box-shadow: inset 0 0 0 1px var(--line); font-size: 12px; color: var(--muted); white-space: nowrap; }
+  .chip .avatar { width: 16px; height: 16px; font-size: 9px; }
+  .chip svg { width: 12px; height: 12px; margin-left: 4px; }
+  .chip s { color: var(--faint); }
+  .item .time { margin-top: 1px; }
+
+  .ask { flex: none; display: flex; flex-direction: column; gap: 10px; max-height: 48%; padding: 14px; }
+  .answers { display: flex; flex-direction: column; gap: 8px; min-height: 0; overflow-y: auto; }
+  .answer { padding: 12px 14px; border-radius: 14px; background: var(--card); animation: appear 0.3s ease-out; }
+  .answer .q { margin: 0 0 4px; font-size: 13px; font-weight: 500; color: var(--muted); }
+  .answer .a { margin: 0; font-size: 14px; line-height: 23px; }
+  .answer .a.failed { color: var(--bad); }
+  .thinking { display: flex; align-items: flex-start; gap: 8px; margin: 0; font-size: 12px; line-height: 18px; color: var(--faint); }
+  .thinking i { flex: none; width: 6px; height: 6px; margin-top: 6px; border-radius: 50%; background: var(--accent); animation: blink 1s ease-in-out infinite; }
+  .thinking span { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+  .cite { display: inline-flex; align-items: center; height: 20px; margin: 0 1px; padding: 0 7px; border-radius: 9999px; background: var(--accent-soft); color: var(--accent); font: 500 11px/20px var(--mono); vertical-align: 1px; }
+  .cite:hover { background: var(--accent); color: #fff; }
+  .suggestions { display: flex; flex-wrap: wrap; gap: 6px; }
+  .suggestions button { height: 28px; padding: 0 12px; border-radius: 9999px; background: var(--secondary); font-size: 12.5px; color: var(--muted); }
+  .suggestions button:hover { background: var(--secondary-hover); color: var(--fg); }
+  .ask-form { display: flex; gap: 8px; }
+  .ask-form .field { flex: 1; padding: 0 16px; }
+  .send { flex: none; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--fg); color: #fff; }
+  .send:disabled { opacity: 0.3; cursor: default; }
+  .send svg { width: 16px; height: 16px; }
+
+  @media (max-width: 1000px) {
+    .surface { height: auto; }
+    .start { grid-template-columns: minmax(0, 1fr); padding: 40px 28px; }
+    .room { grid-template-columns: minmax(0, 1fr); }
+    .transcript { height: 70vh; }
+    .people, .wave { display: none; }
+  }
+</style>
+</head>
+<body>
+<header class="site">
+  <a class="logo" href="https://x.ai" target="_blank" rel="noopener" aria-label="SpaceXAI"><svg viewBox="0 0 759 290.2" aria-hidden="true"><g transform="translate(-674.5,-388.5)"><path d="M1433.19 388.934C1345.69 396.068 1001.73 438.71 763.235 678.467H674.732L684.62 668.612C734.53 620.395 955.373 416.045 1433.19 388.668V388.934Z"/><path d="M1133.66 678.467H1064.29L927.618 578.979C940.213 571.058 952.888 563.515 965.603 556.33L1133.66 678.467Z"/><path d="M1022.8 678.468H953.463L932.43 663.169H814.998C823.265 655.828 831.635 648.702 840.092 641.784H902.996L870.444 618.106C882.079 609.448 893.843 601.155 905.701 593.211L1022.8 678.468Z"/><path d="M770.433 495.02L823.901 533.876C810.594 541.712 798.139 549.468 786.514 557.055L701.158 494.986L770.433 495.02Z"/></g></svg></a>
+  <nav class="crumbs"><span>Cookbook</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg><h1>Meeting to Action Items</h1></nav>
+  <span class="models">grok-4.7 and speech to text</span>
+  <a class="pill pill-secondary pill-sm" href="https://github.com/xai-org/xai-cookbook/tree/main/examples/meeting-to-action-items" target="_blank" rel="noopener">View code</a>
+</header>
+
+
+<main class="surface">
+  <section class="panel start" id="start">
+    <div class="start-copy">
+      <h2>Leave it open during a call</h2>
+      <p>It captions each speaker as they talk, keeps a running list of decisions and action items, and answers questions about what was said.</p>
+      <div class="start-actions">
+        <button type="button" class="pill pill-primary" id="sample"><svg viewBox="0 0 16 16" aria-hidden="true"><path class="fill" d="M5 2.5v11l9-5.5z"/></svg>Play a sample meeting</button>
+        <button type="button" class="pill pill-secondary" id="listen"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5.5" y="1.5" width="5" height="8.5" rx="2.5"/><path d="M3 7.5a5 5 0 0 0 10 0M8 12.5v2"/></svg>Start listening</button>
+      </div>
+      <p class="fineprint">The sample is a one-minute planning call between two voices, recorded with text to speech the first time you play it. It takes a little over a minute and costs about 4 cents.</p>
+    </div>
+    <ol class="how">
+      <li><span class="how-icon"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="3" width="13" height="10" rx="2.5"/><path d="M4.5 7h3.5M10 7h1.5M4.5 9.5h6"/></svg></span><strong>Live captions</strong><span>Each speaker gets a label, and a pause doesn't cut anyone off.</span></li>
+      <li><span class="how-icon"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5"/><path d="m5.5 8.2 1.7 1.7 3.3-3.6"/></svg></span><strong>Decisions and action items</strong><span>Grok revises the notes after every turn, with owners and due dates.</span></li>
+      <li><span class="how-icon"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 4.5a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2H7l-3 2.5v-2.5h0.5a2 2 0 0 1-2-2z"/><path d="M8 5.2v2.3M8 9.4v.1"/></svg></span><strong>Answers with sources</strong><span>Ask what was decided, and jump to the moment someone said it.</span></li>
+    </ol>
+  </section>
+
+  <div class="toolbar" id="toolbar" hidden>
+    <span class="state" id="state"><i></i><span id="state-text"></span></span>
+    <span class="clock" id="clock">0:00</span>
+    <div class="wave" id="wave" aria-hidden="true"></div>
+    <div class="people" id="people"></div>
+    <span class="spacer"></span>
+    <span class="cost" id="cost" hidden></span>
+    <a class="pill pill-secondary pill-sm" id="download" download="meeting-notes.md" hidden><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.5v8M4.5 7 8 10.5 11.5 7M2.5 13.5h11"/></svg>Download notes</a>
+    <button type="button" class="pill pill-primary pill-sm" id="stop"><svg viewBox="0 0 16 16" aria-hidden="true"><rect class="fill" x="3.5" y="3.5" width="9" height="9" rx="1.5"/></svg>Stop</button>
+    <button type="button" class="pill pill-secondary pill-sm" id="new" hidden><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg>New meeting</button>
+  </div>
+  <p id="error" hidden></p>
+
+  <div class="room" id="room" hidden>
+    <section class="panel transcript">
+      <div class="panel-head"><p class="label">Transcript</p><span class="hint">Grey words are interim and can still change</span></div>
+      <div class="lines" id="lines">
+        <div class="line pending" id="pending" hidden>
+          <span class="avatar"><i></i><i></i><i></i></span>
+          <div><div class="line-head"><span class="name">Listening</span></div><p class="text" id="pending-text"></p></div>
+        </div>
+      </div>
+      <button type="button" class="pill pill-secondary pill-sm" id="back" hidden>Back to live</button>
+    </section>
+
+    <aside class="side">
+      <section class="panel notes" id="notes">
+        <div class="panel-head"><p class="label">Notes</p><span class="status" id="revising"><i></i><span id="revising-text">Revised after each turn</span></span></div>
+        <div class="notes-body">
+          <div class="notes-skeleton" id="notes-skeleton"><i></i><i></i><i></i><i></i></div>
+          <p id="summary" hidden></p>
+          <section class="group" id="decisions-group" hidden>
+            <h3>Decisions <span class="count" id="decisions-count"></span></h3>
+            <ul class="items" id="decisions"></ul>
+          </section>
+          <section class="group" id="action_items-group" hidden>
+            <h3>Action items <span class="count" id="action_items-count"></span></h3>
+            <ul class="items" id="action_items"></ul>
+          </section>
+        </div>
+      </section>
+
+      <section class="panel ask">
+        <div class="answers" id="answers"></div>
+        <div class="suggestions" id="suggestions" hidden></div>
+        <form class="ask-form" id="ask">
+          <input class="field" id="question" required maxlength="300" autocomplete="off" aria-label="Question about the meeting" placeholder="Ask about this meeting">
+          <button class="send" id="send" aria-label="Ask" disabled><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 13V3M3.5 7.5 8 3l4.5 4.5"/></svg></button>
+        </form>
+      </section>
+    </aside>
+  </div>
+</main>
+
+<!-- Runs on the audio thread, so capturing never waits on the page. It averages the input down to 16 kHz
+     and posts 100 ms of 16-bit PCM at a time. -->
+<script type="text/worklet" id="capture-worklet">
+  class Capture extends AudioWorkletProcessor {
+    constructor() {
+      super();
+      this.step = sampleRate / 16000;
+      this.chunk = new Int16Array(1600);
+      this.length = 0;
+      this.sum = 0;
+      this.count = 0;
+      this.position = 0;
+      this.peak = 0;
+    }
+
+    process([input]) {
+      const samples = input[0];
+      if (!samples) return true;
+      for (const sample of samples) {
+        this.sum += sample;
+        this.count++;
+        if (++this.position < this.step) continue;
+        this.position -= this.step;
+        const value = Math.max(-1, Math.min(1, this.sum / this.count));
+        this.sum = 0;
+        this.count = 0;
+        this.peak = Math.max(this.peak, Math.abs(value));
+        this.chunk[this.length++] = value * 0x7fff;
+        if (this.length < this.chunk.length) continue;
+        this.port.postMessage({ pcm: this.chunk.buffer, peak: this.peak }, [this.chunk.buffer]);
+        this.chunk = new Int16Array(1600);
+        this.length = 0;
+        this.peak = 0;
+      }
+      return true;
+    }
+  }
+  registerProcessor("capture", Capture);
+</script>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  const ICONS = {
+    check: '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5"/><path d="m5.5 8.2 1.7 1.7 3.3-3.6"/></svg>',
+    box: '<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2.5" y="2.5" width="11" height="11" rx="3.5"/></svg>',
+    calendar: '<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2.5" y="3.5" width="11" height="10" rx="2"/><path d="M2.5 6.5h11M5.5 2v3M10.5 2v3"/></svg>',
+  };
+  const SUGGESTIONS = {
+    sample: ["What did we decide about pricing?", "Who owns what?"],
+    microphone: ["What have we decided so far?", "Who owns what?"],
+  };
+  const WAVE_BARS = 40;
+  // The sample meeting plays through this element, and from there through the same capture as a microphone.
+  const player = new Audio();
+  let context, capture, sampleSource;
+  let meeting = null;
+  let lines = new Map();
+  let names = new Map();
+  let levels = [];
+  let phase = "idle";
+  let cost = null;
+  let questionsCost = 0;
+  let clockTimer = 0;
+  let following = true;
+  let jumping = 0;
+
+  $("wave").innerHTML = "<span></span>".repeat(WAVE_BARS);
+  $("sample").onclick = () => start(true);
+  $("listen").onclick = () => start(false);
+  $("stop").onclick = () => stop();
+  $("new").onclick = () => reset();
+  $("back").onclick = () => {
+    following = true;
+    follow();
+  };
+  player.onended = () => stop();
+
+  $("lines").onscroll = () => {
+    const box = $("lines");
+    if (!jumping) following = box.scrollHeight - box.scrollTop - box.clientHeight < 60;
+    $("back").hidden = following || phase !== "live";
+  };
+
+  $("question").oninput = () => ($("send").disabled = !$("question").value.trim() || !lines.size);
+  $("ask").onsubmit = (event) => {
+    event.preventDefault();
+    ask($("question").value.trim());
+  };
+  $("suggestions").onclick = (event) => {
+    if (event.target.matches("button")) ask(event.target.textContent);
+  };
+  $("answers").onclick = (event) => {
+    const cite = event.target.closest(".cite");
+    if (cite) jumpTo(Number(cite.dataset.line));
+  };
+
+  async function start(sample) {
+    // The audio has to start from a click, or the browser won't let the sample play out loud.
+    context ??= new AudioContext();
+    context.resume();
+    reset();
+    $("start").hidden = true;
+    $("toolbar").hidden = false;
+    $("room").hidden = false;
+    $("stop").hidden = false;
+    setPhase("connecting", "Connecting");
+    let microphone = null;
+    try {
+      capture ??= await createCapture();
+      if (!sample) microphone = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1 } });
+    } catch (error) {
+      return fail(sample ? `Couldn't start the audio: ${error.message}` : "Couldn't use the microphone. Allow it for this page, or play the sample meeting.");
+    }
+
+    const events = new EventSource(`/api/meeting${sample ? "?sample" : ""}`);
+    meeting = { events, sample, microphone, socket: null, source: null, id: null };
+    const on = (name, handler) => events.addEventListener(name, (message) => handler(JSON.parse(message.data)));
+
+    on("recording", () => setPhase("connecting", "Recording the sample meeting"));
+    on("meeting", ({ id, sample: url }) => {
+      meeting.id = id;
+      if (url) player.src = url;
+      meeting.socket = new WebSocket(`${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/api/audio?meeting=${id}`);
+      meeting.socket.onclose = () => phase === "live" && stop();
+    });
+    // The API is ready for audio, so start the sample or the microphone. Either one feeds the capture worklet,
+    // which sends 100 ms chunks of 16 kHz PCM up the socket.
+    on("listening", () => {
+      meeting.source = sample ? sampleSource : context.createMediaStreamSource(microphone);
+      meeting.source.connect(capture);
+      if (sample) player.play().catch((error) => fail(`Couldn't play the sample: ${error.message}`));
+      setPhase("live", sample ? "Sample meeting" : "Listening");
+      const started = Date.now();
+      clockTimer = setInterval(() => ($("clock").textContent = clock((Date.now() - started) / 1000)), 250);
+      $("suggestions").innerHTML = SUGGESTIONS[sample ? "sample" : "microphone"].map((question) => `<button type="button">${question}</button>`).join("");
+    });
+    on("interim", ({ text }) => showInterim(text));
+    on("line", showLine);
+    on("revising", ({ lines: ids }) => showRevising(ids));
+    on("change", ({ list, item }) => showItem(list, item));
+    on("speakers", ({ speakers }) => nameSpeakers(speakers));
+    on("notes", ({ notes }) => showNotes(notes));
+    // The lines of a failed revision go into the next one, which starts when the next turn ends.
+    on("revision-failed", () => {
+      document.querySelectorAll(".line.reading").forEach((el) => el.classList.remove("reading"));
+      $("revising").classList.remove("on");
+      $("revising-text").textContent = "Couldn't revise. Trying again after the next turn";
+    });
+    on("finishing", () => setPhase("connecting", "Finishing the notes"));
+    on("done", ({ cost: meetingCost, download }) => {
+      events.close();
+      setPhase("ended", "Ended");
+      cost = meetingCost;
+      showCost();
+      $("download").href = download;
+      $("download").hidden = false;
+      $("stop").hidden = true;
+      $("new").hidden = false;
+    });
+    on("failure", ({ message }) => fail(message));
+    events.onerror = () => fail("Lost the connection to the server.");
+  }
+
+  async function createCapture() {
+    const code = new Blob([$("capture-worklet").textContent], { type: "text/javascript" });
+    await context.audioWorklet.addModule(URL.createObjectURL(code));
+    const node = new AudioWorkletNode(context, "capture", { numberOfOutputs: 0, channelCount: 1, channelCountMode: "explicit" });
+    node.port.onmessage = ({ data }) => {
+      if (phase === "live" && meeting?.socket?.readyState === WebSocket.OPEN) meeting.socket.send(data.pcm);
+      showLevel(phase === "live" ? data.peak : 0);
+    };
+    sampleSource = context.createMediaElementSource(player);
+    sampleSource.connect(context.destination);
+    return node;
+  }
+
+  // Ends the meeting. Closing the socket tells the server the audio is over, and it sends the last words and
+  // the final notes before "done".
+  function stop() {
+    if (phase !== "live") return;
+    setPhase("connecting", "Finishing the notes");
+    endAudio();
+    meeting.socket?.close();
+  }
+
+  function endAudio() {
+    player.pause();
+    meeting?.source?.disconnect(capture);
+    if (meeting) meeting.source = null;
+    meeting?.microphone?.getTracks().forEach((track) => track.stop());
+    clearInterval(clockTimer);
+    levels = [];
+    showLevel(0);
+  }
+
+  function fail(message) {
+    endAudio();
+    meeting?.events?.close();
+    meeting?.socket?.close();
+    setPhase("ended", "Stopped");
+    $("error").textContent = message;
+    $("error").hidden = false;
+    $("stop").hidden = true;
+    $("new").hidden = false;
+  }
+
+  function setPhase(next, text) {
+    phase = next;
+    $("state").className = `state ${next === "live" ? "live" : next === "connecting" ? "busy" : ""}`;
+    $("state-text").textContent = text;
+    $("toolbar").classList.toggle("live-wave", next === "live");
+    $("back").hidden = following || next !== "live";
+    if (next !== "live") document.querySelectorAll(".person.speaking").forEach((person) => person.classList.remove("speaking"));
+  }
+
+  function showLevel(peak) {
+    levels = [...levels, Math.min(1, peak * 2.5)].slice(-WAVE_BARS);
+    const bars = $("wave").children;
+    for (let i = 0; i < WAVE_BARS; i++) {
+      const level = levels[i - (WAVE_BARS - levels.length)] ?? 0;
+      bars[i].style.height = `${3 + level * 25}px`;
+    }
+  }
+
+  // Interim words don't say who's speaking, so they wait in a line of their own until they're final.
+  function showInterim(text) {
+    $("pending-text").textContent = text;
+    $("pending").hidden = !text;
+    follow();
+  }
+
+  function showLine({ id, speaker, start, text, open }) {
+    let line = lines.get(id);
+    if (!line) {
+      const el = document.createElement("div");
+      el.className = `line s${Math.min(speaker, 4)}`;
+      el.dataset.speaker = speaker;
+      el.innerHTML = `<span class="avatar"></span><div><div class="line-head"><span class="name"></span><button type="button" class="time">${clock(start)}</button></div><p class="text"></p></div>`;
+      el.querySelector(".time").onclick = () => jumpTo(id);
+      $("lines").insertBefore(el, $("pending"));
+      line = { el, speaker, start };
+      lines.set(id, line);
+      addPerson(speaker);
+      labelSpeakers();
+      $("send").disabled = !$("question").value.trim();
+      $("suggestions").hidden = !$("suggestions").children.length;
+    }
+    line.el.querySelector(".text").textContent = text;
+    line.el.classList.toggle("open", open);
+    $("people").querySelector(`[data-speaker="${speaker}"]`)?.classList.toggle("speaking", open && phase === "live");
+    follow();
+  }
+
+  function addPerson(speaker) {
+    if ($("people").querySelector(`[data-speaker="${speaker}"]`)) return;
+    $("people").insertAdjacentHTML("beforeend", `<span class="person s${Math.min(speaker, 4)}" data-speaker="${speaker}"><span class="avatar"></span><span class="name"></span></span>`);
+  }
+
+  // Speakers are numbers until Grok works out their names from the conversation.
+  function nameSpeakers(speakers) {
+    names = new Map(speakers.map(({ speaker, name }) => [speaker, name]));
+    labelSpeakers();
+  }
+
+  function labelSpeakers() {
+    document.querySelectorAll("[data-speaker]").forEach((el) => {
+      const speaker = Number(el.dataset.speaker);
+      const name = names.get(speaker);
+      el.querySelector(".name").textContent = name ?? `Speaker ${speaker}`;
+      el.querySelector(".avatar").textContent = name ? name[0].toUpperCase() : speaker;
+    });
+  }
+
+  // Keeps the newest words in view, unless the reader has scrolled up to read something earlier.
+  function follow() {
+    if (following) $("lines").scrollTop = $("lines").scrollHeight;
+  }
+
+  // The lines Grok is reading pulse in the margin, then stay marked once they're in the notes.
+  function showRevising(ids) {
+    $("revising").classList.add("on");
+    $("revising-text").textContent = `Revising with ${ids.length} new ${ids.length === 1 ? "line" : "lines"}`;
+    for (const id of ids) lines.get(id)?.el.classList.add("reading");
+  }
+
+  function showItem(list, item) {
+    $("notes-skeleton").hidden = true;
+    $(`${list}-group`).hidden = false;
+    let el = $(list).querySelector(`[data-id="${CSS.escape(item.id)}"]`);
+    if (el) {
+      // A due date that changed keeps the old one, crossed out, so the revision shows.
+      if (el.item.due && el.item.due !== item.due) el.was = el.item.due;
+      el.classList.remove("fresh", "changed");
+      void el.offsetWidth;
+      el.classList.add("changed");
+    } else {
+      el = document.createElement("li");
+      el.className = "item fresh";
+      el.dataset.id = item.id;
+      $(list).append(el);
+    }
+    el.item = item;
+    el.innerHTML = list === "decisions" ? decision(item) : actionItem(item, el.was);
+    el.querySelector(".time")?.addEventListener("click", () => jumpTo(item.line));
+    $(`${list}-count`).textContent = $(list).children.length;
+    el.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }
+
+  function decision(item) {
+    return `<span class="mark">${ICONS.check}</span><p>${escapeHtml(item.text)}</p>${timeButton(item.line)}`;
+  }
+
+  function actionItem(item, was) {
+    const owner = item.owner ? `<span class="chip">${ownerAvatar(item.owner)}${escapeHtml(item.owner)}</span>` : "";
+    const crossedOut = was && was !== item.due ? ` <s>${escapeHtml(was)}</s>` : "";
+    const due = item.due ? `<span class="chip">${ICONS.calendar}${escapeHtml(item.due)}${crossedOut}</span>` : "";
+    return `<span class="mark box">${ICONS.box}</span><div><p>${escapeHtml(item.task)}</p>${owner || due ? `<div class="meta">${owner}${due}</div>` : ""}</div>${timeButton(item.line)}`;
+  }
+
+  // The owner is a name Grok has matched to a speaker, or Speaker N until it has.
+  function ownerAvatar(owner) {
+    const number = Number(owner.match(/^Speaker (\d+)$/)?.[1]);
+    const speaker = number || [...names].find(([, name]) => name === owner)?.[0];
+    const initial = number || escapeHtml(owner[0].toUpperCase());
+    return `<span class="s${speaker ? Math.min(speaker, 4) : 1}"><span class="avatar"${speaker ? "" : ' style="background: var(--faint)"'}>${initial}</span></span>`;
+  }
+
+  function timeButton(id) {
+    const line = lines.get(id);
+    return line ? `<button type="button" class="time">${clock(line.start)}</button>` : "<span></span>";
+  }
+
+  // A revision has finished: drop what Grok removed, and mark the lines it read.
+  function showNotes(notes) {
+    for (const list of ["decisions", "action_items"]) {
+      const kept = new Set(notes[list].map((item) => item.id));
+      [...$(list).children].forEach((el) => kept.has(el.dataset.id) || el.remove());
+      $(`${list}-count`).textContent = $(list).children.length;
+      $(`${list}-group`).hidden = !$(list).children.length;
+    }
+    if (notes.summary) {
+      $("notes-skeleton").hidden = true;
+      $("summary").textContent = notes.summary;
+      $("summary").hidden = false;
+    }
+    document.querySelectorAll(".line.reading").forEach((el) => el.classList.replace("reading", "noted"));
+    $("revising").classList.remove("on");
+    $("revising-text").textContent = "Revised after each turn";
+  }
+
+  function jumpTo(id) {
+    const line = lines.get(id);
+    if (!line) return;
+    document.querySelectorAll(".line.cited").forEach((el) => el.classList.remove("cited"));
+    line.el.classList.add("cited");
+    // New captions would pull the view back down while it scrolls, so following waits until it's there.
+    following = false;
+    clearTimeout(jumping);
+    jumping = setTimeout(() => (jumping = 0), 800);
+    line.el.scrollIntoView({ block: "center", behavior: "smooth" });
+    $("back").hidden = phase !== "live";
+  }
+
+  function ask(question) {
+    if (!question || !meeting?.id || !lines.size) return;
+    $("question").value = "";
+    $("send").disabled = true;
+    [...$("suggestions").children].forEach((button) => button.textContent.toLowerCase() === question.toLowerCase() && button.remove());
+    $("suggestions").hidden = !$("suggestions").children.length;
+    const card = document.createElement("article");
+    card.className = "answer";
+    card.innerHTML = `<p class="q"></p><p class="thinking"><i></i><span>Reading the transcript</span></p><p class="a" hidden></p>`;
+    card.querySelector(".q").textContent = question;
+    $("answers").append(card);
+    card.scrollIntoView({ block: "nearest", behavior: "smooth" });
+
+    const events = new EventSource(`/api/answer?meeting=${meeting.id}&question=${encodeURIComponent(question)}`);
+    const on = (name, handler) => events.addEventListener(name, (message) => handler(JSON.parse(message.data)));
+    const answer = card.querySelector(".a");
+    let reasoning = "";
+    let text = "";
+    on("reasoning", ({ text: delta }) => {
+      reasoning += delta;
+      card.querySelector(".thinking span").textContent = reasoning.slice(-160);
+    });
+    on("text", ({ text: delta }) => {
+      text += delta;
+      card.querySelector(".thinking").hidden = true;
+      answer.hidden = false;
+      answer.innerHTML = withCitations(text);
+      $("answers").scrollTop = $("answers").scrollHeight;
+    });
+    on("done", ({ cost: answerCost }) => {
+      events.close();
+      questionsCost += answerCost;
+      if (cost) showCost();
+    });
+    const failed = (message) => {
+      events.close();
+      card.querySelector(".thinking").hidden = true;
+      answer.hidden = false;
+      answer.classList.add("failed");
+      answer.textContent = message;
+    };
+    on("failure", ({ message }) => failed(message));
+    events.onerror = () => failed("Lost the connection to the server.");
+  }
+
+  // Grok cites lines like [12]. Each citation becomes the line's time, which jumps to it in the transcript.
+  // A citation that's still being written is left out until it's complete.
+  function withCitations(text) {
+    return escapeHtml(text.replace(/\[[\d,\s]*$/, "")).replace(/\[(\d+(?:\s*,\s*\d+)*)\]/g, (_, ids) =>
+      ids
+        .split(",")
+        .map(Number)
+        .filter((id) => lines.has(id))
+        .map((id) => `<button type="button" class="cite" data-line="${id}">${clock(lines.get(id).start)}</button>`)
+        .join(""),
+    );
+  }
+
+  // The meeting's cost comes with "done", and each answer adds its own, during the meeting or after.
+  function showCost() {
+    const total = cost.recording + cost.transcription + cost.notes + questionsCost;
+    $("cost").textContent = `Cost $${total.toFixed(total < 0.1 ? 3 : 2)}`;
+    $("cost").title = [
+      cost.recording ? `Recording the sample $${cost.recording.toFixed(3)}` : "",
+      `Transcription $${cost.transcription.toFixed(4)}`,
+      `Notes $${cost.notes.toFixed(3)}`,
+      questionsCost ? `Questions $${questionsCost.toFixed(3)}` : "",
+    ].filter(Boolean).join(" · ");
+    $("cost").hidden = false;
+  }
+
+  function reset() {
+    endAudio();
+    meeting?.events?.close();
+    meeting = null;
+    lines = new Map();
+    names = new Map();
+    cost = null;
+    questionsCost = 0;
+    following = true;
+    phase = "idle";
+    $("start").hidden = false;
+    $("toolbar").hidden = true;
+    $("room").hidden = true;
+    $("error").hidden = true;
+    $("cost").hidden = true;
+    $("download").hidden = true;
+    $("new").hidden = true;
+    $("back").hidden = true;
+    $("clock").textContent = "0:00";
+    $("people").innerHTML = "";
+    $("lines").replaceChildren($("pending"));
+    showInterim("");
+    $("notes-skeleton").hidden = false;
+    $("summary").hidden = true;
+    for (const list of ["decisions", "action_items"]) {
+      $(list).innerHTML = "";
+      $(`${list}-group`).hidden = true;
+    }
+    $("revising").classList.remove("on");
+    $("revising-text").textContent = "Revised after each turn";
+    $("answers").innerHTML = "";
+    $("suggestions").hidden = true;
+    $("question").value = "";
+    $("send").disabled = true;
+  }
+
+  function clock(seconds) {
+    const whole = Math.floor(seconds);
+    return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, "0")}`;
+  }
+
+  function escapeHtml(text) {
+    return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+</script>
+</body>
+</html>

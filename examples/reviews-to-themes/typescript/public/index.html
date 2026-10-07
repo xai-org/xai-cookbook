@@ -1,0 +1,828 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Reviews to Themes</title>
+<style>
+  /* The look every SpaceXAI Cookbook page shares, after x.ai. */
+  :root {
+    --bg: #fff;
+    --card: #f9f8f6;
+    --secondary: #f2f1ef;
+    --secondary-hover: #e9e8e5;
+    --tint: rgb(10 10 10 / 0.04);
+    --line: rgb(10 10 10 / 0.08);
+    --border: rgb(10 10 10 / 0.15);
+    --fg: #0a0a0a;
+    --muted: rgb(10 10 10 / 0.6);
+    --faint: rgb(10 10 10 / 0.36);
+    --accent: #ff6308;
+    --accent-soft: rgb(255 99 8 / 0.1);
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; font: 14px/22px var(--sans); background: var(--bg); color: var(--fg); -webkit-font-smoothing: antialiased; }
+  button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
+  a { color: inherit; }
+  svg { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  @keyframes blink { 50% { opacity: 0.3; } }
+  @keyframes pulse { to { background-color: var(--secondary-hover); } }
+  @keyframes appear { from { opacity: 0; transform: translateY(4px); } }
+
+  .site { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 12px; height: 60px; padding: 0 20px; background: rgb(255 255 255 / 0.85); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+  .logo { flex: none; margin-right: 4px; color: var(--fg); }
+  .logo svg { display: block; width: 52px; height: 20px; fill: currentColor; stroke: none; }
+  .crumbs { display: flex; align-items: center; gap: 8px; min-width: 0; color: var(--muted); white-space: nowrap; }
+  .crumbs svg { width: 12px; height: 12px; color: var(--faint); }
+  .crumbs h1 { margin: 0; overflow: hidden; text-overflow: ellipsis; font-size: inherit; line-height: inherit; font-weight: 500; color: var(--fg); }
+  .site .pill { flex: none; margin-left: auto; }
+  .models { flex: none; height: 26px; padding: 0 10px; border-radius: 9999px; box-shadow: inset 0 0 0 1px var(--line); font-size: 12px; font-weight: 500; line-height: 26px; color: var(--muted); }
+  .pill { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 40px; padding: 0 18px; border-radius: 9999px; font-size: 14px; font-weight: 500; white-space: nowrap; text-decoration: none; }
+  .pill-sm { height: 32px; padding: 0 14px; font-size: 13px; }
+  .pill-primary { background: var(--fg); color: #fff; }
+  .pill-primary:hover { background: #202329; }
+  .pill-secondary { background: var(--secondary); color: var(--fg); }
+  .pill-secondary:hover { background: var(--secondary-hover); }
+  .pill:disabled { opacity: 0.4; cursor: default; }
+  .pill svg { width: 14px; height: 14px; }
+  .field { min-width: 0; height: 40px; padding: 0 18px; border: 1px solid var(--border); border-radius: 9999px; background: var(--bg); color: var(--fg); font: inherit; outline: none; }
+  .field:focus { border-color: var(--fg); }
+  .field::placeholder { color: var(--faint); }
+  .surface { display: flex; flex-direction: column; gap: 8px; height: calc(100vh - 72px); min-height: 560px; margin: 0 12px 12px; padding: 8px; border-radius: 20px; background: var(--card); }
+  .panel { min-width: 0; padding: 20px 22px; border-radius: 16px; background: var(--bg); }
+  .label { margin: 0; font-size: 13px; font-weight: 500; color: var(--muted); }
+  @media (max-width: 900px) {
+    .models { display: none; }
+  }
+  @media (max-width: 640px) {
+    .site { padding: 0 16px; }
+    .crumbs > span, .crumbs > svg { display: none; }
+    .surface { margin: 0 8px 8px; }
+  }
+
+  /* Reviews to Themes */
+  :root {
+    --bad: #e5484d;
+    --bad-soft: rgb(229 72 77 / 0.1);
+  }
+  @keyframes sweep { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+  svg.fill { fill: currentColor; stroke: none; }
+  mark { padding: 0 1px; border-radius: 3px; background: rgb(255 99 8 / 0.16); color: inherit; }
+
+  .toolbar { flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px; border-radius: 16px; background: var(--bg); }
+  .sources { display: flex; gap: 2px; padding: 3px; border-radius: 14px; background: var(--card); }
+  .source { position: relative; display: flex; align-items: center; gap: 10px; height: 46px; padding: 0 16px 0 12px; border-radius: 11px; color: var(--faint); text-align: left; cursor: pointer; }
+  .source svg { flex: none; width: 18px; height: 18px; }
+  .source b { display: block; font-size: 13px; font-weight: 500; line-height: 18px; color: var(--muted); }
+  .source small { display: block; font-size: 12px; line-height: 16px; }
+  .source.active { background: var(--bg); color: var(--muted); box-shadow: 0 1px 2px rgb(10 10 10 / 0.06), inset 0 0 0 1px var(--line); }
+  .source.active b { color: var(--fg); }
+  .source input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+  .toolbar .spacer { flex: 1; }
+  .select { position: relative; display: inline-flex; align-items: center; gap: 6px; height: 40px; padding: 0 12px 0 16px; border-radius: 9999px; background: var(--secondary); color: var(--muted); font-size: 13px; font-weight: 500; }
+  .select select { appearance: none; height: 100%; padding: 0 20px 0 0; border: 0; background: none; color: var(--fg); font: inherit; font-size: 14px; outline: none; cursor: pointer; }
+  .select svg { position: absolute; right: 12px; width: 14px; height: 14px; pointer-events: none; }
+  .segmented { display: inline-flex; gap: 2px; padding: 3px; border-radius: 9999px; background: var(--secondary); }
+  .segmented button { height: 34px; padding: 0 16px; border-radius: 9999px; color: var(--muted); font-size: 13px; font-weight: 500; }
+  .segmented button.active { background: var(--bg); color: var(--fg); box-shadow: 0 1px 2px rgb(10 10 10 / 0.08); }
+  .segmented button:disabled { opacity: 0.4; cursor: default; }
+  #go { min-width: 148px; }
+  #go.stop { background: var(--secondary); color: var(--fg); }
+  fieldset { display: contents; }
+  fieldset:disabled .source, fieldset:disabled select, fieldset:disabled .segmented button { cursor: default; opacity: 0.6; }
+
+  #message { flex: none; margin: 0; padding: 10px 16px; border-radius: 12px; background: var(--bad-soft); color: var(--bad); }
+  #message.notice { background: var(--bg); color: var(--muted); }
+
+  .start { flex: 1; display: grid; align-content: center; justify-items: center; gap: 28px; padding: 40px 24px; text-align: center; overflow: auto; }
+  .start h2 { margin: 0; font-size: 40px; line-height: 1.1; font-weight: 450; letter-spacing: -0.02em; }
+  .start p { max-width: 640px; margin: 14px auto 0; font-size: 16px; line-height: 26px; color: var(--muted); }
+  .start-actions { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 14px; }
+  .start-actions span { color: var(--faint); font-size: 13px; }
+  .how { display: grid; grid-template-columns: repeat(3, minmax(0, 230px)); gap: 8px; margin: 0; padding: 0; list-style: none; text-align: left; }
+  .how li { display: grid; gap: 4px; padding: 14px 16px; border-radius: 14px; background: var(--card); }
+  .how b { font-weight: 500; }
+  .how span { color: var(--muted); font-size: 13px; line-height: 19px; }
+  .how small { margin-top: 4px; color: var(--faint); font-size: 12px; }
+  .resume { display: flex; align-items: center; gap: 14px; max-width: 640px; padding: 12px 12px 12px 16px; border-radius: 14px; background: var(--accent-soft); text-align: left; animation: appear 0.3s ease-out; }
+  .resume > svg { flex: none; width: 20px; height: 20px; color: var(--accent); }
+  .resume div { flex: 1; min-width: 0; }
+  .resume b { display: block; font-weight: 500; }
+  .resume span { display: block; overflow: hidden; color: var(--muted); font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+  .resume .pill { background: var(--bg); }
+
+  .run { flex: none; display: grid; gap: 14px; padding: 14px 16px 18px; }
+  .steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 0; padding: 0; list-style: none; }
+  .steps li { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 9px 12px; border-radius: 12px; background: var(--card); color: var(--faint); }
+  .steps .num { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--secondary-hover); font-size: 12px; font-weight: 600; color: var(--muted); }
+  .steps .num svg { width: 13px; height: 13px; stroke-width: 2; }
+  .steps .text { min-width: 0; }
+  .steps b { display: block; overflow: hidden; font-size: 13px; font-weight: 500; line-height: 18px; color: var(--muted); text-overflow: ellipsis; white-space: nowrap; }
+  .steps span { display: block; overflow: hidden; font-size: 12px; line-height: 16px; text-overflow: ellipsis; white-space: nowrap; }
+  .steps em { margin-left: auto; font-size: 12px; font-style: normal; font-variant-numeric: tabular-nums; }
+  .steps li.active { animation: pulse 1.2s ease-in-out infinite alternate; }
+  .steps li.active .num { background: var(--accent); color: #fff; }
+  .steps li.active b, .steps li.done b { color: var(--fg); }
+  .steps li.done .num { background: var(--fg); color: #fff; }
+  .meter-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+  #meter-count { font-size: 34px; line-height: 38px; font-weight: 450; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+  #meter-total { color: var(--muted); }
+  .meter-head .spacer { flex: 1; }
+  .meter-head .fact { color: var(--faint); font-size: 13px; font-variant-numeric: tabular-nums; }
+  .meter-head .fact b { font-weight: 500; color: var(--fg); }
+  #downloads { display: flex; gap: 6px; align-self: center; }
+  .bar { position: relative; height: 10px; overflow: hidden; border-radius: 5px; background: var(--secondary); }
+  .bar.waiting { animation: pulse 1s ease-in-out infinite alternate; }
+  .bar i { position: absolute; inset: 0 auto 0 0; width: 0; overflow: hidden; border-radius: inherit; background: var(--fg); transition: width 0.8s ease; }
+  .bar.running i::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.22), transparent); animation: sweep 1.8s ease-in-out infinite; }
+
+  .board { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(300px, 380px) minmax(0, 1fr); gap: 8px; }
+  .board .panel { display: flex; flex-direction: column; min-height: 0; overflow: auto; }
+  .panel-head { flex: none; display: flex; align-items: center; gap: 8px; margin: 0 0 12px; }
+  .panel-head .status { color: var(--faint); font-size: 13px; }
+
+  .list { padding: 16px 12px; }
+  .list .panel-head { padding: 0 10px; }
+  .themes { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
+  .candidate { display: grid; gap: 4px; padding: 10px; border-radius: 12px; animation: appear 0.3s ease-out; }
+  .candidate .top { display: flex; align-items: baseline; gap: 10px; }
+  .candidate .name { flex: 1; min-width: 0; font-weight: 500; line-height: 20px; }
+  .candidate .count { font-weight: 500; font-variant-numeric: tabular-nums; }
+  .candidate .desc { display: -webkit-box; margin: 0; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; color: var(--muted); font-size: 12px; line-height: 17px; }
+  .mini { height: 4px; margin-top: 4px; overflow: hidden; border-radius: 2px; background: var(--secondary); }
+  .mini i { display: block; width: 0; height: 100%; border-radius: inherit; background: var(--fg); transition: width 0.6s ease; }
+  .skeleton { display: grid; gap: 14px; padding: 10px; }
+  .skeleton i { height: 12px; border-radius: 6px; background: var(--secondary); animation: pulse 1s ease-in-out infinite alternate; }
+  .skeleton i:nth-child(odd) { width: 70%; height: 14px; }
+  .theme { display: grid; grid-template-columns: 20px minmax(0, 1fr) auto; gap: 4px 8px; align-items: baseline; width: 100%; padding: 11px 12px 11px 10px; border-radius: 12px; text-align: left; animation: appear 0.3s ease-out; }
+  .theme:hover { background: var(--card); }
+  .theme.selected { background: var(--card); box-shadow: inset 0 0 0 1px var(--line); }
+  .theme .rank { color: var(--faint); font-size: 12px; font-variant-numeric: tabular-nums; }
+  .theme .name { font-weight: 500; line-height: 20px; }
+  .theme .count { font-weight: 500; font-variant-numeric: tabular-nums; }
+  .theme .facts { grid-column: 2 / -1; display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 12px; line-height: 20px; font-variant-numeric: tabular-nums; }
+  .theme.quiet .name, .theme.quiet .count { color: var(--muted); font-weight: 450; }
+  .spark { flex: none; width: 70px; height: 18px; color: var(--secondary-hover); }
+  .spark rect.before { color: rgb(10 10 10 / 0.25); }
+  .spark rect.recent { color: var(--fg); }
+  .spark rect { fill: currentColor; stroke: none; }
+  .trend { display: inline-flex; align-items: center; gap: 2px; padding: 0 7px 0 5px; border-radius: 9999px; font-size: 12px; font-weight: 500; line-height: 20px; white-space: nowrap; }
+  .trend svg { width: 12px; height: 12px; stroke-width: 2; }
+  .trend.up { background: var(--accent-soft); color: var(--accent); }
+  .trend.down { background: var(--secondary); color: var(--muted); }
+  .trend.flat { padding: 0; color: var(--faint); }
+  .rating { display: inline-flex; align-items: center; gap: 3px; }
+  .rating svg { width: 11px; height: 11px; color: var(--faint); }
+
+  .detail { padding: 20px 24px; }
+  #activity { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+  .thinking { flex: 1; min-height: 0; overflow: auto; }
+  #reasoning { white-space: pre-wrap; font: 12px/19px var(--mono); color: var(--faint); }
+  .waiting { display: grid; gap: 14px; padding: 18px 20px; border-radius: 14px; background: var(--card); animation: appear 0.3s ease-out; }
+  .waiting dl { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 6px 18px; margin: 0; font-size: 13px; }
+  .waiting dt { color: var(--faint); }
+  .waiting dd { margin: 0; overflow-wrap: anywhere; font: 12px/22px var(--mono); }
+  .waiting p { margin: 0; color: var(--muted); }
+  .feed { flex: 1; min-height: 0; overflow: auto; }
+  .entry { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 12px; padding: 10px 2px; border-bottom: 1px solid var(--line); animation: appear 0.3s ease-out; }
+  .entry .row-no { color: var(--faint); font-size: 12px; line-height: 20px; font-variant-numeric: tabular-nums; }
+  .entry p { margin: 0 0 6px; font-size: 13px; line-height: 20px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 4px; }
+  .chip { padding: 0 8px; border-radius: 9999px; background: var(--secondary); color: var(--muted); font-size: 12px; line-height: 20px; }
+  .chip.none { padding: 0; background: none; color: var(--faint); }
+
+  #theme { display: grid; align-content: start; gap: 22px; animation: appear 0.3s ease-out; }
+  #theme h2 { margin: 4px 0 6px; font-size: 26px; line-height: 32px; font-weight: 500; letter-spacing: -0.015em; }
+  .summary { max-width: 760px; margin: 0; color: var(--muted); font-size: 15px; line-height: 23px; }
+  .stats { display: flex; flex-wrap: wrap; gap: 12px 40px; }
+  .stat strong { display: flex; align-items: center; gap: 4px; font-size: 32px; line-height: 38px; font-weight: 450; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+  .stat strong svg { width: 22px; height: 22px; stroke-width: 2; }
+  .stat strong.up { color: var(--accent); }
+  .stat span { color: var(--muted); font-size: 13px; }
+  .chart { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 6px; height: 150px; }
+  .col { display: grid; grid-template-rows: minmax(0, 1fr) auto; justify-items: center; gap: 6px; min-width: 0; }
+  .stem { display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 3px; width: 100%; height: 100%; }
+  .stem .n { color: var(--faint); font-size: 11px; line-height: 13px; font-variant-numeric: tabular-nums; }
+  .stem i { width: min(30px, 72%); min-height: 2px; border-radius: 6px 6px 2px 2px; background: var(--secondary-hover); }
+  .col.before .stem i { background: rgb(10 10 10 / 0.25); }
+  .col.recent .stem i { background: var(--fg); }
+  .col.recent .n { color: var(--fg); }
+  .col .wk { color: var(--faint); font-size: 11px; line-height: 13px; white-space: nowrap; }
+  .chart-note { margin: -12px 0 0; color: var(--faint); font-size: 12px; }
+  .quotes { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px; }
+  .quote { display: flex; flex-direction: column; justify-content: space-between; gap: 10px; padding: 14px 16px; border-radius: 14px; background: var(--card); text-align: left; }
+  .quote:hover { background: var(--secondary); }
+  .quote q { font-size: 15px; line-height: 22px; }
+  .quote span { color: var(--muted); font-size: 12px; }
+  .rows table { width: 100%; border-collapse: collapse; font-size: 13px; line-height: 20px; }
+  .rows th { position: sticky; top: -20px; z-index: 1; padding: 8px; border-bottom: 1px solid var(--line); background: var(--bg); color: var(--faint); font-size: 12px; font-weight: 500; text-align: left; }
+  .rows td { padding: 9px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .rows td.dim { color: var(--faint); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .rows tr.focus td { background: var(--accent-soft); }
+  .rows .more { margin: 12px 0 0; color: var(--faint); font-size: 13px; }
+  .stars { color: var(--fg); letter-spacing: 1px; white-space: nowrap; }
+  .stars span { color: var(--secondary-hover); }
+
+  @media (max-width: 1000px) {
+    .surface { height: auto; }
+    .board { grid-template-columns: minmax(0, 1fr); }
+    .board .panel, .thinking, .feed { overflow: visible; }
+    .steps, .how { grid-template-columns: minmax(0, 1fr); }
+  }
+</style>
+</head>
+<body>
+<header class="site">
+  <a class="logo" href="https://x.ai" target="_blank" rel="noopener" aria-label="SpaceXAI"><svg viewBox="0 0 759 290.2" aria-hidden="true"><g transform="translate(-674.5,-388.5)"><path d="M1433.19 388.934C1345.69 396.068 1001.73 438.71 763.235 678.467H674.732L684.62 668.612C734.53 620.395 955.373 416.045 1433.19 388.668V388.934Z"/><path d="M1133.66 678.467H1064.29L927.618 578.979C940.213 571.058 952.888 563.515 965.603 556.33L1133.66 678.467Z"/><path d="M1022.8 678.468H953.463L932.43 663.169H814.998C823.265 655.828 831.635 648.702 840.092 641.784H902.996L870.444 618.106C882.079 609.448 893.843 601.155 905.701 593.211L1022.8 678.468Z"/><path d="M770.433 495.02L823.901 533.876C810.594 541.712 798.139 549.468 786.514 557.055L701.158 494.986L770.433 495.02Z"/></g></svg></a>
+  <nav class="crumbs"><span>Cookbook</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg><h1>Reviews to Themes</h1></nav>
+  <span class="models">grok-4.7 and grok-4.3 with the Batch API</span>
+  <a class="pill pill-secondary pill-sm" href="https://github.com/xai-org/xai-cookbook/tree/main/examples/reviews-to-themes" target="_blank" rel="noopener">View code</a>
+</header>
+
+<main class="surface">
+  <form id="form" class="toolbar">
+    <fieldset id="controls">
+      <div class="sources">
+        <button type="button" class="source active" id="src-sample">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3.5" y="2" width="9" height="12" rx="1.5"/><path d="M6 5.5h4M6 8h4M6 10.5h2.5"/></svg>
+          <span><b>sample-reviews.csv</b><small id="sample-note">Reviews of a budgeting app</small></span>
+        </button>
+        <label class="source" id="src-upload">
+          <input id="file" type="file" accept=".csv,text/csv" aria-label="A CSV of reviews or tickets">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 10.5v-7M5 6l3-3 3 3M3 12.5h10"/></svg>
+          <span><b id="upload-name">Your own CSV</b><small id="upload-note">With a text column</small></span>
+        </label>
+      </div>
+      <span class="spacer"></span>
+      <label class="select">Labels with
+        <select id="model" aria-label="The model that labels the reviews">
+          <option value="grok-4.3" data-batch selected>grok-4.3</option>
+          <option value="grok-4.20-0309-non-reasoning" data-batch>grok-4.20 non-reasoning</option>
+          <option value="grok-4.20-0309-reasoning" data-batch>grok-4.20 reasoning</option>
+          <option value="grok-4.7">grok-4.7, live only</option>
+        </select>
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4.5 6.5 3.5 3.5 3.5-3.5"/></svg>
+      </label>
+      <div class="segmented" id="mode" role="group" aria-label="How the labeling requests are sent">
+        <button type="button" data-mode="batch" class="active">Batch</button>
+        <button type="button" data-mode="live">Live</button>
+      </div>
+    </fieldset>
+    <button id="go" class="pill pill-primary"></button>
+  </form>
+
+  <p id="message" hidden></p>
+
+  <section class="panel start" id="start">
+    <div>
+      <h2>Turn a thousand reviews into themes</h2>
+      <p>Grok reads a sample to find candidate themes, labels every review against them in one batch, then merges and names the themes. You get each theme's count, its trend, and quotes that link back to the rows behind it.</p>
+    </div>
+    <div class="start-actions">
+      <button type="button" class="pill pill-primary" id="try"><svg class="fill" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3.2v9.6L12.6 8z"/></svg>Run on the sample</button>
+      <span>One to three minutes, about 23 cents</span>
+    </div>
+    <div class="resume" id="resume" hidden>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>
+      <div><b>Your last batch is still running</b><span id="resume-info"></span></div>
+      <button type="button" class="pill pill-sm" id="resume-go"><svg class="fill" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3.2v9.6L12.6 8z"/></svg>Pick it up</button>
+    </div>
+    <ol class="how">
+      <li><b>1. Find candidate themes</b><span>Grok reads 150 reviews from across the whole period and lists the themes in them.</span><small>One live request to grok-4.7</small></li>
+      <li><b>2. Label every review</b><span>Every review is checked against those themes, 25 to a request, with structured output.</span><small>A batch, or live requests</small></li>
+      <li><b>3. Merge and name</b><span>With every review counted, Grok merges overlapping themes and names them from the quotes.</span><small>One live request to grok-4.7</small></li>
+    </ol>
+  </section>
+
+  <section class="panel run" id="run" hidden>
+    <ol class="steps" id="steps">
+      <li><span class="num">1</span><span class="text"><b>Find candidate themes</b><span>grok-4.7 reads a sample</span></span><em></em></li>
+      <li><span class="num">2</span><span class="text"><b>Label every review</b><span id="label-detail"></span></span><em></em></li>
+      <li><span class="num">3</span><span class="text"><b>Merge and name</b><span>grok-4.7 with every review counted</span></span><em></em></li>
+    </ol>
+    <div class="meter">
+      <div class="meter-head">
+        <strong id="meter-count">0</strong><span id="meter-total"></span>
+        <span class="spacer"></span>
+        <span class="fact" id="meter-detail"></span>
+        <span class="fact" id="clock"></span>
+        <span class="fact" id="cost"></span>
+        <span id="downloads" hidden>
+          <a class="pill pill-secondary pill-sm" id="dl-csv" download="reviews-with-themes.csv"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.5v8M4.5 7 8 10.5 11.5 7M2.5 13.5h11"/></svg>CSV</a>
+          <a class="pill pill-secondary pill-sm" id="dl-json" download="themes.json"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.5v8M4.5 7 8 10.5 11.5 7M2.5 13.5h11"/></svg>JSON</a>
+        </span>
+      </div>
+      <div class="bar" id="track" style="margin-top: 10px"><i id="bar"></i></div>
+    </div>
+  </section>
+
+  <div class="board" id="board" hidden>
+    <aside class="panel list">
+      <div class="panel-head"><p class="label" id="list-label">Candidate themes</p><span class="status" id="list-status"></span></div>
+      <div class="skeleton" id="list-wait"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      <ol class="themes" id="themes"></ol>
+    </aside>
+    <section class="panel detail">
+      <div id="activity">
+        <div class="panel-head"><p class="label" id="activity-label"></p><span class="status" id="activity-status"></span></div>
+        <div class="thinking" id="thinking">
+          <div class="skeleton" id="thinking-wait" style="padding: 0"><i></i><i></i><i></i></div>
+          <div id="reasoning"></div>
+        </div>
+        <div class="waiting" id="waiting" hidden></div>
+        <div class="feed" id="feed" hidden></div>
+      </div>
+      <div id="theme" hidden></div>
+    </section>
+  </div>
+</main>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  const KEY = "reviews-to-themes:run";
+  const STEPS = ["find", "label", "name"];
+  const ICONS = {
+    play: '<svg class="fill" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3.2v9.6L12.6 8z"/></svg>',
+    stop: '<svg class="fill" viewBox="0 0 16 16" aria-hidden="true"><rect x="4" y="4" width="8" height="8" rx="1.5"/></svg>',
+    check: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4 8.5 2.5 2.5L12 5.5"/></svg>',
+    up: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 12.5v-9M4.5 7 8 3.5 11.5 7"/></svg>',
+    down: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3.5v9M4.5 9 8 12.5 11.5 9"/></svg>',
+    star: '<svg class="fill" viewBox="0 0 16 16" aria-hidden="true"><path d="m8 1.8 1.9 4 4.3.5-3.2 3 .9 4.3L8 11.5l-3.9 2.1.9-4.3-3.2-3 4.3-.5z"/></svg>',
+  };
+  const DAY = new Intl.DateTimeFormat("en", { month: "short", day: "numeric", timeZone: "UTC" });
+  // A CSV the server has read. Its id starts one run, so it's uploaded again for the next.
+  let upload = null;
+  let chosenMode = "batch";
+  let mode = "batch";
+  let events;
+  let runId;
+  let resumed = false;
+  let total = 0;
+  let reviews = new Map();
+  let labels = {};
+  let candidates = new Map();
+  let counts = new Map();
+  let result = null;
+  let stepSince = {};
+  let labelingSince = 0;
+  let timer = 0;
+  let spent = 0;
+
+  setRunning(false);
+  fetch("/api/sample").then((response) => response.json()).then(({ rows }) => {
+    $("sample-note").textContent = `${rows.toLocaleString()} reviews of a budgeting app`;
+  });
+  checkSaved();
+
+  document.querySelectorAll("#mode button").forEach((button) => {
+    button.onclick = () => {
+      chosenMode = button.dataset.mode;
+      syncMode();
+    };
+  });
+  $("model").onchange = syncMode;
+  $("src-sample").onclick = () => setSource(false);
+  $("file").onchange = () => chooseFile($("file").files[0]);
+  $("try").onclick = () => {
+    setSource(false);
+    $("form").requestSubmit();
+  };
+
+  $("form").onsubmit = async (event) => {
+    event.preventDefault();
+    if (events) return stop();
+    let source = "sample";
+    if ($("src-upload").classList.contains("active")) {
+      if (!upload.id) upload = (await sendCsv(upload.file)) ?? upload;
+      if (!upload.id) return;
+      source = upload.id;
+      upload.id = null;
+    }
+    start(`/api/run?source=${encodeURIComponent(source)}&model=${encodeURIComponent($("model").value)}&mode=${mode}`);
+  };
+
+  // A run the page started before it was closed or reloaded, whose batch the server can pick up.
+  async function checkSaved() {
+    const id = localStorage.getItem(KEY);
+    if (!id) return;
+    const response = await fetch(`/api/saved?run=${encodeURIComponent(id)}`);
+    if (!response.ok) return localStorage.removeItem(KEY);
+    const saved = await response.json();
+    $("resume-info").textContent = `${saved.rows.toLocaleString()} reviews from ${saved.source}, labeled by ${saved.model} · started ${ago(saved.started)} · ${saved.batch}`;
+    $("resume").hidden = false;
+    $("resume-go").onclick = () => start(`/api/run?resume=${encodeURIComponent(id)}`, true);
+  }
+
+  function start(url, resuming = false) {
+    reset();
+    resumed = resuming;
+    setRunning(true);
+    events = new EventSource(url);
+    const on = (name, handler) => events.addEventListener(name, (message) => handler(JSON.parse(message.data)));
+
+    on("run", (run) => {
+      runId = run.id;
+      total = run.reviews.length;
+      reviews = new Map(run.reviews.map((review) => [review.id, review]));
+      labelingSince = Date.parse(run.started);
+      $("label-detail").textContent = run.mode === "batch" ? `${run.model} in a batch` : `${run.model}, 8 requests at a time`;
+      $("meter-total").textContent = `of ${total.toLocaleString()} reviews labeled`;
+      $("waiting").innerHTML = run.mode === "batch"
+        ? `<dl><dt>Batch</dt><dd id="batch-id">Starting</dd><dt>Requests</dt><dd id="batch-file">${Math.ceil(total / 25)} of 25 reviews each</dd><dt>Model</dt><dd>${escapeHtml(run.model)}</dd></dl><p>SpaceXAI runs the requests in the background, and each one's labels show up here as soon as it finishes. A batch can take up to 24 hours, though one this size often finishes within a minute. You can close the page and pick it up later.</p>`
+        : `<dl><dt>Requests</dt><dd>${Math.ceil(total / 25)} of 25 reviews each, 8 at a time</dd><dt>Model</dt><dd>${escapeHtml(run.model)}</dd></dl><p>Each request's labels show up here as soon as it comes back.</p>`;
+    });
+    on("step", ({ step }) => setStep(step));
+    on("reasoning", ({ text }) => {
+      $("thinking-wait").hidden = true;
+      $("reasoning").textContent += text;
+      $("thinking").scrollTop = $("thinking").scrollHeight;
+    });
+    on("candidate", addCandidate);
+    on("batch", ({ id, file, requests }) => {
+      localStorage.setItem(KEY, runId);
+      $("batch-id").textContent = id;
+      $("batch-file").textContent = `${requests} of 25 reviews each, read from ${file}`;
+    });
+    on("progress", showProgress);
+    on("labels", ({ labels: chunk }) => addLabels(chunk));
+    on("warning", ({ message }) => showMessage(`A labeling request failed, so its reviews stay unlabeled: ${message}`));
+    on("cost", ({ cost }) => {
+      spent = cost;
+      $("cost").innerHTML = `<b>${money(cost)}</b> so far`;
+    });
+    on("done", (done) => {
+      localStorage.removeItem(KEY);
+      result = done;
+      setStep("done");
+      showResult();
+      finish();
+    });
+    on("failure", ({ message }) => finish(`Couldn't find the themes: ${message}`));
+    events.onerror = () => finish("Lost the connection to the server.");
+  }
+
+  // Closing the stream stops the server from waiting, and the stop request cancels the batch, so the requests
+  // that haven't run yet aren't billed.
+  async function stop() {
+    const id = runId;
+    finish();
+    const response = id ? await fetch(`/api/stop?run=${encodeURIComponent(id)}`, { method: "POST" }).catch(() => null) : null;
+    const { cancelled } = response?.ok ? await response.json() : {};
+    localStorage.removeItem(KEY);
+    showMessage(cancelled ? `Stopped, and cancelled the batch. What finished before that cost ${money(spent)}.` : `Stopped. That cost ${money(spent)}.`, true);
+  }
+
+  function finish(message) {
+    events?.close();
+    events = undefined;
+    clearInterval(timer);
+    setRunning(false);
+    $("track").classList.remove("running", "waiting");
+    $("steps").querySelector(".active")?.classList.remove("active");
+    if (message) showMessage(message);
+  }
+
+  // Marks the steps before this one done, with how long each took, and shows what this one is doing.
+  function setStep(step) {
+    const now = Date.now();
+    const current = step === "done" ? STEPS.length : STEPS.indexOf(step);
+    [...$("steps").children].forEach((item, index) => {
+      if (index < current && !item.classList.contains("done")) {
+        item.querySelector(".num").innerHTML = ICONS.check;
+        if (stepSince[STEPS[index]]) item.querySelector("em").textContent = clock(now - stepSince[STEPS[index]]);
+        item.classList.add("done");
+      }
+      item.classList.toggle("active", index === current);
+    });
+    stepSince[step] = now;
+    $("board").hidden = false;
+    if (step === "find") {
+      $("activity-label").textContent = "Grok is reading 150 reviews from across the whole period";
+    }
+    if (step === "label") {
+      if (!resumed) labelingSince = now;
+      tick();
+      timer = setInterval(tick, 1000);
+      $("track").classList.add("running", "waiting");
+      $("list-wait").hidden = true;
+      $("list-status").textContent = "· reviews so far";
+      $("activity-label").textContent = "Labeled so far";
+      $("activity-status").textContent = "";
+      $("thinking").hidden = true;
+      $("waiting").hidden = Object.keys(labels).length > 0;
+      $("feed").hidden = !$("waiting").hidden;
+    }
+    if (step === "name") {
+      clearInterval(timer);
+      $("track").classList.remove("running", "waiting");
+      $("activity-label").textContent = `Merging ${candidates.size} candidates into themes, with every review counted`;
+      $("reasoning").textContent = "";
+      $("thinking-wait").hidden = false;
+      $("thinking").hidden = false;
+      $("waiting").hidden = true;
+      $("feed").hidden = true;
+    }
+  }
+
+  function tick() {
+    $("clock").textContent = clock(Date.now() - labelingSince);
+  }
+
+  function addCandidate({ id, name, description }) {
+    candidates.set(id, { name, description });
+    $("list-wait").hidden = true;
+    $("list-label").textContent = `${candidates.size} candidate themes`;
+    $("themes").insertAdjacentHTML("beforeend", `<li class="candidate" data-id="${escapeHtml(id)}"><div class="top"><span class="name">${escapeHtml(name)}</span><span class="count"></span></div><p class="desc">${escapeHtml(description)}</p><div class="mini"><i></i></div></li>`);
+    $("themes").lastElementChild.scrollIntoView({ block: "nearest" });
+  }
+
+  function showProgress({ done, failed, total: requests, reviews: labeled }) {
+    $("bar").style.width = `${(done / requests) * 100}%`;
+    $("track").classList.toggle("waiting", done === 0);
+    $("meter-count").textContent = labeled.toLocaleString();
+    $("meter-detail").textContent = `${done} of ${requests} requests${failed ? `, ${failed} failed` : ""}`;
+  }
+
+  // Counts each candidate's reviews as the labels come in, and adds the newest reviews to the top of the feed.
+  function addLabels(chunk) {
+    Object.assign(labels, chunk);
+    for (const mentions of Object.values(chunk)) {
+      for (const theme of new Set(mentions.map((mention) => mention.theme))) counts.set(theme, (counts.get(theme) ?? 0) + 1);
+    }
+    const max = Math.max(1, ...counts.values());
+    for (const item of $("themes").children) {
+      const count = counts.get(item.dataset.id) ?? 0;
+      item.querySelector(".count").textContent = count.toLocaleString();
+      item.querySelector(".mini i").style.width = `${(count / max) * 100}%`;
+    }
+    $("waiting").hidden = true;
+    $("feed").hidden = false;
+    $("feed").insertAdjacentHTML("afterbegin", Object.entries(chunk).reverse().map(([id, mentions]) => feedEntry(id, mentions)).join(""));
+    while ($("feed").children.length > 60) $("feed").lastElementChild.remove();
+    $("feed").scrollTop = 0;
+  }
+
+  function feedEntry(id, mentions) {
+    const review = reviews.get(id);
+    if (!review) return "";
+    const themes = [...new Set(mentions.map((mention) => mention.theme))];
+    const chips = themes.length ? themes.map((theme) => `<span class="chip">${escapeHtml(candidates.get(theme)?.name ?? theme)}</span>`).join("") : `<span class="chip none">No theme</span>`;
+    return `<div class="entry"><span class="row-no">${id}</span><div><p>${highlight(review.text, mentions[0]?.quote)}</p><div class="chips">${chips}</div></div></div>`;
+  }
+
+  function showResult() {
+    $("bar").style.width = "100%";
+    $("meter-count").textContent = (total - result.unlabeled.length).toLocaleString();
+    $("meter-detail").textContent = result.unlabeled.length ? `${result.unlabeled.length} couldn't be labeled` : "";
+    $("clock").innerHTML = `done in <b>${clock(result.seconds * 1000)}</b>`;
+    $("cost").innerHTML = `cost <b>${money(result.cost)}</b>`;
+    $("dl-csv").href = result.files.csv;
+    $("dl-json").href = result.files.json;
+    $("downloads").hidden = false;
+    $("list-label").textContent = `${result.themes.length} themes`;
+    $("list-status").textContent = "· by number of reviews";
+    $("themes").innerHTML = [...result.themes.map(themeItem), unthemedItem()].join("");
+    $("activity").hidden = true;
+    $("theme").hidden = false;
+    select(0);
+  }
+
+  $("themes").onclick = (event) => {
+    const button = event.target.closest("button.theme");
+    if (button) select(Number(button.dataset.index));
+  };
+
+  // Clicking a quote scrolls to its row in the table below it.
+  $("theme").onclick = (event) => {
+    const quote = event.target.closest(".quote");
+    if (!quote) return;
+    const row = $("theme").querySelector(`tr[data-row="${quote.dataset.row}"]`);
+    $("theme").querySelectorAll("tr.focus").forEach((other) => other.classList.remove("focus"));
+    row?.classList.add("focus");
+    row?.scrollIntoView({ block: "center", behavior: "smooth" });
+  };
+
+  function select(index) {
+    const theme = result.themes[index] ?? {
+      name: "No theme",
+      summary: "These reviews didn't match any of the candidate themes. A theme that wasn't in the sample would show up here.",
+      candidates: [],
+      rows: result.unthemed,
+      weekly: [],
+      trend: null,
+      rating: null,
+      quotes: [],
+    };
+    $("themes").querySelectorAll(".theme").forEach((item) => item.classList.toggle("selected", Number(item.dataset.index) === index));
+    $("themes").querySelector(".selected")?.scrollIntoView({ block: "nearest" });
+    const share = Math.round((theme.rows.length / total) * 100);
+    const rows = theme.rows.slice(0, 400).map((id) => {
+      const review = reviews.get(id);
+      const quote = labels[id]?.find((mention) => theme.candidates.includes(mention.theme))?.quote;
+      return `<tr data-row="${id}"><td class="dim">${id}</td><td class="dim">${review.date ? day(review.date) : ""}</td><td>${review.rating ? stars(review.rating) : ""}</td><td>${highlight(review.text, quote)}</td></tr>`;
+    });
+    $("theme").innerHTML = `
+      <div>
+        <p class="label">${index < result.themes.length ? `Theme ${index + 1} of ${result.themes.length}` : "Unthemed"}</p>
+        <h2>${escapeHtml(theme.name)}</h2>
+        <p class="summary">${escapeHtml(theme.summary)}</p>
+      </div>
+      <div class="stats">
+        <div class="stat"><strong>${theme.rows.length.toLocaleString()}</strong><span>reviews, ${share}% of all</span></div>
+        ${theme.trend ? `<div class="stat"><strong class="${theme.trend.direction}">${theme.trend.direction === "up" ? ICONS.up : theme.trend.direction === "down" ? ICONS.down : ""}${escapeHtml(theme.trend.label)}</strong><span>${theme.trend.recent} in the last ${theme.trend.weeks} weeks, ${theme.trend.before} in the ${theme.trend.weeks} before</span></div>` : ""}
+        ${theme.rating ? `<div class="stat"><strong>${theme.rating.toFixed(1)}</strong><span>average rating</span></div>` : ""}
+      </div>
+      ${theme.weekly.length ? `${chart(theme)}<p class="chart-note">Reviews each week. The last ${theme.trend?.weeks ?? 0} weeks are dark, and the ${theme.trend?.weeks ?? 0} before them are gray.</p>` : ""}
+      ${theme.quotes.length ? `<div class="quotes">${theme.quotes.map(quoteCard).join("")}</div>` : ""}
+      <div class="rows">
+        <div class="panel-head"><p class="label">The ${theme.rows.length.toLocaleString()} reviews behind it</p></div>
+        <table><thead><tr><th>Row</th><th>Date</th><th>Rating</th><th>Review</th></tr></thead><tbody>${rows.join("")}</tbody></table>
+        ${theme.rows.length > 400 ? `<p class="more">And ${theme.rows.length - 400} more in the CSV download.</p>` : ""}
+      </div>`;
+    $("theme").parentElement.scrollTop = 0;
+  }
+
+  function themeItem(theme, index) {
+    const share = Math.round((theme.rows.length / total) * 100);
+    const rating = theme.rating ? `<span class="rating">${ICONS.star}${theme.rating.toFixed(1)}</span>` : "";
+    return `<li><button type="button" class="theme" data-index="${index}"><span class="rank">${index + 1}</span><span class="name">${escapeHtml(theme.name)}</span><span class="count">${theme.rows.length.toLocaleString()}</span><span class="facts">${spark(theme)}${trendChip(theme.trend)}${rating}<span>${share}%</span></span></button></li>`;
+  }
+
+  function unthemedItem() {
+    return `<li><button type="button" class="theme quiet" data-index="${result.themes.length}"><span class="rank"></span><span class="name">No theme</span><span class="count">${result.unthemed.length.toLocaleString()}</span><span class="facts">Reviews that matched none of the themes</span></button></li>`;
+  }
+
+  function trendChip(trend) {
+    if (!trend) return "";
+    const arrow = trend.direction === "up" ? ICONS.up : trend.direction === "down" ? ICONS.down : "";
+    return `<span class="trend ${trend.direction}" title="${trend.recent} in the last ${trend.weeks} weeks, ${trend.before} in the ${trend.weeks} before">${arrow}${escapeHtml(trend.label)}</span>`;
+  }
+
+  // One bar a week. The weeks the trend compares are darker: the last ones darkest, the ones before them gray.
+  function spark({ weekly, trend }) {
+    if (!weekly.length) return "";
+    const max = Math.max(1, ...weekly);
+    const span = trend?.weeks ?? 0;
+    const bars = weekly.map((count, i) => {
+      const height = Math.max(1.5, (count / max) * 18);
+      const kind = i >= weekly.length - span ? "recent" : i >= weekly.length - 2 * span ? "before" : "";
+      return `<rect class="${kind}" x="${i * 6}" y="${18 - height}" width="4" height="${height}" rx="1"/>`;
+    });
+    return `<svg class="spark" viewBox="0 0 ${weekly.length * 6 - 2} 18" preserveAspectRatio="none" aria-hidden="true">${bars.join("")}</svg>`;
+  }
+
+  function chart(theme) {
+    const max = Math.max(1, ...theme.weekly);
+    const span = theme.trend?.weeks ?? 0;
+    const n = theme.weekly.length;
+    return `<div class="chart">${theme.weekly.map((count, i) => {
+      const kind = i >= n - span ? "recent" : i >= n - 2 * span ? "before" : "";
+      return `<div class="col ${kind}" title="Week of ${day(result.weeks[i])}: ${count} ${count === 1 ? "review" : "reviews"}"><div class="stem"><span class="n">${count}</span><i style="height: ${(count / max) * 82}%"></i></div><span class="wk">${day(result.weeks[i])}</span></div>`;
+    }).join("")}</div>`;
+  }
+
+  function quoteCard({ id, quote }) {
+    const review = reviews.get(id);
+    const facts = [`Row ${id}`, review?.date && day(review.date), review?.rating && stars(review.rating)].filter(Boolean);
+    return `<button type="button" class="quote" data-row="${id}"><q>${escapeHtml(quote)}</q><span>${facts.join(" · ")}</span></button>`;
+  }
+
+  async function chooseFile(file) {
+    if (!file) return;
+    $("upload-name").textContent = file.name;
+    $("upload-note").textContent = "Reading it";
+    const sent = await sendCsv(file);
+    $("file").value = "";
+    if (!sent) {
+      $("upload-note").textContent = "Couldn't read it";
+      return;
+    }
+    upload = sent;
+    $("upload-note").textContent = `${sent.rows.toLocaleString()} reviews`;
+    setSource(true);
+  }
+
+  async function sendCsv(file) {
+    hideMessage();
+    const response = await fetch(`/api/uploads?name=${encodeURIComponent(file.name)}`, { method: "POST", body: file });
+    if (!response.ok) return showMessage(await response.text());
+    return { ...(await response.json()), file };
+  }
+
+  function setSource(uploaded) {
+    $("src-sample").classList.toggle("active", !uploaded);
+    $("src-upload").classList.toggle("active", uploaded);
+  }
+
+  // grok-4.7 doesn't take batch requests, so choosing it switches to live until another model is chosen.
+  function syncMode() {
+    const batchable = $("model").selectedOptions[0].hasAttribute("data-batch");
+    mode = batchable ? chosenMode : "live";
+    const batch = $("mode").querySelector('[data-mode="batch"]');
+    batch.disabled = !batchable;
+    batch.title = batchable ? "" : "grok-4.7 doesn't take batch requests";
+    document.querySelectorAll("#mode button").forEach((button) => button.classList.toggle("active", button.dataset.mode === mode));
+  }
+
+  function setRunning(running) {
+    $("go").innerHTML = running ? `${ICONS.stop}Stop` : `${ICONS.play}Find themes`;
+    $("go").classList.toggle("stop", running);
+    $("controls").disabled = running;
+    $("try").disabled = running;
+  }
+
+  function reset() {
+    hideMessage();
+    result = null;
+    runId = undefined;
+    total = 0;
+    spent = 0;
+    labels = {};
+    candidates = new Map();
+    counts = new Map();
+    stepSince = {};
+    $("start").hidden = true;
+    $("run").hidden = false;
+    $("board").hidden = true;
+    [...$("steps").children].forEach((item, index) => {
+      item.className = "";
+      item.querySelector(".num").textContent = index + 1;
+      item.querySelector("em").textContent = "";
+    });
+    $("label-detail").textContent = "";
+    $("bar").style.width = "0";
+    $("track").className = "bar";
+    $("meter-count").textContent = "0";
+    $("meter-total").textContent = "";
+    ["meter-detail", "clock", "cost"].forEach((id) => ($(id).textContent = ""));
+    $("downloads").hidden = true;
+    $("themes").innerHTML = "";
+    $("list-wait").hidden = false;
+    $("list-label").textContent = "Candidate themes";
+    $("list-status").textContent = "";
+    $("activity").hidden = false;
+    $("activity-label").textContent = "";
+    $("activity-status").textContent = "";
+    $("thinking").hidden = false;
+    $("thinking-wait").hidden = false;
+    $("reasoning").textContent = "";
+    $("waiting").hidden = true;
+    $("feed").hidden = true;
+    $("feed").innerHTML = "";
+    $("theme").hidden = true;
+    $("theme").innerHTML = "";
+  }
+
+  function showMessage(text, notice = false) {
+    $("message").textContent = text;
+    $("message").classList.toggle("notice", notice);
+    $("message").hidden = false;
+  }
+
+  function hideMessage() {
+    $("message").hidden = true;
+  }
+
+  function highlight(text, quote) {
+    const at = quote ? text.toLowerCase().indexOf(quote.toLowerCase()) : -1;
+    if (at < 0) return escapeHtml(text);
+    return `${escapeHtml(text.slice(0, at))}<mark>${escapeHtml(text.slice(at, at + quote.length))}</mark>${escapeHtml(text.slice(at + quote.length))}`;
+  }
+
+  function stars(rating) {
+    const filled = Math.round(rating);
+    return `<span class="stars" title="${rating} out of 5">${"★".repeat(filled)}<span>${"★".repeat(Math.max(0, 5 - filled))}</span></span>`;
+  }
+
+  function day(date) {
+    return DAY.format(new Date(`${date}T00:00:00Z`));
+  }
+
+  function ago(time) {
+    const minutes = Math.round((Date.now() - Date.parse(time)) / 60000);
+    if (minutes < 1) return "just now";
+    if (minutes < 90) return `${minutes} ${minutes === 1 ? "minute" : "minutes"} ago`;
+    const hours = Math.round(minutes / 60);
+    return `${hours} ${hours === 1 ? "hour" : "hours"} ago`;
+  }
+
+  function clock(ms) {
+    const seconds = Math.round(ms / 1000);
+    return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+  }
+
+  function money(dollars) {
+    return `$${dollars.toFixed(2)}`;
+  }
+
+  function escapeHtml(text) {
+    return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+</script>
+</body>
+</html>

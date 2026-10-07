@@ -10,11 +10,17 @@
       "type": "string",
       "minLength": 1
     },
-    "description": {
-      "description": "One sentence on what someone will learn or build. Shown in the README catalog.",
+    "seo_title": {
+      "description": "A longer title for the example's page on docs.x.ai, shown in search results and the browser tab: the job people search for first, then the Grok API or Grok Imagine, in title case like the other docs pages. The page heading, the docs cards, and the README catalog keep the short title.",
       "type": "string",
       "minLength": 1,
-      "maxLength": 200
+      "maxLength": 75
+    },
+    "description": {
+      "description": "One sentence on what someone will learn or build. Shown in the README catalog and used as the docs page's meta description, so it has to fit in 160 characters.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 160
     },
     "type": {
       "description": "recipe: one concept, short. guide: an end-to-end walkthrough. app: a complete project you run.",
@@ -60,7 +66,19 @@
           "video-generation",
           "voice",
           "text-to-speech",
-          "x-data"
+          "speech-to-text",
+          "x-data",
+          "web-search",
+          "code-execution",
+          "collections",
+          "mcp",
+          "tool-search",
+          "shell",
+          "multi-agent",
+          "files",
+          "batch",
+          "prompt-caching",
+          "compaction"
         ]
       }
     },

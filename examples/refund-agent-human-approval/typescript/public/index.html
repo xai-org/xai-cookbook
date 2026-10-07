@@ -1,0 +1,815 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Refund Agent with Human Approval</title>
+<style>
+  /* The look every SpaceXAI Cookbook page shares, after x.ai. */
+  :root {
+    --bg: #fff;
+    --card: #f9f8f6;
+    --secondary: #f2f1ef;
+    --secondary-hover: #e9e8e5;
+    --tint: rgb(10 10 10 / 0.04);
+    --line: rgb(10 10 10 / 0.08);
+    --border: rgb(10 10 10 / 0.15);
+    --fg: #0a0a0a;
+    --muted: rgb(10 10 10 / 0.6);
+    --faint: rgb(10 10 10 / 0.36);
+    --accent: #ff6308;
+    --accent-soft: rgb(255 99 8 / 0.1);
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; font: 14px/22px var(--sans); background: var(--bg); color: var(--fg); -webkit-font-smoothing: antialiased; }
+  button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
+  a { color: inherit; }
+  svg { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  @keyframes blink { 50% { opacity: 0.3; } }
+  @keyframes pulse { to { background-color: var(--secondary-hover); } }
+  @keyframes appear { from { opacity: 0; transform: translateY(4px); } }
+
+  .site { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 12px; height: 60px; padding: 0 20px; background: rgb(255 255 255 / 0.85); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+  .logo { flex: none; margin-right: 4px; color: var(--fg); }
+  .logo svg { display: block; width: 52px; height: 20px; fill: currentColor; stroke: none; }
+  .crumbs { display: flex; align-items: center; gap: 8px; min-width: 0; color: var(--muted); white-space: nowrap; }
+  .crumbs svg { width: 12px; height: 12px; color: var(--faint); }
+  .crumbs h1 { margin: 0; overflow: hidden; text-overflow: ellipsis; font-size: inherit; line-height: inherit; font-weight: 500; color: var(--fg); }
+  .site .pill { flex: none; margin-left: auto; }
+  .models { flex: none; height: 26px; padding: 0 10px; border-radius: 9999px; box-shadow: inset 0 0 0 1px var(--line); font-size: 12px; font-weight: 500; line-height: 26px; color: var(--muted); }
+  .pill { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 40px; padding: 0 18px; border-radius: 9999px; font-size: 14px; font-weight: 500; white-space: nowrap; text-decoration: none; }
+  .pill-sm { height: 32px; padding: 0 14px; font-size: 13px; }
+  .pill-primary { background: var(--fg); color: #fff; }
+  .pill-primary:hover { background: #202329; }
+  .pill-secondary { background: var(--secondary); color: var(--fg); }
+  .pill-secondary:hover { background: var(--secondary-hover); }
+  .pill:disabled { opacity: 0.4; cursor: default; }
+  .pill svg { width: 14px; height: 14px; }
+  .field { min-width: 0; height: 40px; padding: 0 18px; border: 1px solid var(--border); border-radius: 9999px; background: var(--bg); color: var(--fg); font: inherit; outline: none; }
+  .field:focus { border-color: var(--fg); }
+  .field::placeholder { color: var(--faint); }
+  .surface { display: flex; flex-direction: column; gap: 8px; height: calc(100vh - 72px); min-height: 560px; margin: 0 12px 12px; padding: 8px; border-radius: 20px; background: var(--card); }
+  .panel { min-width: 0; padding: 20px 22px; border-radius: 16px; background: var(--bg); }
+  .label { margin: 0; font-size: 13px; font-weight: 500; color: var(--muted); }
+  @media (max-width: 900px) {
+    .models { display: none; }
+  }
+  @media (max-width: 640px) {
+    .site { padding: 0 16px; }
+    .crumbs > span, .crumbs > svg { display: none; }
+    .surface { margin: 0 8px 8px; }
+  }
+
+  /* Refund Agent with Human Approval */
+  :root {
+    --positive: #16a34a;
+    --positive-soft: rgb(22 163 74 / 0.1);
+    --negative: #e5484d;
+    --negative-soft: rgb(229 72 77 / 0.1);
+  }
+  code { font: 11px/16px var(--mono); }
+  .server { flex: none; display: inline-flex; align-items: center; gap: 7px; height: 26px; padding: 0 10px; border-radius: 9999px; box-shadow: inset 0 0 0 1px var(--line); font-size: 12px; font-weight: 500; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .server i { width: 6px; height: 6px; border-radius: 50%; background: var(--positive); }
+  .server.offline i { background: var(--faint); animation: blink 1s ease-in-out infinite; }
+
+  .desk { display: grid; grid-template-columns: 300px minmax(0, 1fr) 352px; }
+  .desk > .panel { min-height: 0; overflow-y: auto; scrollbar-width: thin; }
+  .section-head { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; }
+  .section-head .count { padding: 0 7px; border-radius: 9999px; background: var(--accent-soft); color: var(--accent); font-size: 12px; font-weight: 600; line-height: 20px; }
+  .section-head .path { margin-left: auto; font: 11px/16px var(--mono); color: var(--faint); }
+  .avatar { flex: none; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--secondary); font-size: 11px; font-weight: 600; color: var(--muted); }
+
+  /* Inbox */
+  .inbox { display: flex; flex-direction: column; gap: 22px; }
+  .compose { display: grid; gap: 8px; }
+  .samples { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 4px; }
+  .compose textarea.field { height: auto; min-height: 112px; padding: 12px 16px; border-radius: 16px; resize: vertical; line-height: 20px; }
+  .compose .pill { justify-self: start; }
+  .runs { display: grid; gap: 2px; margin: 0 -10px; padding: 0; list-style: none; }
+  .run-item { display: flex; gap: 10px; width: 100%; padding: 10px; border-radius: 12px; text-align: left; }
+  .run-item.new, .approval.new, .audit li.new { animation: appear 0.3s ease-out; }
+  .run-item:hover { background: var(--card); }
+  .run-item.selected { background: var(--secondary); }
+  .run-main { flex: 1; display: grid; gap: 3px; min-width: 0; }
+  .run-top { display: flex; align-items: baseline; gap: 8px; }
+  .run-top b { overflow: hidden; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
+  .run-top time { margin-left: auto; font-size: 12px; color: var(--faint); white-space: nowrap; }
+  .snippet { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; font-size: 13px; line-height: 18px; color: var(--muted); }
+  .chip { display: inline-flex; align-items: center; justify-self: start; gap: 5px; height: 22px; padding: 0 9px; border-radius: 9999px; background: var(--secondary); font-size: 12px; font-weight: 500; color: var(--muted); white-space: nowrap; }
+  .run-item.selected .chip { background: var(--bg); }
+  .chip svg { width: 11px; height: 11px; }
+  .chip i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; animation: blink 1s ease-in-out infinite; }
+  .chip.waiting, .run-item.selected .chip.waiting { background: var(--accent-soft); color: var(--accent); }
+  .chip.done { color: var(--positive); }
+  .chip.failed { color: var(--negative); }
+  .chip.waiting svg, .chip.stopped svg { fill: currentColor; stroke: none; }
+
+  /* Ticket */
+  .ticket { display: flex; flex-direction: column; padding: 0; overflow: hidden !important; }
+  .ticket-head { flex: none; display: flex; align-items: center; gap: 12px; min-height: 72px; padding: 14px 22px; border-bottom: 1px solid var(--line); }
+  .ticket-head .avatar { width: 36px; height: 36px; font-size: 12px; }
+  .ticket-title { flex: 1; min-width: 0; }
+  .ticket-title h2 { margin: 0; overflow: hidden; font-size: 16px; line-height: 22px; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
+  .ticket-title p { margin: 0; overflow: hidden; font-size: 12px; line-height: 18px; color: var(--faint); text-overflow: ellipsis; white-space: nowrap; }
+  #ticket-cost { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  #stop svg, #resume svg { fill: currentColor; stroke: none; }
+  .timeline { flex: 1; min-height: 0; overflow-y: auto; padding: 20px 22px 28px; scrollbar-width: thin; }
+  #steps { display: flex; flex-direction: column; gap: 12px; }
+  .step { animation: appear 0.3s ease-out; }
+
+  .email { max-width: 88%; padding: 14px 16px; border-radius: 16px; }
+  .email header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 13px; color: var(--muted); }
+  .email header b { font-weight: 500; color: var(--fg); }
+  .email header time { margin-left: auto; color: var(--faint); }
+  .email p { margin: 0; white-space: pre-wrap; }
+  .email.in { align-self: flex-start; border-radius: 16px 16px 16px 6px; background: var(--card); }
+  .email.out { align-self: flex-end; border-radius: 16px 16px 6px 16px; background: var(--fg); color: #f2f1ef; }
+  .email.out header { color: rgb(242 241 239 / 0.62); }
+  .email.out header b { color: #fff; }
+  .email.out header svg { width: 14px; height: 14px; }
+  .email.out footer { margin-top: 8px; font-size: 12px; color: rgb(242 241 239 / 0.5); }
+
+  .turn { display: flex; align-items: flex-start; gap: 8px; padding: 0 4px; font-size: 12px; line-height: 18px; color: var(--faint); }
+  .turn svg { flex: none; width: 13px; height: 13px; margin-top: 2px; }
+  .turn .thought { flex: 1; font-style: italic; }
+  .turn code { flex: none; padding: 1px 7px; border-radius: 6px; background: var(--tint); cursor: help; }
+
+  .tool { border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+  .tool > header { display: flex; align-items: center; gap: 10px; padding: 10px 14px; }
+  .tool .icon { flex: none; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 8px; background: var(--secondary); color: var(--muted); }
+  .tool .icon svg { width: 14px; height: 14px; }
+  .tool > header b { font-weight: 500; }
+  .tool > header code { margin-left: auto; color: var(--muted); }
+  .tool-body { padding: 0 14px 12px 50px; font-size: 13px; line-height: 20px; color: var(--muted); }
+  .tool-body:empty { display: none; }
+  .items { display: grid; grid-template-columns: 1fr auto; gap: 2px 16px; margin: 0 0 6px; }
+  .items dd { margin: 0; color: var(--fg); font-variant-numeric: tabular-nums; text-align: right; }
+  .items dt { color: var(--fg); }
+  .facts { display: flex; flex-wrap: wrap; gap: 6px; }
+  .fact { display: inline-flex; align-items: center; gap: 5px; height: 24px; padding: 0 9px; border-radius: 9999px; background: var(--card); font-size: 12px; color: var(--muted); }
+  .fact.yes { background: var(--positive-soft); color: var(--positive); }
+  .fact.no { background: var(--negative-soft); color: var(--negative); }
+  .fact svg { width: 11px; height: 11px; }
+  .error-text { color: var(--negative); }
+
+  .refund { border-color: var(--border); }
+  .refund .icon { background: var(--fg); color: #fff; }
+  .refund .reason { margin: 0 0 10px; color: var(--fg); }
+  .refund-state { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 10px; background: var(--card); font-size: 13px; color: var(--muted); }
+  .refund-state svg { flex: none; width: 13px; height: 13px; }
+  .refund-state.waiting { background: var(--accent-soft); color: var(--accent); }
+  .refund-state.waiting svg { fill: currentColor; stroke: none; animation: blink 1.2s ease-in-out infinite; }
+  .refund-state.approved { background: var(--positive-soft); color: var(--positive); }
+  .refund-state.rejected { background: var(--negative-soft); color: var(--negative); }
+  .refund-state code { color: inherit; }
+
+  .divider { display: flex; align-items: center; gap: 12px; margin: 8px 0; font-size: 12px; color: var(--muted); }
+  .divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+  .divider span { display: inline-flex; align-items: center; gap: 6px; padding: 3px 12px; border-radius: 9999px; background: var(--card); white-space: nowrap; }
+  .divider.restarted span { background: var(--fg); color: #f2f1ef; }
+  .divider svg { width: 13px; height: 13px; }
+
+  .note { padding: 12px 16px; border-radius: 14px; background: var(--card); }
+  .note .label { margin-bottom: 2px; font-size: 12px; }
+  .note p { margin: 0; }
+  .error { padding: 10px 14px; border-radius: 12px; background: var(--negative-soft); color: var(--negative); }
+
+  #live { display: flex; gap: 10px; margin-top: 12px; padding: 12px 14px; border-radius: 14px; background: var(--card); animation: pulse 1s ease-in-out infinite alternate; }
+  #live svg { flex: none; width: 14px; height: 14px; margin-top: 3px; color: var(--muted); }
+  #live-label { font-size: 13px; font-weight: 500; color: var(--muted); }
+  #live-reasoning { max-height: 96px; margin: 2px 0 0; overflow: hidden; white-space: pre-wrap; font: 11px/17px var(--mono); color: var(--faint); }
+  #live-reasoning:empty, #live-text:empty { display: none; }
+  #live-text { margin: 4px 0 0; }
+  .footer { display: flex; align-items: flex-start; gap: 10px; margin-top: 14px; padding: 12px 16px; border-radius: 14px; font-size: 13px; color: var(--muted); }
+  .footer svg { flex: none; width: 15px; height: 15px; margin-top: 3px; }
+  .footer b { display: block; font-weight: 500; color: var(--fg); }
+  .footer.waiting { background: var(--accent-soft); }
+  .footer.waiting svg { color: var(--accent); fill: currentColor; stroke: none; }
+  .footer.done { background: var(--positive-soft); }
+  .footer.done svg { color: var(--positive); }
+  .footer.stopped, .footer.failed, .footer.customer { background: var(--card); }
+  .reply { display: grid; gap: 8px; margin-top: 10px; }
+  .reply textarea.field { height: auto; min-height: 72px; padding: 10px 14px; border-radius: 14px; resize: vertical; line-height: 20px; }
+  .reply .pill { justify-self: start; }
+  .email header .persona { padding: 0 8px; border-radius: 9999px; background: var(--secondary); font-size: 11px; line-height: 18px; color: var(--muted); }
+
+  .intro { display: grid; place-content: center; justify-items: start; gap: 18px; height: 100%; max-width: 620px; margin: 0 auto; padding: 40px 32px; }
+  .intro h2 { margin: 0; font-size: 36px; line-height: 1.12; font-weight: 450; letter-spacing: -0.02em; }
+  .intro > p { margin: 0; font-size: 16px; line-height: 26px; color: var(--muted); }
+  .how { display: grid; gap: 10px; margin: 6px 0; padding: 0; list-style: none; counter-reset: how; }
+  .how li { display: flex; gap: 12px; counter-increment: how; }
+  .how li::before { content: counter(how); flex: none; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--secondary); font-size: 12px; font-weight: 600; color: var(--muted); }
+  .how b { font-weight: 500; }
+  .how span { color: var(--muted); }
+
+  /* Approvals */
+  .side { display: flex; flex-direction: column; gap: 24px; }
+  .approver .field { width: 100%; margin-top: 8px; }
+  .queue { display: grid; gap: 10px; }
+  .approval { padding: 16px 18px 18px; border: 1px solid var(--border); border-radius: 16px; cursor: pointer; }
+  .approval.current { border-color: var(--fg); box-shadow: inset 0 0 0 1px var(--fg); }
+  .approval > header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .badge { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: 9999px; background: var(--accent-soft); color: var(--accent); font-size: 12px; font-weight: 600; }
+  .badge svg { width: 10px; height: 10px; fill: currentColor; stroke: none; animation: blink 1.2s ease-in-out infinite; }
+  .approval > header time { margin-left: auto; font-size: 12px; color: var(--faint); }
+  .amount { margin: 0; font-size: 40px; line-height: 44px; font-weight: 450; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+  .to { margin: 2px 0 0; color: var(--fg); }
+  .meta { margin: 0; font-size: 13px; color: var(--muted); }
+  .approval blockquote { margin: 12px 0; padding: 10px 12px; border-radius: 10px; background: var(--card); font-size: 13px; line-height: 19px; color: var(--muted); }
+  .ids { display: grid; grid-template-columns: auto 1fr; gap: 0 10px; margin: 0 0 14px; font: 11px/17px var(--mono); }
+  .ids dt { color: var(--faint); }
+  .ids dd { margin: 0; overflow: hidden; color: var(--muted); text-overflow: ellipsis; white-space: nowrap; }
+  .actions { display: flex; gap: 8px; }
+  .actions .pill { flex: 1; }
+  .reject-form { display: grid; gap: 8px; }
+  .danger { background: var(--negative); }
+  .danger:hover { background: #d13b40; }
+  .card-note { margin: 10px 0 0; font-size: 13px; color: var(--negative); }
+
+  .audit { display: grid; margin: 0; padding: 0; list-style: none; }
+  .audit li { display: grid; grid-template-columns: auto 1fr; gap: 0 10px; padding: 9px 0; border-top: 1px solid var(--line); font-size: 13px; line-height: 19px; }
+  .audit li:first-child { border-top: 0; }
+  .audit time { grid-row: span 2; font-size: 12px; color: var(--faint); font-variant-numeric: tabular-nums; }
+  .audit b { font-weight: 500; }
+  .audit .pid { font: 11px/16px var(--mono); color: var(--faint); }
+  .audit .approved b, .audit .refunded .what { color: var(--positive); }
+  .audit .rejected b { color: var(--negative); }
+  .audit .replayed .what, .audit .ignored .what { color: var(--accent); }
+
+  .toast { position: fixed; left: 50%; bottom: 28px; z-index: 30; display: flex; align-items: center; gap: 10px; max-width: calc(100vw - 48px); padding: 12px 18px; border-radius: 14px; background: var(--fg); color: #f2f1ef; font-size: 14px; transform: translateX(-50%); box-shadow: 0 12px 32px rgb(10 10 10 / 0.18); animation: appear 0.3s ease-out; }
+  .toast svg { flex: none; width: 15px; height: 15px; }
+
+  @media (max-width: 1180px) {
+    .desk { grid-template-columns: 260px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; height: auto; }
+    .desk > .panel { max-height: calc(100vh - 88px); }
+    .side { grid-column: span 2; max-height: none !important; }
+  }
+  @media (max-width: 760px) {
+    .desk { grid-template-columns: minmax(0, 1fr); }
+    .side { grid-column: auto; }
+    .ticket { height: 80vh; }
+  }
+</style>
+</head>
+<body>
+<header class="site">
+  <a class="logo" href="https://x.ai" target="_blank" rel="noopener" aria-label="SpaceXAI"><svg viewBox="0 0 759 290.2" aria-hidden="true"><g transform="translate(-674.5,-388.5)"><path d="M1433.19 388.934C1345.69 396.068 1001.73 438.71 763.235 678.467H674.732L684.62 668.612C734.53 620.395 955.373 416.045 1433.19 388.668V388.934Z"/><path d="M1133.66 678.467H1064.29L927.618 578.979C940.213 571.058 952.888 563.515 965.603 556.33L1133.66 678.467Z"/><path d="M1022.8 678.468H953.463L932.43 663.169H814.998C823.265 655.828 831.635 648.702 840.092 641.784H902.996L870.444 618.106C882.079 609.448 893.843 601.155 905.701 593.211L1022.8 678.468Z"/><path d="M770.433 495.02L823.901 533.876C810.594 541.712 798.139 549.468 786.514 557.055L701.158 494.986L770.433 495.02Z"/></g></svg></a>
+  <nav class="crumbs"><span>Cookbook</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg><h1>Refund Agent with Human Approval</h1></nav>
+  <span class="models">grok-4.7 with function calling</span>
+  <span class="server offline" id="server" title="The server process this page is connected to"><i></i><span id="server-text">Connecting</span></span>
+  <a class="pill pill-secondary pill-sm" href="https://github.com/xai-org/xai-cookbook/tree/main/examples/refund-agent-human-approval" target="_blank" rel="noopener">View code</a>
+</header>
+
+<main class="surface desk">
+  <aside class="panel inbox">
+    <form class="compose" id="compose">
+      <p class="label">New request</p>
+      <div class="samples" id="samples">
+        <button type="button" class="pill pill-secondary pill-sm" data-from="maya.chen@example.com" data-message="Hi, my order A1043 came yesterday and the glass carafe of the pour-over coffee maker was cracked right out of the box. The mugs are fine. Can I get my money back for the coffee maker? Thanks, Maya">Cracked on arrival</button>
+        <button type="button" class="pill pill-secondary pill-sm" data-from="jordan.patel@example.com" data-message="Hello, I ordered the 8-inch chef's knife (order A1051) but it's too big for my hands. It's still in the box, never used. Could I return it for a refund? Jordan">Changed my mind</button>
+        <button type="button" class="pill pill-secondary pill-sm" data-from="sam.rivera@example.com" data-message="My stand mixer from order A1037 stopped working this week. I'd like a refund please. Sam">Past 30 days</button>
+        <button type="button" class="pill pill-secondary pill-sm" data-persona="angry" data-from="priya.nair@example.com" data-message="I want ALL of my money back for order A1066, today. The gift card was a birthday present and my sister doesn't even cook, and I don't want the skillet either. $94.95 for nothing. This is the worst store I've ever ordered from. Priya">Angry customer</button>
+      </div>
+      <input id="from" class="field" type="email" required aria-label="From" value="maya.chen@example.com">
+      <textarea id="message" class="field" required aria-label="Message">Hi, my order A1043 came yesterday and the glass carafe of the pour-over coffee maker was cracked right out of the box. The mugs are fine. Can I get my money back for the coffee maker? Thanks, Maya</textarea>
+      <button class="pill pill-primary" id="send"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 7.5 13.5 2.5 9 13.5 7.5 9z"/><path d="m7.5 9 6-6.5"/></svg>Send to the agent</button>
+    </form>
+    <section id="inbox" hidden>
+      <div class="section-head"><p class="label">Inbox</p></div>
+      <ul class="runs" id="runs"></ul>
+    </section>
+  </aside>
+
+  <section class="panel ticket">
+    <div class="intro" id="intro">
+      <h2>Refunds that wait for a person</h2>
+      <p>The agent reads a customer's email, looks up the order and the refund policy, and proposes a refund. Then it stops before any money moves and saves where it stopped. When someone approves, it picks up the same run, issues the refund once, and writes back to the customer.</p>
+      <ol class="how">
+        <li><span><b>Send a request.</b> <span>Pick a sample, or write your own.</span></span></li>
+        <li><span><b>Restart the server while the refund waits.</b> <span>Stop <code>npm run web</code> and start it again.</span></span></li>
+        <li><span><b>Approve it.</b> <span>The run continues from the response it stored before the restart.</span></span></li>
+      </ol>
+      <button type="button" class="pill pill-primary" id="try">Try the cracked coffee maker</button>
+    </div>
+    <div class="ticket-head" id="ticket-head" hidden>
+      <span class="avatar" id="ticket-avatar"></span>
+      <div class="ticket-title"><h2 id="ticket-title"></h2><p id="ticket-sub"></p></div>
+      <span id="ticket-status"></span>
+      <span id="ticket-cost"></span>
+      <button type="button" class="pill pill-secondary pill-sm" id="stop" hidden><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="4" y="4" width="8" height="8" rx="1.5"/></svg>Stop</button>
+      <button type="button" class="pill pill-secondary pill-sm" id="resume" hidden><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3.2v9.6L12.8 8z"/></svg>Resume</button>
+    </div>
+    <div class="timeline" id="timeline" hidden>
+      <div id="steps"></div>
+      <div id="live" hidden>
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v2.5M8 11.5V14M2 8h2.5M11.5 8H14M3.8 3.8l1.8 1.8M10.4 10.4l1.8 1.8M12.2 3.8l-1.8 1.8M5.6 10.4l-1.8 1.8"/></svg>
+        <div><span id="live-label">Thinking</span><pre id="live-reasoning"></pre><p id="live-text"></p></div>
+      </div>
+      <div id="footer"></div>
+      <form class="reply" id="reply" hidden>
+        <textarea id="reply-text" class="field" aria-label="Reply as the customer" placeholder="Write back as the customer. Push back if you like."></textarea>
+        <button class="pill pill-secondary pill-sm" id="reply-send">Reply as the customer</button>
+      </form>
+    </div>
+  </section>
+
+  <aside class="panel side">
+    <section class="approver">
+      <p class="label">Approving as</p>
+      <input id="approver" class="field" aria-label="Approving as" autocomplete="name">
+    </section>
+    <section id="queue-section" hidden>
+      <div class="section-head"><p class="label">Waiting for approval</p><span class="count" id="queue-count"></span></div>
+      <div class="queue" id="queue"></div>
+    </section>
+    <section id="audit-section" hidden>
+      <div class="section-head"><p class="label">Audit log</p><span class="path">output/audit.log</span></div>
+      <ol class="audit" id="audit"></ol>
+    </section>
+  </aside>
+</main>
+
+<div class="toast" id="toast" hidden></div>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  const page = crypto.randomUUID();
+  const ICONS = {
+    pause: '<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3.5" y="2.5" width="3" height="11" rx="1"/><rect x="9.5" y="2.5" width="3" height="11" rx="1"/></svg>',
+    stop: '<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="4" y="4" width="8" height="8" rx="1.5"/></svg>',
+    check: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="m3.5 8.5 3 3 6-7"/></svg>',
+    x: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="m4.5 4.5 7 7M11.5 4.5l-7 7"/></svg>',
+    restart: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13 8a5 5 0 1 1-1.6-3.7"/><path d="M13 2.5v3h-3"/></svg>',
+    thought: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v2.5M8 11.5V14M2 8h2.5M11.5 8H14M3.8 3.8l1.8 1.8M10.4 10.4l1.8 1.8M12.2 3.8l-1.8 1.8M5.6 10.4l-1.8 1.8"/></svg>',
+    mail: '<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="3.5" width="12" height="9" rx="1.5"/><path d="m2.5 4.5 5.5 4 5.5-4"/></svg>',
+    lookup_order: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 5 8 2.5 13.5 5v6L8 13.5 2.5 11z"/><path d="M2.5 5 8 7.5 13.5 5M8 7.5v6"/></svg>',
+    check_refund_policy: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5h5.5L12 5v8.5H4z"/><path d="M9.5 2.5V5H12M6 8h4M6 10.5h4"/></svg>',
+    issue_refund: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10.6 5c-.4-.9-1.4-1.5-2.6-1.5-1.5 0-2.6.8-2.6 2s1.1 1.7 2.6 2 2.6.8 2.6 2-1.1 2-2.6 2c-1.2 0-2.3-.6-2.7-1.6M8 2v12"/></svg>',
+  };
+  const TOOLS = { lookup_order: "Look up the order", check_refund_policy: "Check the refund policy", issue_refund: "Issue a refund" };
+  const STATUS = { working: "Working", waiting: "Waiting for approval", customer: "Customer is replying", stopped: "Stopped", done: "Resolved", failed: "Failed" };
+  const runs = new Map();
+  const approvals = new Map();
+  const live = new Map();
+  const rejecting = new Set();
+  const cardNotes = new Map();
+  const shown = new Set();
+  let audit = [];
+  let selected = null;
+  let server = null;
+  let connected = false;
+  let toastTimer = 0;
+
+  $("approver").value = localStorage.getItem("approver") || "Dana Kim";
+  $("approver").oninput = () => localStorage.setItem("approver", $("approver").value);
+
+  document.querySelectorAll("#samples button").forEach((button) => {
+    button.onclick = () => {
+      $("from").value = button.dataset.from;
+      $("message").value = button.dataset.message;
+      // The angry customer is one Grok plays, writing a reply to each of the agent's emails.
+      $("compose").dataset.persona = button.dataset.persona ?? "";
+      $("compose").requestSubmit();
+    };
+  });
+  $("try").onclick = () => document.querySelector("#samples button").click();
+
+  $("compose").onsubmit = async (event) => {
+    event.preventDefault();
+    $("send").disabled = true;
+    const persona = $("compose").dataset.persona || undefined;
+    $("compose").dataset.persona = "";
+    const result = await post("/api/runs", { from: $("from").value.trim(), message: $("message").value.trim(), persona });
+    $("send").disabled = false;
+    if (result.id) select(result.id);
+    else toast(result.message);
+  };
+
+  $("reply").onsubmit = async (event) => {
+    event.preventDefault();
+    const message = $("reply-text").value.trim();
+    if (!message) return;
+    $("reply-send").disabled = true;
+    const result = await post(`/api/runs/${selected}/reply`, { message });
+    $("reply-send").disabled = false;
+    if (result.message) toast(result.message);
+    else $("reply-text").value = "";
+  };
+
+  $("runs").onclick = (event) => {
+    const item = event.target.closest(".run-item");
+    if (item) select(item.dataset.id);
+  };
+  $("stop").onclick = () => post(`/api/runs/${selected}/stop`, {});
+  $("resume").onclick = async () => {
+    const result = await post(`/api/runs/${selected}/resume`, {});
+    if (result.message) toast(result.message);
+  };
+
+  $("queue").onclick = (event) => {
+    const card = event.target.closest(".approval");
+    if (!card) return;
+    const id = card.dataset.id;
+    if (event.target.closest(".approve")) decideRefund(id, "approve");
+    else if (event.target.closest(".reject")) {
+      rejecting.add(id);
+      renderQueue();
+      document.querySelector(`.approval[data-id="${id}"] .note`)?.focus();
+    } else if (event.target.closest(".cancel")) {
+      rejecting.delete(id);
+      renderQueue();
+    } else if (event.target.closest(".confirm-reject")) decideRefund(id, "reject", card.querySelector(".note").value.trim());
+    else if (!event.target.closest("input")) select(approvals.get(id).run);
+  };
+
+  connect();
+  setInterval(renderServer, 1000);
+
+  // One stream for the life of the page. When the server goes down, EventSource keeps reconnecting, and
+  // the new process sends a fresh snapshot of everything, loaded from output/.
+  function connect() {
+    const events = new EventSource(`/api/events?page=${page}`);
+    const on = (name, handler) => events.addEventListener(name, (message) => handler(JSON.parse(message.data)));
+
+    on("hello", (hello) => {
+      const restarted = server && server.pid !== hello.pid;
+      server = { pid: hello.pid, started_at: hello.started_at };
+      connected = true;
+      runs.clear();
+      for (const run of hello.runs) runs.set(run.id, run);
+      approvals.clear();
+      for (const approval of hello.approvals) approvals.set(approval.id, approval);
+      audit = hello.audit;
+      live.clear();
+      for (const run of hello.runs) shown.add(run.id);
+      for (const approval of hello.approvals) shown.add(approval.id);
+      for (const entry of hello.audit) shown.add(auditKey(entry));
+      if (!runs.has(selected)) selected = [...runs.values()].at(-1)?.id ?? null;
+      renderAll();
+      if (restarted) {
+        const waiting = [...approvals.values()].filter((approval) => approval.status === "pending").length;
+        toast(`${ICONS.restart}The server restarted as process ${hello.pid}. ${waiting ? `${plural(waiting, "refund")} still waiting for approval, loaded from output/state.json.` : "Its state came from output/state.json."}`);
+      }
+    });
+    on("run", (summary) => {
+      const run = upsert(summary);
+      if (run.status !== "working") live.delete(run.id);
+      renderInbox();
+      if (run.id === selected) renderStatus();
+    });
+    on("step", ({ run: summary, step }) => {
+      const run = upsert(summary);
+      run.steps.push(step);
+      if (step.kind === "turn") live.delete(run.id);
+      renderInbox();
+      if (run.id !== selected) return;
+      if ($("timeline").dataset.run !== run.id) renderTicket();
+      else appendStep(run, step, true);
+      renderStatus();
+    });
+    on("delta", ({ run, kind, text }) => {
+      const entry = live.get(run) ?? { reasoning: "", text: "" };
+      entry[kind] += text;
+      live.set(run, entry);
+      if (run === selected) renderLive();
+    });
+    on("approval", (approval) => {
+      approvals.set(approval.id, approval);
+      if (approval.status !== "pending") rejecting.delete(approval.id);
+      renderQueue();
+      const card = document.querySelector(`.tool[data-call="${approval.id}"]`);
+      if (card) fillTool(runs.get(approval.run), card);
+    });
+    on("audit", (entry) => {
+      audit.push(entry);
+      renderAudit();
+    });
+    events.onerror = () => {
+      connected = false;
+      renderServer();
+    };
+  }
+
+  function upsert(summary) {
+    const run = runs.get(summary.id);
+    if (run) return Object.assign(run, summary);
+    const created = { ...summary, steps: [] };
+    runs.set(created.id, created);
+    return created;
+  }
+
+  function select(id) {
+    selected = id;
+    renderInbox();
+    renderTicket();
+    renderQueue();
+  }
+
+  async function decideRefund(id, action, note = "") {
+    cardNotes.delete(id);
+    document.querySelectorAll(`.approval[data-id="${id}"] button`).forEach((button) => (button.disabled = true));
+    const result = await post(`/api/approvals/${id}/${action}`, { by: $("approver").value.trim() || "Someone", note });
+    if (result.message) cardNotes.set(id, result.message);
+    renderQueue();
+    select(approvals.get(id)?.run ?? selected);
+  }
+
+  async function post(url, body) {
+    try {
+      const response = await fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...body, page }) });
+      return await response.json();
+    } catch {
+      return { message: "The server isn't answering. Try again once it's back." };
+    }
+  }
+
+  function renderAll() {
+    renderServer();
+    renderInbox();
+    renderTicket();
+    renderQueue();
+    renderAudit();
+  }
+
+  function renderServer() {
+    $("server").classList.toggle("offline", !connected);
+    if (!connected) $("server-text").textContent = server ? "Server offline, reconnecting" : "Connecting";
+    else $("server-text").textContent = `Server process ${server.pid} · up ${duration(Date.now() - Date.parse(server.started_at))}`;
+  }
+
+  function renderInbox() {
+    const list = [...runs.values()].sort((a, b) => b.created_at.localeCompare(a.created_at));
+    $("inbox").hidden = !list.length;
+    $("runs").innerHTML = list
+      .map((run) => {
+        const name = customerOf(run) ?? run.from;
+        return `<li><button type="button" class="run-item${run.id === selected ? " selected" : ""}${fresh(run.id)}" data-id="${run.id}">
+          <span class="avatar">${initials(name)}</span>
+          <span class="run-main"><span class="run-top"><b>${escapeHtml(name)}</b><time>${time(run.created_at)}</time></span><span class="snippet">${escapeHtml(run.message)}</span>${chip(run)}</span>
+        </button></li>`;
+      })
+      .join("");
+  }
+
+  function renderTicket() {
+    const run = runs.get(selected);
+    $("intro").hidden = Boolean(run);
+    $("ticket-head").hidden = !run;
+    $("timeline").hidden = !run;
+    if (!run) return;
+    $("timeline").dataset.run = run.id;
+    $("steps").innerHTML = "";
+    for (const step of run.steps) appendStep(run, step, false);
+    renderStatus();
+    $("timeline").scrollTop = $("timeline").scrollHeight;
+  }
+
+  // Header, live box, and footer: everything about the selected run that changes with its status.
+  function renderStatus() {
+    const run = runs.get(selected);
+    if (!run) return;
+    const name = customerOf(run);
+    $("ticket-avatar").textContent = initials(name ?? run.from);
+    $("ticket-title").textContent = name ?? run.from;
+    $("ticket-sub").textContent = [name && run.from, orderOf(run) && `Order ${orderOf(run)}`, run.id].filter(Boolean).join(" · ");
+    $("ticket-status").innerHTML = chip(run);
+    $("ticket-cost").textContent = run.requests ? `${plural(run.requests, "request")} · ${dollars(run.cost, 3)}` : "";
+    $("stop").hidden = run.status !== "working" && run.status !== "customer";
+    $("resume").hidden = !["stopped", "failed"].includes(run.status);
+    $("reply").hidden = run.status !== "done";
+    renderLive();
+    renderFooter(run);
+    scrollToEnd();
+  }
+
+  function renderLive() {
+    const run = runs.get(selected);
+    const entry = live.get(selected);
+    $("live").hidden = run?.status !== "working";
+    $("live-label").textContent = entry?.text ? "Writing" : "Thinking";
+    $("live-reasoning").textContent = entry?.reasoning ?? "";
+    $("live-reasoning").scrollTop = $("live-reasoning").scrollHeight;
+    $("live-text").textContent = entry?.text ?? "";
+    scrollToEnd();
+  }
+
+  function renderFooter(run) {
+    const response = run.response_id ? `<code>${short(run.response_id)}</code>` : "the start";
+    const footers = {
+      waiting: `${ICONS.pause}<div><b>Waiting for approval</b>The run stopped before <code>issue_refund</code> and saved stored response ${response} and the call to output/state.json. The response is kept for 30 days, so the server can restart before anyone decides.</div>`,
+      customer: `${ICONS.mail}<div><b>The customer is writing back</b>Grok, playing the customer, is answering the agent's email. The reply goes into the same run, which continues from stored response ${response}.</div>`,
+      done: `${ICONS.check}<div><b>Resolved</b>${plural(run.requests, "request")} to grok-4.7, ${dollars(run.cost, 3)} in all.</div>`,
+      stopped: `${ICONS.stop}<div><b>Stopped</b>Resume continues from stored response ${response}.</div>`,
+      failed: `${ICONS.x}<div><b>The last request failed</b>Resume tries again from stored response ${response}.</div>`,
+    };
+    $("footer").className = `footer ${run.status}`;
+    $("footer").hidden = !footers[run.status];
+    $("footer").innerHTML = footers[run.status] ?? "";
+  }
+
+  function appendStep(run, step, animate) {
+    if (step.kind === "result") {
+      // The email shows what was sent, with the store's signature, once the call has run.
+      const sent = document.querySelector(`[data-email="${step.call_id}"] p`);
+      if (sent && step.output?.message) sent.textContent = step.output.message;
+      const card = document.querySelector(`.tool[data-call="${step.call_id}"]`);
+      if (card) fillTool(run, card);
+      return;
+    }
+    const el = stepElement(run, step);
+    if (!animate) el.style.animation = "none";
+    $("steps").append(el);
+    if (el.dataset.call) fillTool(run, el);
+    scrollToEnd();
+  }
+
+  function stepElement(run, step) {
+    const el = document.createElement("div");
+    el.className = `step ${step.kind}`;
+    if (step.kind === "request") {
+      el.classList.add("email", "in");
+      const persona = step.simulated ? `<span class="persona">Written by Grok, playing the customer</span>` : "";
+      el.innerHTML = `<header><b>${escapeHtml(step.from)}</b>${persona}<time>${time(step.at)}</time></header><p>${escapeHtml(step.message)}</p>`;
+    } else if (step.kind === "turn") {
+      const chain = step.previous_response_id ? `previous_response_id ${step.previous_response_id}` : "First turn, no previous response";
+      el.innerHTML = `${ICONS.thought}<span class="thought">${escapeHtml(step.reasoning.trim() || `Answered in ${step.seconds.toFixed(1)} s`)}</span><code title="Stored response ${step.response_id}. ${chain}">${short(step.response_id)}</code>`;
+    } else if (step.kind === "call" && step.name === "send_customer_message") {
+      el.className = "step email out";
+      el.dataset.email = step.call_id;
+      el.innerHTML = `<header>${ICONS.mail}<b>To ${escapeHtml(run.from)}</b><time>${time(step.at)}</time></header><p>${escapeHtml(String(step.arguments.message ?? ""))}</p><footer>Written to output/outbox.log instead of sent</footer>`;
+    } else if (step.kind === "call") {
+      el.className = `step tool${step.name === "issue_refund" ? " refund" : ""}`;
+      el.dataset.call = step.call_id;
+      const label = step.name === "issue_refund" ? `${dollars(step.arguments.amount)} · ${step.arguments.order_id}` : step.arguments.order_id ?? "";
+      el.innerHTML = `<header><span class="icon">${ICONS[step.name] ?? ICONS.check_refund_policy}</span><b>${TOOLS[step.name] ?? step.name}</b><code>${escapeHtml(String(label))}</code></header><div class="tool-body"></div>`;
+    } else if (step.kind === "resume") {
+      el.className = `step divider${step.restarted ? " restarted" : ""}`;
+      el.innerHTML = `<span>${ICONS.restart}${step.restarted ? `Server restarted · process ${step.pid} continued` : "Continued"} from stored response <code>${short(step.response_id)}</code></span>`;
+    } else if (step.kind === "note") {
+      el.innerHTML = `<p class="label">Agent</p><p>${escapeHtml(step.text)}</p>`;
+    } else if (step.kind === "error") {
+      el.textContent = step.message;
+    }
+    return el;
+  }
+
+  // Fills a tool card from the call's result and, for a refund, the approval.
+  function fillTool(run, card) {
+    const call = run.steps.find((step) => step.kind === "call" && step.call_id === card.dataset.call);
+    const output = run.steps.find((step) => step.kind === "result" && step.call_id === card.dataset.call)?.output;
+    const body = card.querySelector(".tool-body");
+    if (call.name === "issue_refund") body.innerHTML = refundBody(call, output, approvals.get(call.call_id));
+    else if (output?.error) body.innerHTML = `<span class="error-text">${escapeHtml(output.error)}</span>`;
+    else if (output && call.name === "lookup_order") body.innerHTML = orderBody(output);
+    else if (output && call.name === "check_refund_policy") body.innerHTML = policyBody(output);
+    scrollToEnd();
+  }
+
+  function orderBody(order) {
+    const items = order.items.map((item) => `<dt>${escapeHtml(item.name)}${item.final_sale ? " · final sale" : ""}</dt><dd>${dollars(item.price * item.quantity)}</dd>`).join("");
+    const refunded = order.refunds.length ? ` · ${dollars(order.refunds.reduce((sum, refund) => sum + refund.amount, 0))} already refunded` : "";
+    return `<dl class="items">${items}</dl>${escapeHtml(order.customer.name)} · ${dollars(order.total)} paid with ${escapeHtml(order.payment)} · delivered ${day(order.delivered_at)}${refunded}`;
+  }
+
+  function policyBody(policy) {
+    const facts = [
+      [`Delivered ${plural(policy.days_since_delivery, "day")} ago`, ""],
+      [policy.within_refund_window ? "Inside the 30-day window" : "Outside the 30-day window", policy.within_refund_window ? "yes" : "no"],
+      [`${dollars(policy.refundable)} left to refund`, ""],
+      ...policy.final_sale_items.map((item) => [`${item} is final sale`, "no"]),
+    ];
+    return `<div class="facts">${facts.map(([text, kind]) => `<span class="fact ${kind}">${kind === "yes" ? ICONS.check : kind === "no" ? ICONS.x : ""}${escapeHtml(text)}</span>`).join("")}</div>`;
+  }
+
+  function refundBody(call, output, approval) {
+    const reason = `<p class="reason">${escapeHtml(String(call.arguments.reason ?? ""))}</p>`;
+    let state = `<div class="refund-state">Checking the refund</div>`;
+    if (output?.error) state = `<div class="refund-state rejected">${ICONS.x}${escapeHtml(output.error)}</div>`;
+    else if (output?.status === "refunded") state = `<div class="refund-state approved">${ICONS.check}<span>Approved by ${escapeHtml(output.approved_by)} · refund <code>${output.refund_id}</code> issued once, with the call ID as its idempotency key</span></div>`;
+    else if (output?.status === "rejected") state = `<div class="refund-state rejected">${ICONS.x}<span>Rejected by ${escapeHtml(output.rejected_by)}${output.note ? `: ${escapeHtml(output.note)}` : ""}</span></div>`;
+    else if (approval?.status === "pending") state = `<div class="refund-state waiting">${ICONS.pause}<span>Waiting for approval. Nothing has been refunded.</span></div>`;
+    else if (approval) state = `<div class="refund-state ${approval.status}">${approval.status === "approved" ? ICONS.check : ICONS.x}<span>${approval.status === "approved" ? "Approved" : "Rejected"} by ${escapeHtml(approval.decided_by)}</span></div>`;
+    return reason + state;
+  }
+
+  function renderQueue() {
+    const pending = [...approvals.values()].filter((approval) => approval.status === "pending");
+    $("queue-section").hidden = !pending.length;
+    $("queue-count").textContent = pending.length;
+    $("queue").innerHTML = pending.map(approvalCard).join("");
+  }
+
+  function approvalCard(approval) {
+    const { order_id, amount, reason } = approval.arguments;
+    const actions = rejecting.has(approval.id)
+      ? `<div class="reject-form"><input class="field note" aria-label="Why not" placeholder="Why not? The agent tells the customer."><div class="actions"><button type="button" class="pill pill-primary danger confirm-reject">Reject refund</button><button type="button" class="pill pill-secondary cancel">Cancel</button></div></div>`
+      : `<div class="actions"><button type="button" class="pill pill-primary approve">${ICONS.check}Approve</button><button type="button" class="pill pill-secondary reject">${ICONS.x}Reject</button></div>`;
+    const note = cardNotes.get(approval.id);
+    return `<article class="approval${approval.run === selected ? " current" : ""}${fresh(approval.id)}" data-id="${approval.id}">
+      <header><span class="badge">${ICONS.pause}Needs approval</span><time>${time(approval.requested_at)}</time></header>
+      <p class="amount">${dollars(amount)}</p>
+      <p class="to">Refund to ${escapeHtml(approval.order.payment)}</p>
+      <p class="meta">Order ${escapeHtml(order_id)} · ${escapeHtml(approval.order.customer)} · ${dollars(approval.order.total)} paid</p>
+      <blockquote>${escapeHtml(reason)}</blockquote>
+      <dl class="ids"><dt>response</dt><dd title="${approval.response_id}">${approval.response_id}</dd><dt>call</dt><dd title="${approval.call_id}">${approval.call_id}</dd></dl>
+      ${actions}
+      ${note ? `<p class="card-note">${escapeHtml(note)}</p>` : ""}
+    </article>`;
+  }
+
+  function renderAudit() {
+    $("audit-section").hidden = !audit.length;
+    $("audit").innerHTML = audit.slice(-40).reverse().map(auditItem).join("");
+  }
+
+  function auditItem(entry) {
+    const amount = `${dollars(entry.amount)} for ${escapeHtml(entry.order)}`;
+    const by = `<b>${escapeHtml(entry.by)}</b>`;
+    const lines = {
+      requested: `<b>Agent</b> asked to refund ${amount}`,
+      approved: `${by} approved ${amount}`,
+      rejected: `${by} rejected ${amount}${entry.note ? `: ${escapeHtml(entry.note)}` : ""}`,
+      ignored: `${by} decided again, <span class="what">ignored</span>: ${escapeHtml(entry.note ?? "")}`,
+      refunded: `<span class="what">Refund <code>${entry.refund}</code> issued</span>, ${amount}`,
+      replayed: `<span class="what">Refund <code>${entry.refund}</code> was already issued</span>, so the retry reused it`,
+    };
+    return `<li class="${entry.action}${fresh(auditKey(entry))}"><time>${time(entry.at, true)}</time><span>${lines[entry.action] ?? entry.action}</span><span class="pid">process ${entry.pid}</span></li>`;
+  }
+
+  function auditKey(entry) {
+    return `${entry.at} ${entry.action} ${entry.approval}`;
+  }
+
+  // The lists are drawn again on every change, so only items that weren't on the page before fade in.
+  function fresh(key) {
+    if (shown.has(key)) return "";
+    shown.add(key);
+    return " new";
+  }
+
+  function chip(run) {
+    const icon = { working: "<i></i>", waiting: ICONS.pause, customer: "<i></i>", stopped: ICONS.stop, done: ICONS.check, failed: ICONS.x }[run.status];
+    return `<span class="chip ${run.status}">${icon}${STATUS[run.status]}</span>`;
+  }
+
+  function customerOf(run) {
+    return run.steps.find((step) => step.kind === "result" && step.name === "lookup_order" && step.output?.customer)?.output.customer.name;
+  }
+
+  function orderOf(run) {
+    return run.steps.find((step) => step.kind === "call" && step.arguments.order_id)?.arguments.order_id;
+  }
+
+  function scrollToEnd() {
+    const timeline = $("timeline");
+    timeline.scrollTo({ top: timeline.scrollHeight, behavior: "smooth" });
+  }
+
+  function toast(html) {
+    $("toast").innerHTML = html;
+    $("toast").hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => ($("toast").hidden = true), 7000);
+  }
+
+  function short(id) {
+    return id.slice(0, 8);
+  }
+
+  function initials(name) {
+    const words = name.split("@")[0].split(/[\s._-]+/).filter(Boolean);
+    return escapeHtml(words.slice(0, 2).map((word) => word[0].toUpperCase()).join(""));
+  }
+
+  function dollars(amount, digits = 2) {
+    return `$${Number(amount).toFixed(digits)}`;
+  }
+
+  function time(at, seconds = false) {
+    return new Date(at).toLocaleTimeString("en", { hour: "numeric", minute: "2-digit", ...(seconds && { second: "2-digit" }) });
+  }
+
+  function day(at) {
+    return new Date(at).toLocaleDateString("en", { month: "short", day: "numeric" });
+  }
+
+  function duration(ms) {
+    const seconds = Math.max(0, Math.floor(ms / 1000));
+    return seconds < 60 ? `${seconds}s` : `${Math.floor(seconds / 60)}m ${String(seconds % 60).padStart(2, "0")}s`;
+  }
+
+  function plural(count, word) {
+    return `${count} ${word}${count === 1 ? "" : "s"}`;
+  }
+
+  function escapeHtml(text) {
+    return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+</script>
+</body>
+</html>

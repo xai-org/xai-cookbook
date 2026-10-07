@@ -1,6 +1,7 @@
 ---
 title: Screenshot to React Component
-description: Turn a screenshot of a UI into a React component styled with Tailwind, then have Grok compare a screenshot of the component with the original and fix what doesn't match, in a small web app.
+seo_title: "Screenshot to Code: Generate React Components with the Grok API"
+description: Turn a screenshot of a UI into a React component styled with Tailwind, then have Grok compare the result with the original and fix what doesn't match.
 type: app
 level: beginner
 languages: [typescript]
@@ -12,6 +13,8 @@ date: 2026-10-01
 ---
 
 # Screenshot to React Component
+
+This app turns a screenshot of a user interface into a React component with the Grok API, then has Grok check its work against the original. It shows how to send an image at high detail and get code back as structured output, ready to preview without a build step.
 
 Give it a screenshot of a user interface, and it writes a React component that recreates it. A small web app shows Grok's reasoning and the code as it's written, then runs the component next to the screenshot. In a second round, the page takes a screenshot of the component, and Grok compares it with the original and fixes what doesn't line up.
 

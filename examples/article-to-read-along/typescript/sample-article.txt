@@ -1,0 +1,15 @@
+How a Rocket Booster Lands Itself
+
+On December 21, 2015, a Falcon 9 booster did something no orbital rocket had done before. It flew back to Cape Canaveral and landed upright, a few miles from where it had launched.
+
+For most of the history of spaceflight, the biggest and most expensive part of a rocket flew once and was thrown away. The first stage, the tall tube of engines and fuel that lifts everything off the pad, burned for a few minutes, let go, and fell into the ocean.
+
+The trip home starts about two and a half minutes after liftoff. The booster lets go of the upper stage, which keeps climbing toward orbit. Now it is high above most of the atmosphere, moving away from land at several times the speed of sound, with only a little fuel left. Small thrusters near the top flip it around, and three of its nine engines relight for the boostback burn, which cancels its speed away from the coast and sends it arcing back toward land.
+
+As it falls, the booster picks up speed again. Before it reaches the thicker air, three engines fire once more for the entry burn, which slows it down enough to keep the rushing air from overheating it. Four grid fins near the top, which look like waffle irons, steer it through the air the way feathers steer an arrow.
+
+The hardest part comes last. Even at its lowest setting, a single engine pushes harder than the nearly empty booster weighs, so the booster can't hover the way a helicopter can. If it lit its engine too early, it would stop above the pad and start climbing again. Instead it waits, lights its center engine at the last possible moment, and burns just long enough to reach zero speed as it touches the ground. This is called a hoverslam. The four landing legs swing down in the final seconds.
+
+Not every booster has enough fuel to fly all the way back. When a mission needs more of the fuel to reach orbit, the booster lands on a ship waiting hundreds of kilometers out at sea. The ships take their names from Iain M. Banks's science fiction novels: Of Course I Still Love You, Just Read the Instructions, and A Shortfall of Gravitas. The first landing at sea came in April 2016.
+
+Landing is only half the point. A booster that comes back can be inspected, refueled, and flown again, and some have now flown more than twenty times. When the most expensive part of a rocket is no longer thrown away, launches get cheaper and more frequent, and a sight that once seemed impossible, a rocket standing on its tail after a trip to the edge of space, has become routine.

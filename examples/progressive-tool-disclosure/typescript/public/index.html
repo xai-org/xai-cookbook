@@ -1,0 +1,508 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Progressive Tool Disclosure</title>
+<style>
+  /* The look every SpaceXAI Cookbook page shares, after x.ai. */
+  :root {
+    --bg: #fff;
+    --card: #f9f8f6;
+    --secondary: #f2f1ef;
+    --secondary-hover: #e9e8e5;
+    --tint: rgb(10 10 10 / 0.04);
+    --line: rgb(10 10 10 / 0.08);
+    --border: rgb(10 10 10 / 0.15);
+    --fg: #0a0a0a;
+    --muted: rgb(10 10 10 / 0.6);
+    --faint: rgb(10 10 10 / 0.36);
+    --accent: #ff6308;
+    --accent-soft: rgb(255 99 8 / 0.1);
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; font: 14px/22px var(--sans); background: var(--bg); color: var(--fg); -webkit-font-smoothing: antialiased; }
+  button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
+  a { color: inherit; }
+  svg { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  @keyframes blink { 50% { opacity: 0.3; } }
+  @keyframes pulse { to { background-color: var(--secondary-hover); } }
+  @keyframes appear { from { opacity: 0; transform: translateY(4px); } }
+
+  .site { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 12px; height: 60px; padding: 0 20px; background: rgb(255 255 255 / 0.85); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+  .logo { flex: none; margin-right: 4px; color: var(--fg); }
+  .logo svg { display: block; width: 52px; height: 20px; fill: currentColor; stroke: none; }
+  .crumbs { display: flex; align-items: center; gap: 8px; min-width: 0; color: var(--muted); white-space: nowrap; }
+  .crumbs svg { width: 12px; height: 12px; color: var(--faint); }
+  .crumbs h1 { margin: 0; overflow: hidden; text-overflow: ellipsis; font-size: inherit; line-height: inherit; font-weight: 500; color: var(--fg); }
+  .site .pill { flex: none; margin-left: auto; }
+  .models { flex: none; height: 26px; padding: 0 10px; border-radius: 9999px; box-shadow: inset 0 0 0 1px var(--line); font-size: 12px; font-weight: 500; line-height: 26px; color: var(--muted); }
+  .pill { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 40px; padding: 0 18px; border-radius: 9999px; font-size: 14px; font-weight: 500; white-space: nowrap; text-decoration: none; }
+  .pill-sm { height: 32px; padding: 0 14px; font-size: 13px; }
+  .pill-primary { background: var(--fg); color: #fff; }
+  .pill-primary:hover { background: #202329; }
+  .pill-secondary { background: var(--secondary); color: var(--fg); }
+  .pill-secondary:hover { background: var(--secondary-hover); }
+  .pill:disabled { opacity: 0.4; cursor: default; }
+  .pill svg { width: 14px; height: 14px; }
+  .field { min-width: 0; height: 40px; padding: 0 18px; border: 1px solid var(--border); border-radius: 9999px; background: var(--bg); color: var(--fg); font: inherit; outline: none; }
+  .field:focus { border-color: var(--fg); }
+  .field::placeholder { color: var(--faint); }
+  .surface { display: flex; flex-direction: column; gap: 8px; height: calc(100vh - 72px); min-height: 560px; margin: 0 12px 12px; padding: 8px; border-radius: 20px; background: var(--card); }
+  .panel { min-width: 0; padding: 20px 22px; border-radius: 16px; background: var(--bg); }
+  .label { margin: 0; font-size: 13px; font-weight: 500; color: var(--muted); }
+  @media (max-width: 900px) {
+    .models { display: none; }
+  }
+  @media (max-width: 640px) {
+    .site { padding: 0 16px; }
+    .crumbs > span, .crumbs > svg { display: none; }
+    .surface { margin: 0 8px 8px; }
+  }
+
+  /* Progressive Tool Disclosure */
+  :root {
+    --ok: #16a34a;
+    --bad: #e5484d;
+    --bad-soft: rgb(229 72 77 / 0.1);
+  }
+  .surface { min-height: 680px; }
+  .toolbar { display: flex; align-items: center; gap: 8px; padding: 8px; border-radius: 16px; background: var(--bg); }
+  .ask { position: relative; flex: 1; display: flex; min-width: 200px; }
+  .ask svg { position: absolute; left: 16px; top: 12px; width: 16px; height: 16px; color: var(--faint); }
+  .ask .field { flex: 1; padding-left: 42px; }
+  #go svg { fill: currentColor; stroke: none; }
+  #go.stop { background: var(--secondary); color: var(--fg); }
+
+  /* One small square per tool, a row per service. Dark means its whole definition is sent; orange means Grok loaded or called it. */
+  .apis { display: grid; gap: 6px; }
+  .api { display: grid; grid-template-columns: 112px minmax(0, 1fr); align-items: center; gap: 10px; }
+  .api span { font-size: 11px; line-height: 14px; color: var(--muted); white-space: nowrap; }
+  .api em { margin-left: 5px; font-style: normal; color: var(--faint); font-variant-numeric: tabular-nums; }
+  .dots { display: flex; flex-wrap: wrap; gap: 2px; }
+  .dots i { flex: none; width: 5px; height: 5px; border-radius: 1.5px; background: var(--secondary-hover); transition: background-color 0.3s, box-shadow 0.3s, transform 0.3s; }
+  .apis.sent .dots i { background: rgb(10 10 10 / 0.72); }
+  .dots i.loaded { background: var(--accent-soft); box-shadow: inset 0 0 0 1.5px var(--accent); transform: scale(1.8); }
+  .apis .dots i.called { background: var(--accent); transform: scale(1.8); }
+
+  .start { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px; padding: 40px; overflow: auto; }
+  .start > * { width: min(100%, 760px); }
+  .intro h2 { margin: 0 0 10px; font-size: 34px; line-height: 1.15; font-weight: 450; letter-spacing: -0.02em; }
+  .intro p { max-width: 620px; margin: 0; font-size: 15px; line-height: 24px; color: var(--muted); }
+  .ways { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .way { display: grid; align-content: start; gap: 10px; padding: 18px; border-radius: 16px; background: var(--card); }
+  .way h3 { margin: 4px 0 0; font-size: 15px; line-height: 20px; font-weight: 600; }
+  .way p { margin: 0; font-size: 13px; line-height: 20px; color: var(--muted); }
+  .way .apis { gap: 5px; }
+  .way .api { gap: 6px; }
+  .way .dots { gap: 0.75px; }
+  .way .dots i { width: 4px; height: 4px; }
+  .way .dots i.loaded, .way .apis .dots i.called { transform: scale(2); }
+  .samples { display: grid; gap: 8px; }
+  .samples button { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 14px; background: var(--card); text-align: left; }
+  .samples button:hover { background: var(--secondary); }
+  .samples svg { flex: none; width: 14px; height: 14px; color: var(--faint); fill: currentColor; stroke: none; }
+  .fine { margin: 0; font-size: 13px; line-height: 20px; color: var(--faint); }
+
+  .compare { flex: 1; display: flex; flex-direction: column; gap: 8px; min-height: 0; }
+  .verdict { display: flex; align-items: baseline; align-content: center; flex-wrap: wrap; gap: 4px 12px; min-height: 66px; margin: 0; padding: 16px 22px; border-radius: 16px; background: var(--bg); font-size: 15px; line-height: 24px; color: var(--muted); }
+  .verdict strong { font-size: 30px; line-height: 34px; font-weight: 500; letter-spacing: -0.02em; color: var(--accent); font-variant-numeric: tabular-nums; }
+  .verdict b { font-weight: 500; color: var(--fg); }
+  .verdict.waiting span { animation: blink 1.4s ease-in-out infinite; }
+  .lanes { flex: 1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; min-height: 0; }
+  .lane { display: flex; flex-direction: column; gap: 14px; min-height: 0; overflow: auto; }
+  .lane-head { display: flex; align-items: baseline; gap: 10px; }
+  .lane-head h3 { margin: 0; font-size: 16px; line-height: 22px; font-weight: 600; }
+  .lane-head .status { margin-left: auto; font-size: 13px; color: var(--faint); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .lane-head .status.live { animation: blink 1.4s ease-in-out infinite; }
+  .lane-head .status.bad { color: var(--bad); }
+  .lane-sub { margin: -12px 0 0; font-size: 13px; line-height: 20px; color: var(--muted); }
+  .figure { display: grid; gap: 8px; }
+  .tokens { display: flex; align-items: baseline; gap: 8px; }
+  .tokens strong { font-size: 30px; line-height: 34px; font-weight: 500; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+  .tokens span { color: var(--muted); }
+  .tokens small { margin-left: auto; font-size: 12px; color: var(--faint); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .track { height: 10px; overflow: hidden; border-radius: 5px; background: var(--secondary); }
+  .track.waiting { animation: pulse 1s ease-in-out infinite alternate; }
+  .track i { display: block; width: 0; height: 100%; border-radius: inherit; transition: width 0.6s ease-out; }
+  #upfront-bar { background: var(--fg); }
+  #deferred-bar { background: var(--accent); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chips:empty { display: none; }
+  .chips span { display: inline-flex; align-items: baseline; gap: 8px; height: 28px; padding: 0 12px; border-radius: 9999px; background: var(--accent-soft); font-size: 12px; line-height: 28px; animation: appear 0.3s ease-out; }
+  .chips b { font: 500 12px/28px var(--mono); color: var(--accent); }
+  .chips em { font-style: normal; color: var(--muted); }
+  .chips span.called { background: var(--accent); }
+  .chips span.called b, .chips span.called em { color: #fff; }
+
+  .steps { flex: 0 1 auto; display: grid; align-content: start; gap: 6px; min-height: 48px; margin: 0; padding: 0 6px 0 0; overflow: auto; list-style: none; }
+  .step { display: flex; align-items: center; gap: 8px; min-width: 0; min-height: 36px; padding: 6px 12px; border-radius: 10px; background: var(--card); font-size: 13px; animation: appear 0.3s ease-out; }
+  .step.pending { animation: appear 0.3s ease-out, pulse 1s ease-in-out infinite alternate; }
+  .step > svg { flex: none; width: 14px; height: 14px; color: var(--muted); }
+  .step .kind { flex: none; color: var(--muted); }
+  .step code, .step summary code { min-width: 0; overflow: hidden; font: 12px/18px var(--mono); text-overflow: ellipsis; white-space: nowrap; }
+  .step summary code { flex: none; max-width: 60%; }
+  .step .args { min-width: 0; overflow: hidden; color: var(--muted); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+  .step .found { flex: none; margin-left: auto; padding: 0 8px; border-radius: 9999px; background: var(--accent-soft); color: var(--accent); font: 500 11px/20px var(--mono); white-space: nowrap; }
+  .step.call { display: block; padding: 0; }
+  .step.call summary { display: flex; align-items: center; gap: 8px; min-height: 36px; padding: 6px 12px; cursor: pointer; list-style: none; }
+  .step.call summary::-webkit-details-marker { display: none; }
+  .method { flex: none; padding: 0 7px; border-radius: 6px; background: var(--fg); color: #fff; font: 600 10px/18px var(--mono); }
+  .code { flex: none; margin-left: auto; padding: 0 8px; border-radius: 9999px; font: 500 11px/20px var(--mono); }
+  .code.ok { background: rgb(22 163 74 / 0.1); color: var(--ok); }
+  .code.bad { background: var(--bad-soft); color: var(--bad); }
+  .code.dry { background: var(--accent-soft); color: var(--accent); }
+  .body { max-height: 160px; margin: 0 12px 10px; padding: 10px 12px; overflow: auto; border-radius: 8px; background: var(--bg); font: 11px/16px var(--mono); color: var(--muted); white-space: pre-wrap; overflow-wrap: anywhere; }
+
+  .answer { flex: none; padding: 14px 16px; border-radius: 12px; box-shadow: inset 0 0 0 1px var(--line); animation: appear 0.3s ease-out; }
+  .answer-text { margin: 4px 0 0; font-size: 15px; line-height: 24px; }
+  .answer-text.typing::after { content: ""; display: inline-block; width: 7px; height: 15px; margin-left: 2px; vertical-align: -2px; border-radius: 2px; background: var(--accent); animation: blink 1s ease-in-out infinite; }
+  .lane .failed { margin: 0; padding: 12px 16px; border-radius: 12px; background: var(--bad-soft); color: var(--bad); font-size: 13px; }
+  #message { margin: 0; padding: 12px 16px; border-radius: 12px; background: var(--bad-soft); color: var(--bad); }
+
+  @media (max-width: 1080px) {
+    .surface { height: auto; }
+    .lanes, .ways { grid-template-columns: minmax(0, 1fr); }
+    .steps { max-height: 320px; }
+  }
+</style>
+</head>
+<body>
+<header class="site">
+  <a class="logo" href="https://x.ai" target="_blank" rel="noopener" aria-label="SpaceXAI"><svg viewBox="0 0 759 290.2" aria-hidden="true"><g transform="translate(-674.5,-388.5)"><path d="M1433.19 388.934C1345.69 396.068 1001.73 438.71 763.235 678.467H674.732L684.62 668.612C734.53 620.395 955.373 416.045 1433.19 388.668V388.934Z"/><path d="M1133.66 678.467H1064.29L927.618 578.979C940.213 571.058 952.888 563.515 965.603 556.33L1133.66 678.467Z"/><path d="M1022.8 678.468H953.463L932.43 663.169H814.998C823.265 655.828 831.635 648.702 840.092 641.784H902.996L870.444 618.106C882.079 609.448 893.843 601.155 905.701 593.211L1022.8 678.468Z"/><path d="M770.433 495.02L823.901 533.876C810.594 541.712 798.139 549.468 786.514 557.055L701.158 494.986L770.433 495.02Z"/></g></svg></a>
+  <nav class="crumbs"><span>Cookbook</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg><h1>Progressive Tool Disclosure</h1></nav>
+  <span class="models">grok-4.7 with tool search</span>
+  <a class="pill pill-secondary pill-sm" href="https://github.com/xai-org/xai-cookbook/tree/main/examples/progressive-tool-disclosure" target="_blank" rel="noopener">View code</a>
+</header>
+
+<main class="surface">
+  <form id="form" class="toolbar">
+    <label class="ask">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 4.5a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2H7l-3 2.5v-2.5a2 2 0 0 1-1.5-2z"/></svg>
+      <input id="question" class="field" required aria-label="Question" placeholder="Ask Maya's assistant about her code, chat, issues, docs, calendar, email, errors, or payments">
+    </label>
+    <button type="button" id="sample" class="pill pill-secondary" disabled>Sample</button>
+    <button id="go" class="pill pill-primary" disabled><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3.2v9.6L12.6 8z"/></svg><span>Ask</span></button>
+  </form>
+
+  <section class="panel start" id="start">
+    <div class="intro">
+      <h2>Load tool definitions on demand</h2>
+      <p>Grok is Maya's assistant at a made-up company, with tools from her eight work apps. It sees only their names and loads the few each question needs.</p>
+    </div>
+    <div class="ways">
+      <div class="way">
+        <div class="apis sent" id="start-upfront" aria-hidden="true"></div>
+        <h3>Every tool sent</h3>
+        <p>All <span class="count">203</span> tool definitions go out with every request.</p>
+      </div>
+      <div class="way">
+        <div class="apis" id="start-deferred" aria-hidden="true"></div>
+        <h3>Only the tools it needs</h3>
+        <p>Grok sees the <span class="count">203</span> names and loads the full definitions of the few a question needs.</p>
+      </div>
+    </div>
+    <div class="samples" id="samples"></div>
+    <p class="fine">A question takes 10 to 45 seconds and costs about 15 to 35 cents at list prices, most of it for the run that sends every tool.</p>
+  </section>
+
+  <section class="compare" id="compare" hidden>
+    <p class="verdict waiting" id="verdict"><span>Asking the question both ways at the same time</span></p>
+    <div class="lanes">
+      <section class="panel lane">
+        <div class="lane-head"><h3>Every tool sent</h3><span class="status" id="upfront-status"></span></div>
+        <p class="lane-sub">All <span class="count">203</span> tool definitions go out with every request.</p>
+        <div class="apis sent" id="upfront-dots" aria-hidden="true"></div>
+        <div class="figure">
+          <div class="tokens"><strong id="upfront-tokens">0</strong><span>input tokens</span><small id="upfront-note"></small></div>
+          <div class="track waiting" id="upfront-track"><i id="upfront-bar"></i></div>
+        </div>
+        <ol class="steps" id="upfront-steps"></ol>
+        <div class="answer" id="upfront-answer" hidden><p class="label">Answer</p><p class="answer-text" id="upfront-text"></p></div>
+      </section>
+      <section class="panel lane">
+        <div class="lane-head"><h3>Only the tools it needs</h3><span class="status" id="deferred-status"></span></div>
+        <p class="lane-sub">Grok sees the <span class="count">203</span> names and loads the definitions it needs.</p>
+        <div class="apis" id="deferred-dots" aria-hidden="true"></div>
+        <div class="figure">
+          <div class="tokens"><strong id="deferred-tokens">0</strong><span>input tokens</span><small id="deferred-note"></small></div>
+          <div class="track waiting" id="deferred-track"><i id="deferred-bar"></i></div>
+        </div>
+        <div class="chips" id="deferred-chips"></div>
+        <ol class="steps" id="deferred-steps"></ol>
+        <div class="answer" id="deferred-answer" hidden><p class="label">Answer</p><p class="answer-text" id="deferred-text"></p></div>
+      </section>
+    </div>
+  </section>
+
+  <p id="message" hidden></p>
+</main>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  const MODES = ["upfront", "deferred"];
+  const ICONS = {
+    play: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3.2v9.6L12.6 8z"/></svg>',
+    stop: '<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3.5" y="3.5" width="9" height="9" rx="1.5"/></svg>',
+    search: '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.5"/><path d="m10.5 10.5 3 3"/></svg>',
+    list: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 4h8M5.5 8h8M5.5 12h8M2.5 4h.01M2.5 8h.01M2.5 12h.01"/></svg>',
+  };
+  // The tools the first sample question needs, lit on the start page to show what loading on demand looks like.
+  const EXAMPLE = ["sentry_search_issues", "linear_search_issues", "slack_search_messages"];
+  const dots = { upfront: new Map(), deferred: new Map() };
+  let services = [];
+  let operations = [];
+  let questions = [];
+  let sample = 0;
+  let events;
+  let run;
+
+  fetch("/api/catalog")
+    .then(async (response) => (response.ok ? response.json() : Promise.reject(new Error(await response.text()))))
+    .then((catalog) => {
+      services = catalog.services;
+      operations = catalog.operations;
+      questions = catalog.questions;
+      document.querySelectorAll(".count").forEach((element) => (element.textContent = operations.length));
+      renderDots();
+      $("samples").innerHTML = questions.map((question) => `<button type="button">${ICONS.play}<span>${escapeHtml(question)}</span></button>`).join("");
+      $("samples").querySelectorAll("button").forEach((button, index) => (button.onclick = () => askSample(index)));
+      $("question").value = questions[0];
+      $("sample").disabled = $("go").disabled = false;
+    })
+    .catch((error) => showMessage(`Couldn't load the tools: ${error.message}`));
+
+  $("sample").onclick = () => askSample(sample++ % questions.length);
+  $("form").onsubmit = (event) => {
+    event.preventDefault();
+    if (events) return stop("Stopped.");
+    start($("question").value.trim());
+  };
+
+  function askSample(index) {
+    if (events) return;
+    $("question").value = questions[index];
+    start(questions[index]);
+  }
+
+  function start(question) {
+    reset();
+    setRunning(true);
+    addStep("upfront", `${ICONS.list}<span class="kind">Grok reads all ${operations.length} tool definitions</span>`, "first pending");
+    addStep("deferred", `${ICONS.list}<span class="kind">Grok reads ${operations.length} names and picks the tools it needs</span>`, "first pending");
+    events = new EventSource(`/api/ask?question=${encodeURIComponent(question)}`);
+    const on = (name, handler) => events.addEventListener(name, (message) => handler(JSON.parse(message.data)));
+
+    on("search", ({ mode, query }) => {
+      settleFirst(mode);
+      run[mode].searches.push(addStep(mode, `${ICONS.search}<span class="kind">Loads the definition of</span><code>${escapeHtml(query)}</code>`, "pending"));
+    });
+    on("loaded", ({ mode, names }) => {
+      const step = run[mode].searches.shift();
+      if (step) {
+        step.classList.remove("pending");
+        step.insertAdjacentHTML("beforeend", `<span class="found">${names.length ? "loaded" : "not found"}</span>`);
+      }
+      for (const name of names) light(mode, name, "loaded");
+    });
+    on("call", ({ mode, id, name, args }) => {
+      settleFirst(mode);
+      light(mode, name, "called");
+      run[mode].signatures.push(`${name} ${JSON.stringify(args)}`);
+      const service = services.find((service) => name.startsWith(`${service.key}_`));
+      const shown = Object.entries(args).map(([key, value]) => `${key}: ${typeof value === "string" ? value : JSON.stringify(value)}`).join(", ");
+      const summary = `<span class="method">${escapeHtml(service?.name ?? "Tool")}</span><code>${escapeHtml(service ? name.slice(service.key.length + 1) : name)}</code><span class="args" title="${escapeHtml(shown)}">${escapeHtml(shown)}</span>`;
+      run[mode].calls.set(id, addStep(mode, `<details><summary>${summary}</summary></details>`, "call pending"));
+    });
+    on("result", ({ mode, id, status, body }) => {
+      const step = run[mode].calls.get(id);
+      if (!step) return;
+      step.classList.remove("pending");
+      const kind = status === "ok" ? "ok" : status === "dry run" ? "dry" : "bad";
+      step.querySelector("summary").insertAdjacentHTML("beforeend", `<span class="code ${kind}">${escapeHtml(status)}</span>`);
+      step.querySelector("details").insertAdjacentHTML("beforeend", `<pre class="body">${escapeHtml(pretty(body))}</pre>`);
+    });
+    on("text", ({ mode, text }) => {
+      settleFirst(mode);
+      $(`${mode}-answer`).hidden = false;
+      $(`${mode}-text`).classList.add("typing");
+      $(`${mode}-text`).textContent += text;
+      scrollSteps(mode);
+    });
+    on("usage", (usage) => showUsage(usage));
+    on("answer", ({ mode, seconds }) => {
+      run[mode].done = true;
+      $(`${mode}-text`).classList.remove("typing");
+      setStatus(mode, `Answered in ${plural(seconds, "second")}`);
+    });
+    on("failure", ({ mode, message }) => {
+      if (!mode) return stop(`Couldn't answer: ${message}`);
+      run[mode].failed = message;
+      setStatus(mode, "Failed", "bad");
+      $(`${mode}-track`).classList.remove("waiting");
+      $(`${mode}-steps`).insertAdjacentHTML("afterend", `<p class="failed">${escapeHtml(message)}</p>`);
+    });
+    on("done", () => {
+      finish();
+      stop();
+    });
+    events.onerror = () => stop("Lost the connection to the server.");
+  }
+
+  // A row of squares per service, labeled with its name and how many tools it has.
+  function renderDots() {
+    const html = services
+      .map((service) => {
+        const tools = operations.filter((operation) => operation.service === service.key);
+        const squares = tools.map((operation) => `<i data-name="${operation.name}" title="${escapeHtml(`${operation.name}: ${operation.summary}`)}"></i>`).join("");
+        return `<div class="api"><span>${escapeHtml(service.name)}<em>${tools.length}</em></span><div class="dots">${squares}</div></div>`;
+      })
+      .join("");
+    for (const id of ["start-upfront", "start-deferred", "upfront-dots", "deferred-dots"]) $(id).innerHTML = html;
+    for (const mode of MODES) $(`${mode}-dots`).querySelectorAll("i").forEach((dot) => dots[mode].set(dot.dataset.name, dot));
+    for (const name of EXAMPLE) $("start-deferred").querySelector(`[data-name="${name}"]`)?.classList.add("called");
+  }
+
+  // Marks a tool as loaded or called, and lists it under the grid in the run that loads tools on demand.
+  function light(mode, name, kind) {
+    dots[mode].get(name)?.classList.add(kind);
+    if (mode !== "deferred") return;
+    const chips = run.deferred.chips;
+    if (!chips.has(name)) {
+      const operation = operations.find((operation) => operation.name === name);
+      $("deferred-chips").insertAdjacentHTML("beforeend", `<span><b>${escapeHtml(name)}</b><em>${escapeHtml(operation?.summary ?? "")}</em></span>`);
+      chips.set(name, $("deferred-chips").lastElementChild);
+    }
+    if (kind === "called") chips.get(name).classList.add("called");
+    setStatus("deferred", `${plural(chips.size, "tool")} of ${operations.length} loaded`, events ? "live" : "");
+  }
+
+  function showUsage({ mode, requests, input, cost, seconds }) {
+    const first = !run[mode].usage;
+    run[mode].usage = { requests, input, cost, seconds };
+    $(`${mode}-track`).classList.remove("waiting");
+    // Only a cost the API reports is shown.
+    $(`${mode}-note`).textContent = [`across ${plural(requests, "request")}`, cost > 0 ? `$${cost.toFixed(3)}` : ""].filter(Boolean).join(" · ");
+    countTo($(`${mode}-tokens`), input, first);
+    const max = Math.max(...MODES.map((key) => run[key].usage?.input ?? 0));
+    for (const key of MODES) if (run[key].usage) $(`${key}-bar`).style.width = `${(run[key].usage.input / max) * 100}%`;
+  }
+
+  function finish() {
+    const { upfront, deferred } = run;
+    $("verdict").classList.remove("waiting");
+    if (upfront.failed || deferred.failed || !upfront.usage || !deferred.usage) {
+      $("verdict").innerHTML = `<span>${upfront.failed || !upfront.usage ? "The run that sends every tool" : "The run that loads tools on demand"} didn't finish, so there's nothing to compare.</span>`;
+      return;
+    }
+    const ratio = upfront.usage.input / deferred.usage.input;
+    const costs = upfront.usage.cost > 0 && deferred.usage.cost > 0 ? ` That's <b>$${deferred.usage.cost.toFixed(3)}</b> for the question instead of <b>$${upfront.usage.cost.toFixed(3)}</b>.` : "";
+    const same = upfront.signatures.length > 0 && [...upfront.signatures].sort().join() === [...deferred.signatures].sort().join();
+    const calls = same ? ` Both runs made the same ${plural(upfront.signatures.length, "call")}.` : "";
+    $("verdict").innerHTML = `<strong>${ratio.toFixed(1)}× fewer</strong><span>input tokens when Grok loads only the tools it needs: <b>${deferred.usage.input.toLocaleString("en")}</b> instead of <b>${upfront.usage.input.toLocaleString("en")}</b>.${calls}${costs}</span>`;
+  }
+
+  function addStep(mode, html, className = "") {
+    $(`${mode}-steps`).insertAdjacentHTML("beforeend", `<li class="step ${className}">${html}</li>`);
+    scrollSteps(mode);
+    return $(`${mode}-steps`).lastElementChild;
+  }
+
+  function settleFirst(mode) {
+    $(`${mode}-steps`).querySelector(".first")?.classList.remove("pending");
+  }
+
+  function scrollSteps(mode) {
+    $(`${mode}-steps`).scrollTop = $(`${mode}-steps`).scrollHeight;
+  }
+
+  function setStatus(mode, text, className = "") {
+    $(`${mode}-status`).textContent = text;
+    $(`${mode}-status`).className = `status ${className}`;
+  }
+
+  // Counts up to the new total, so each request's tokens visibly add on.
+  function countTo(element, value, fromZero) {
+    const from = fromZero ? 0 : Number(element.dataset.value ?? 0);
+    element.dataset.value = value;
+    const started = performance.now();
+    const tick = (now) => {
+      const progress = Math.min(1, (now - started) / 600);
+      element.textContent = Math.round(from + (value - from) * (1 - (1 - progress) ** 3)).toLocaleString("en");
+      if (progress < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }
+
+  function pretty(body) {
+    try {
+      return JSON.stringify(JSON.parse(body), null, 2);
+    } catch {
+      return body;
+    }
+  }
+
+  function stop(message) {
+    events?.close();
+    events = undefined;
+    setRunning(false);
+    document.querySelectorAll(".pending").forEach((step) => step.classList.remove("pending"));
+    document.querySelectorAll(".track.waiting").forEach((track) => track.classList.remove("waiting"));
+    document.querySelectorAll(".typing").forEach((text) => text.classList.remove("typing"));
+    document.querySelectorAll(".status.live").forEach((status) => status.classList.remove("live"));
+    if ($("verdict").classList.contains("waiting")) {
+      $("verdict").className = "verdict";
+      $("verdict").innerHTML = "<span>Stopped before both runs were done.</span>";
+    }
+    if (message) showMessage(message);
+  }
+
+  function setRunning(running) {
+    $("go").innerHTML = running ? `${ICONS.stop}<span>Stop</span>` : `${ICONS.play}<span>Ask</span>`;
+    $("go").classList.toggle("stop", running);
+    $("sample").disabled = running;
+  }
+
+  function reset() {
+    run = Object.fromEntries(MODES.map((mode) => [mode, { searches: [], calls: new Map(), chips: new Map(), signatures: [] }]));
+    $("start").hidden = true;
+    $("compare").hidden = false;
+    $("message").hidden = true;
+    $("verdict").className = "verdict waiting";
+    $("verdict").innerHTML = "<span>Asking the question both ways at the same time</span>";
+    $("deferred-chips").innerHTML = "";
+    document.querySelectorAll(".lane .failed").forEach((element) => element.remove());
+    for (const mode of MODES) {
+      dots[mode].forEach((dot) => dot.classList.remove("loaded", "called"));
+      $(`${mode}-steps`).innerHTML = "";
+      $(`${mode}-tokens`).textContent = "0";
+      $(`${mode}-tokens`).dataset.value = 0;
+      $(`${mode}-note`).textContent = "";
+      $(`${mode}-bar`).style.width = "0";
+      $(`${mode}-track`).classList.add("waiting");
+      $(`${mode}-answer`).hidden = true;
+      $(`${mode}-text`).textContent = "";
+      setStatus(mode, "Asking", "live");
+    }
+  }
+
+  function showMessage(message) {
+    $("message").textContent = message;
+    $("message").hidden = false;
+  }
+
+  function plural(count, word) {
+    return `${count} ${word}${count === 1 ? "" : "s"}`;
+  }
+
+  function escapeHtml(text) {
+    return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+</script>
+</body>
+</html>
