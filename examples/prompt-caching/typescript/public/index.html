@@ -1,0 +1,740 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Prompt Caching</title>
+<style>
+  /* The look every SpaceXAI Cookbook page shares, after x.ai. */
+  :root {
+    --bg: #fff;
+    --card: #f9f8f6;
+    --secondary: #f2f1ef;
+    --secondary-hover: #e9e8e5;
+    --tint: rgb(10 10 10 / 0.04);
+    --line: rgb(10 10 10 / 0.08);
+    --border: rgb(10 10 10 / 0.15);
+    --fg: #0a0a0a;
+    --muted: rgb(10 10 10 / 0.6);
+    --faint: rgb(10 10 10 / 0.36);
+    --accent: #ff6308;
+    --accent-soft: rgb(255 99 8 / 0.1);
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; font: 14px/22px var(--sans); background: var(--bg); color: var(--fg); -webkit-font-smoothing: antialiased; }
+  button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
+  a { color: inherit; }
+  svg { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  @keyframes blink { 50% { opacity: 0.3; } }
+  @keyframes pulse { to { background-color: var(--secondary-hover); } }
+  @keyframes appear { from { opacity: 0; transform: translateY(4px); } }
+
+  .site { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 12px; height: 60px; padding: 0 20px; background: rgb(255 255 255 / 0.85); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+  .logo { flex: none; margin-right: 4px; color: var(--fg); }
+  .logo svg { display: block; width: 52px; height: 20px; fill: currentColor; stroke: none; }
+  .crumbs { display: flex; align-items: center; gap: 8px; min-width: 0; color: var(--muted); white-space: nowrap; }
+  .crumbs svg { width: 12px; height: 12px; color: var(--faint); }
+  .crumbs h1 { margin: 0; overflow: hidden; text-overflow: ellipsis; font-size: inherit; line-height: inherit; font-weight: 500; color: var(--fg); }
+  .site .pill { flex: none; margin-left: auto; }
+  .models { flex: none; height: 26px; padding: 0 10px; border-radius: 9999px; box-shadow: inset 0 0 0 1px var(--line); font-size: 12px; font-weight: 500; line-height: 26px; color: var(--muted); }
+  .pill { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 40px; padding: 0 18px; border-radius: 9999px; font-size: 14px; font-weight: 500; white-space: nowrap; text-decoration: none; }
+  .pill-sm { height: 32px; padding: 0 14px; font-size: 13px; }
+  .pill-primary { background: var(--fg); color: #fff; }
+  .pill-primary:hover { background: #202329; }
+  .pill-secondary { background: var(--secondary); color: var(--fg); }
+  .pill-secondary:hover { background: var(--secondary-hover); }
+  .pill:disabled { opacity: 0.4; cursor: default; }
+  .pill svg { width: 14px; height: 14px; }
+  .field { min-width: 0; height: 40px; padding: 0 18px; border: 1px solid var(--border); border-radius: 9999px; background: var(--bg); color: var(--fg); font: inherit; outline: none; }
+  .field:focus { border-color: var(--fg); }
+  .field::placeholder { color: var(--faint); }
+  .surface { display: flex; flex-direction: column; gap: 8px; height: calc(100vh - 72px); min-height: 560px; margin: 0 12px 12px; padding: 8px; border-radius: 20px; background: var(--card); }
+  .panel { min-width: 0; padding: 20px 22px; border-radius: 16px; background: var(--bg); }
+  .label { margin: 0; font-size: 13px; font-weight: 500; color: var(--muted); }
+  @media (max-width: 900px) {
+    .models { display: none; }
+  }
+  @media (max-width: 640px) {
+    .site { padding: 0 16px; }
+    .crumbs > span, .crumbs > svg { display: none; }
+    .surface { margin: 0 8px 8px; }
+  }
+
+  /* Prompt Caching */
+  :root {
+    --cached: #cfccc7;
+    --output: #57534e;
+    --hatch: repeating-linear-gradient(135deg, var(--accent) 0 2px, rgb(255 99 8 / 0.3) 2px 5px);
+    --hatch-soft: repeating-linear-gradient(135deg, rgb(255 99 8 / 0.32) 0 2px, rgb(255 99 8 / 0.1) 2px 5px);
+    --bad: #e5484d;
+    --bad-soft: rgb(229 72 77 / 0.1);
+  }
+  .surface { min-height: 680px; }
+  .toolbar { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 8px 8px 8px 18px; border-radius: 16px; background: var(--bg); }
+  .toolbar .note { min-width: 0; margin-right: auto; overflow: hidden; color: var(--muted); font-size: 13px; text-overflow: ellipsis; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .toolbar .note b { font-weight: 500; color: var(--fg); }
+  #run.stop { background: var(--secondary); color: var(--fg); }
+  .pill svg.solid, #run svg { fill: currentColor; stroke: none; }
+  .key { display: inline-block; flex: none; width: 10px; height: 10px; border-radius: 3px; }
+  .k-cached { background: var(--cached); }
+  .k-input { background: var(--accent); }
+  .k-output { background: var(--output); }
+  .k-compaction { background: var(--hatch); }
+  .k-summary { background: var(--hatch-soft); }
+  .legend { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 0; padding: 0; list-style: none; font-size: 12px; color: var(--muted); }
+  .legend li { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+
+  .start { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px; padding: 40px; overflow: auto; }
+  .start > * { width: min(100%, 820px); }
+  .intro h2 { margin: 0 0 10px; font-size: 34px; line-height: 1.15; font-weight: 450; letter-spacing: -0.02em; }
+  .intro p { max-width: 640px; margin: 0; font-size: 15px; line-height: 24px; color: var(--muted); }
+  .ways { display: grid; gap: 8px; }
+  .way { display: grid; grid-template-columns: 290px minmax(0, 1fr); align-items: center; gap: 12px 24px; padding: 16px 18px; border-radius: 16px; background: var(--card); }
+  .way h3 { margin: 0 0 2px; font-size: 15px; line-height: 20px; font-weight: 600; }
+  .way p { margin: 0; font-size: 13px; line-height: 20px; color: var(--muted); }
+  /* A prompt from start to end, with each part sized roughly by its tokens. */
+  .anatomy { display: flex; gap: 3px; }
+  .anatomy span { flex: none; min-width: 0; height: 30px; padding: 0 8px; overflow: hidden; border-radius: 7px; font-size: 11px; font-weight: 500; line-height: 30px; text-overflow: ellipsis; white-space: nowrap; }
+  .anatomy .system { flex: 5 1 0; }
+  .anatomy .turns { flex: 3.5 1 0; }
+  .anatomy .time { font-family: var(--mono); }
+  .anatomy .cached { background: var(--cached); }
+  .anatomy .new { background: var(--accent); color: #fff; }
+  .anatomy .summary { background: var(--hatch-soft); }
+  .start-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; }
+  .fine { margin: 0; font-size: 13px; line-height: 20px; color: var(--faint); }
+
+  .compare { flex: 1; display: flex; flex-direction: column; gap: 8px; min-height: 0; }
+  .verdict { display: flex; align-items: baseline; align-content: center; flex-wrap: wrap; gap: 4px 12px; min-height: 66px; margin: 0; padding: 16px 22px; border-radius: 16px; background: var(--bg); font-size: 15px; line-height: 24px; color: var(--muted); }
+  .verdict strong { font-size: 30px; line-height: 34px; font-weight: 500; letter-spacing: -0.02em; color: var(--accent); font-variant-numeric: tabular-nums; }
+  .verdict b { font-weight: 500; color: var(--fg); font-variant-numeric: tabular-nums; }
+  .verdict.waiting span { animation: blink 1.4s ease-in-out infinite; }
+  .lanes { flex: 1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; min-height: 0; }
+  .lane { display: flex; flex-direction: column; gap: 18px; min-height: 0; overflow: auto; }
+  .lane-head { display: flex; align-items: baseline; gap: 10px; }
+  .lane-head h3 { margin: 0; font-size: 16px; line-height: 22px; font-weight: 600; }
+  .status { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; font-size: 13px; color: var(--faint); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .status i { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: blink 1s ease-in-out infinite; }
+  .status svg { width: 13px; height: 13px; }
+  .lane-sub { margin: -14px 0 0; font-size: 13px; line-height: 20px; color: var(--muted); }
+  .lane .anatomy span { height: 24px; line-height: 24px; }
+  .figure { display: grid; gap: 8px; }
+  .total { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; }
+  .total strong { font-size: 30px; line-height: 34px; font-weight: 500; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+  .total span { color: var(--muted); }
+  .total em { align-self: center; padding: 0 8px; border-radius: 9999px; background: var(--accent-soft); color: var(--accent); font-size: 12px; font-style: normal; font-weight: 500; line-height: 20px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .total em:empty { display: none; }
+  .total small { margin-left: auto; font-size: 12px; color: var(--faint); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .track { height: 10px; overflow: hidden; border-radius: 5px; background: var(--secondary); }
+  .track i { display: block; width: 0; height: 100%; border-radius: inherit; background: var(--fg); transition: width 0.6s ease-out; }
+  .lane.top .track i { background: var(--accent); }
+  .lane.compaction .track i { background: var(--hatch); }
+  .extra { margin: -6px 0 0; font-size: 12px; line-height: 18px; color: var(--muted); }
+  .failed { margin: 0; padding: 12px 16px; border-radius: 12px; background: var(--bad-soft); color: var(--bad); font-size: 13px; overflow-wrap: anywhere; }
+
+  .chart-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; margin-bottom: 10px; }
+  .chart-head .axis { margin-left: auto; font-size: 11px; color: var(--faint); font-variant-numeric: tabular-nums; }
+  /* Every chat draws its bars on one scale, so a taller bar always costs more. Each segment's flex-grow is its share of the bar. */
+  .bars { display: grid; grid-template-columns: repeat(var(--turns), minmax(0, 1fr)); gap: 3px; height: clamp(110px, 20vh, 200px); border-bottom: 1px solid var(--border); }
+  .slot { position: relative; display: flex; align-items: flex-end; justify-content: center; height: 100%; padding-top: 4px; border-radius: 4px 4px 0 0; cursor: pointer; }
+  .slot:hover { background: var(--tint); }
+  .slot.compacted::after, .slot.compacting::after { content: ""; position: absolute; top: 0; bottom: 0; right: -2px; border-right: 1.5px dashed var(--accent); }
+  .slot.compacting::after { animation: blink 1s ease-in-out infinite; }
+  .bar { display: flex; flex-direction: column-reverse; width: min(14px, 80%); height: 0; overflow: hidden; border-radius: 3px 3px 1px 1px; transition: height 0.5s ease; }
+  .bar i { flex: 0 0 0; transition: flex-grow 0.5s ease; }
+  .bar i:nth-child(1) { background: var(--cached); }
+  .bar i:nth-child(2) { background: var(--accent); }
+  .bar i:nth-child(3) { background: var(--output); }
+  .bar i:nth-child(4) { background: var(--hatch); }
+  .slot.active .bar { background: var(--secondary); animation: pulse 0.9s ease-in-out infinite alternate; }
+  .ticks { display: grid; grid-template-columns: repeat(var(--turns), minmax(0, 1fr)); gap: 3px; margin-top: 5px; font-size: 11px; line-height: 14px; color: var(--faint); text-align: center; font-variant-numeric: tabular-nums; }
+
+  @keyframes flash { from { background: var(--accent-soft); box-shadow: 0 0 0 8px var(--accent-soft); } }
+  /* The whole conversation, newest turn last, filling the rest of the lane. */
+  .log { position: relative; flex: 1 1 0; display: flex; flex-direction: column; gap: 22px; min-height: 280px; padding: 16px; overflow-y: auto; border-radius: 14px; background: var(--card); }
+  .turn { flex: none; display: grid; gap: 8px; border-radius: 12px; animation: appear 0.3s ease-out; }
+  .turn.flash { animation: flash 1.8s ease-out; }
+  .turn-head { font-size: 12px; line-height: 16px; color: var(--faint); }
+  .latest { position: sticky; bottom: 0; flex: none; display: inline-flex; align-items: center; gap: 6px; align-self: center; margin-top: auto; height: 30px; padding: 0 14px; border-radius: 9999px; background: var(--fg); color: #fff; font-size: 12px; font-weight: 500; box-shadow: 0 4px 14px rgb(10 10 10 / 0.18); }
+  .latest svg { width: 12px; height: 12px; }
+  .t-q { justify-self: end; max-width: 88%; padding: 7px 13px; border-radius: 14px 14px 4px 14px; background: var(--fg); color: #fff; font-size: 13px; line-height: 19px; text-wrap: pretty; }
+  .t-a { justify-self: start; max-width: 94%; padding: 7px 13px; border-radius: 14px 14px 14px 4px; background: var(--bg); font-size: 13px; line-height: 19px; white-space: pre-wrap; overflow-wrap: anywhere; text-wrap: pretty; }
+  .t-a.typing { display: flex; gap: 4px; padding: 13px 14px; }
+  .t-a.typing i { width: 6px; height: 6px; border-radius: 50%; background: var(--faint); animation: blink 1s ease-in-out infinite; }
+  .t-a.typing i:nth-child(2) { animation-delay: 0.15s; }
+  .t-a.typing i:nth-child(3) { animation-delay: 0.3s; }
+  .prompt { display: grid; gap: 6px; margin-top: 4px; }
+  .prompt-bar { display: flex; height: 8px; overflow: hidden; border-radius: 4px; background: var(--secondary); }
+  .prompt-bar.waiting { animation: pulse 1s ease-in-out infinite alternate; }
+  .prompt-bar i { height: 100%; transition: width 0.5s ease; }
+  .prompt-bar i:first-child { background: var(--cached); }
+  .prompt-bar i:last-child { background: var(--accent); }
+  .prompt-text { font-size: 12px; line-height: 18px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .prompt-text b { font-weight: 500; color: var(--fg); }
+  .divider { display: flex; align-items: center; gap: 12px; margin-top: 4px; font-size: 12px; line-height: 18px; color: var(--muted); animation: appear 0.3s ease-out; }
+  .divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+  .divider span { display: inline-flex; align-items: center; gap: 6px; min-width: 0; max-width: 86%; padding: 4px 12px; border-radius: 9999px; background: var(--accent-soft); color: var(--accent); }
+  .divider b { min-width: 0; overflow: hidden; font-weight: inherit; text-overflow: ellipsis; white-space: nowrap; }
+  .divider svg { flex: none; width: 13px; height: 13px; }
+  .divider.pending span { animation: blink 1.4s ease-in-out infinite; }
+  #message { margin: 0; padding: 12px 16px; border-radius: 12px; background: var(--bad-soft); color: var(--bad); }
+
+  .tip { position: fixed; z-index: 40; width: 320px; padding: 12px 14px; border-radius: 12px; background: var(--bg); box-shadow: 0 0 0 1px var(--line), 0 12px 32px rgb(10 10 10 / 0.16); font-size: 12px; line-height: 18px; pointer-events: none; }
+  .tip-head { display: flex; justify-content: space-between; gap: 12px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .tip-q { margin: 2px 0 10px; overflow: hidden; color: var(--muted); text-overflow: ellipsis; white-space: nowrap; }
+  .tip-rows { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: 4px 10px; }
+  .tip-rows span:nth-child(4n + 3), .tip-rows span:nth-child(4n) { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .tip-rows span:nth-child(4n + 3) { color: var(--muted); }
+  .tip-why { margin: 10px 0 0; padding-top: 8px; border-top: 1px solid var(--line); color: var(--muted); }
+  .tip-head + .tip-why { margin-top: 0; padding-top: 0; border: 0; }
+
+  @media (max-width: 1100px) {
+    .surface { height: auto; }
+    .lanes { grid-template-columns: minmax(0, 1fr); }
+    .way { grid-template-columns: minmax(0, 1fr); }
+    .log { flex: none; height: 480px; }
+  }
+</style>
+</head>
+<body>
+<header class="site">
+  <a class="logo" href="https://x.ai" target="_blank" rel="noopener" aria-label="SpaceXAI"><svg viewBox="0 0 759 290.2" aria-hidden="true"><g transform="translate(-674.5,-388.5)"><path d="M1433.19 388.934C1345.69 396.068 1001.73 438.71 763.235 678.467H674.732L684.62 668.612C734.53 620.395 955.373 416.045 1433.19 388.668V388.934Z"/><path d="M1133.66 678.467H1064.29L927.618 578.979C940.213 571.058 952.888 563.515 965.603 556.33L1133.66 678.467Z"/><path d="M1022.8 678.468H953.463L932.43 663.169H814.998C823.265 655.828 831.635 648.702 840.092 641.784H902.996L870.444 618.106C882.079 609.448 893.843 601.155 905.701 593.211L1022.8 678.468Z"/><path d="M770.433 495.02L823.901 533.876C810.594 541.712 798.139 549.468 786.514 557.055L701.158 494.986L770.433 495.02Z"/></g></svg></a>
+  <nav class="crumbs"><span>Cookbook</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg><h1>Prompt Caching</h1></nav>
+  <span class="models">grok-4.7 with prompt caching</span>
+  <a class="pill pill-secondary pill-sm" href="https://github.com/xai-org/xai-cookbook/tree/main/examples/prompt-caching" target="_blank" rel="noopener">View code</a>
+</header>
+
+<main class="surface">
+  <div class="toolbar">
+    <span class="note" id="note">The crew assistant of a made-up Mars station, with its 2,100-token handbook in every prompt</span>
+    <a id="download" class="pill pill-secondary pill-sm" download hidden><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.5v8M4.5 7 8 10.5 11.5 7M2.5 13.5h11"/></svg>Results</a>
+    <button type="button" id="run" class="pill pill-primary" hidden></button>
+  </div>
+
+  <section class="panel start" id="start">
+    <div class="intro">
+      <h2>Keep the start of the prompt the same</h2>
+      <p>Every turn of a chat sends the whole chat again, and the part that matches the start of the last prompt is read from the cache at a quarter of the price. These three chats send the same 30 messages and all tell Grok the time. The first two put it in different places, and the third also compacts as it goes.</p>
+    </div>
+    <div class="ways">
+      <div class="way">
+        <div><h3>Time in the message</h3><p>The time starts the latest message, so each prompt starts with everything the last one sent.</p></div>
+        <div class="anatomy" data-anatomy="message" aria-hidden="true"></div>
+      </div>
+      <div class="way">
+        <div><h3>Time on top</h3><p>The time starts the system prompt and changes on every turn, so no two prompts start the same way.</p></div>
+        <div class="anatomy" data-anatomy="top" aria-hidden="true"></div>
+      </div>
+      <div class="way">
+        <div><h3>With compaction</h3><p>Like the first, but every 1,500 tokens of turns are swapped for one summary item, which the next turn reads as new.</p></div>
+        <div class="anatomy" data-anatomy="compaction" aria-hidden="true"></div>
+      </div>
+    </div>
+    <ul class="legend"><li><i class="key k-cached"></i>Read from the cache, $0.50 per million tokens</li><li><i class="key k-input"></i>New, $2.00 per million tokens</li><li><i class="key k-summary"></i>A compaction's summary, new on the turn after it</li></ul>
+    <div class="start-actions">
+      <button type="button" class="pill pill-primary" id="start-run"><svg class="solid" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 2.5v11l9-5.5z"/></svg>Play the chat three ways</button>
+      <p class="fine">It takes 2 to 4 minutes and costs about 60 cents at list price.</p>
+    </div>
+  </section>
+
+  <section class="compare" id="compare" hidden>
+    <p class="verdict waiting" id="verdict"><span>Playing the same messages in all three chats</span></p>
+    <div class="lanes" id="lanes"></div>
+  </section>
+</main>
+
+<template id="lane">
+  <section class="panel lane">
+    <div class="lane-head"><h3></h3><span class="status"></span></div>
+    <p class="lane-sub"></p>
+    <div class="anatomy" aria-hidden="true"></div>
+    <div class="figure">
+      <div class="total"><strong>$0.0000</strong><span>so far</span><em></em><small></small></div>
+      <div class="track"><i></i></div>
+    </div>
+    <p class="extra" hidden></p>
+    <div class="chart">
+      <div class="chart-head">
+        <p class="label">Cost per turn</p>
+        <ul class="legend"><li><i class="key k-cached"></i>Cached input</li><li><i class="key k-input"></i>New input</li><li><i class="key k-output"></i>Output</li><li class="compacting-key"><i class="key k-compaction"></i>Compacting</li></ul>
+        <span class="axis"></span>
+      </div>
+      <div class="bars"></div>
+      <div class="ticks"></div>
+    </div>
+    <div class="log" hidden>
+      <button type="button" class="latest" hidden><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3.5 8.5 8 13l4.5-4.5"/></svg>Latest turn</button>
+    </div>
+  </section>
+</template>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  const ICONS = {
+    play: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 2.5v11l9-5.5z"/></svg>',
+    check: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="m3 8.5 3 3 7-7"/></svg>',
+    compact: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5v4.5M5.5 3.5 8 6l2.5-2.5M8 14.5V10M5.5 12.5 8 10l2.5 2.5M2.5 8h11"/></svg>',
+  };
+  // The parts of each chat's prompt, in order.
+  const ANATOMY = {
+    message: '<span class="system cached">System prompt</span><span class="turns cached">Turns so far</span><span class="time new">Time</span><span class="new">Message</span>',
+    top: '<span class="time new">Time</span><span class="system new">System prompt</span><span class="turns new">Turns so far</span><span class="new">Message</span>',
+    compaction: '<span class="summary">Summary</span><span class="system cached">System prompt</span><span class="turns cached">Turns since</span><span class="time new">Time</span><span class="new">Message</span>',
+  };
+  document.querySelectorAll("[data-anatomy]").forEach((el) => (el.innerHTML = ANATOMY[el.dataset.anatomy]));
+
+  // `hover` is the bar under the pointer, whose tooltip updates as its turn finishes.
+  const run = { events: undefined, script: [], lanes: [], compactAfter: 0, hover: null, started: 0, timer: 0 };
+  const tip = document.createElement("div");
+  tip.className = "tip";
+  tip.hidden = true;
+  document.body.append(tip);
+  addEventListener("scroll", hideTip, true);
+  showRunButton(false);
+  $("run").onclick = () => (run.events ? stop("Stopped") : start());
+  $("start-run").onclick = start;
+
+  function start() {
+    run.events?.close();
+    run.started = Date.now();
+    hideTip();
+    $("download").hidden = true;
+    $("download").removeAttribute("href");
+    $("message")?.remove();
+    showRunButton(true);
+    clearInterval(run.timer);
+    run.timer = setInterval(renderNote, 1000);
+    renderNote();
+    const events = new EventSource("/api/compare");
+    run.events = events;
+    const on = (name, handler) => events.addEventListener(name, (message) => handler(JSON.parse(message.data)));
+    on("start", ({ script, chats, compact_after }) => buildLanes(script, chats, compact_after));
+    on("ask", ({ chat, index }) => {
+      const lane = laneOf(chat);
+      lane.active = index;
+      lane.status = "asking";
+      lane.texts[index] = "";
+      renderBars();
+      renderLane(lane);
+      renderTurn(lane, index);
+    });
+    on("text", ({ chat, index, text }) => {
+      const lane = laneOf(chat);
+      lane.texts[index] += text;
+      renderAnswer(lane, index);
+      follow(lane);
+    });
+    on("answer", ({ chat, index, turn }) => {
+      const lane = laneOf(chat);
+      lane.turns[index] = turn;
+      lane.texts[index] = turn.answer;
+      if (index === run.script.length - 1) lane.status = "done";
+      updateAll(lane, index);
+      renderVerdict();
+    });
+    on("compacting", ({ chat, index }) => {
+      const lane = laneOf(chat);
+      lane.status = "compacting";
+      lane.compacting = index;
+      updateAll(lane, index);
+    });
+    on("compacted", ({ chat, index, compaction }) => {
+      const lane = laneOf(chat);
+      lane.turns[index].compaction = compaction;
+      lane.compacting = -1;
+      lane.status = "asking";
+      updateAll(lane, index);
+    });
+    on("failed", ({ chat, message }) => {
+      const lane = laneOf(chat);
+      lane.status = "failed";
+      lane.message = message;
+      updateAll(lane, lane.active);
+      renderVerdict();
+    });
+    on("done", ({ results }) => finish(results));
+    on("failure", ({ message }) => stop(`Failed: ${message}`));
+    events.onerror = () => stop("Lost the connection to the server");
+  }
+
+  function buildLanes(script, chats, compactAfter) {
+    run.script = script;
+    run.compactAfter = compactAfter;
+    $("start").hidden = true;
+    $("compare").hidden = false;
+    $("lanes").replaceChildren();
+    run.lanes = Object.entries(chats).map(([key, chat]) => {
+      const el = $("lane").content.firstElementChild.cloneNode(true);
+      el.classList.add(key);
+      el.style.setProperty("--turns", script.length);
+      el.querySelector("h3").textContent = chat.name;
+      el.querySelector(".lane-sub").textContent = chat.about;
+      el.querySelector(".anatomy").innerHTML = ANATOMY[key];
+      if (!chat.compact) el.querySelector(".compacting-key").remove();
+      el.querySelector(".bars").innerHTML = script.map(() => '<div class="slot"><div class="bar"><i></i><i></i><i></i><i></i></div></div>').join("");
+      el.querySelector(".ticks").innerHTML = script.map((_, index) => `<span>${index === 0 || (index + 1) % 5 === 0 ? index + 1 : ""}</span>`).join("");
+      const log = el.querySelector(".log");
+      const lane = { key, ...chat, el, log, latest: log.querySelector(".latest"), following: true, slots: [...el.querySelectorAll(".slot")], turns: [], texts: [], active: -1, compacting: -1, status: "waiting" };
+      log.onscroll = () => onLogScroll(lane);
+      lane.latest.onclick = () => log.scrollTo({ top: log.scrollHeight, behavior: "smooth" });
+      lane.slots.forEach((slot, index) => {
+        slot.onclick = () => jump(index);
+        slot.onmouseenter = () => showTip(lane, index, slot);
+        slot.onmouseleave = hideTip;
+      });
+      $("lanes").append(el);
+      return lane;
+    });
+    run.lanes.forEach(renderLane);
+    renderBars();
+    renderVerdict();
+  }
+
+  function laneOf(key) {
+    return run.lanes.find((lane) => lane.key === key);
+  }
+
+  function finished(lane) {
+    return lane.turns.filter(Boolean);
+  }
+
+  // A turn changes its own bar and place in the conversation, and every chat's track and ratio, since
+  // they share one scale.
+  function updateAll(lane, index) {
+    run.lanes.forEach(renderLane);
+    renderBars();
+    if (index >= 0) renderTurn(lane, index);
+    if (run.hover) showTip(run.hover.lane, run.hover.index, run.hover.slot);
+  }
+
+  function costParts(turn) {
+    return [turn.cost.cached, turn.cost.input, turn.cost.output, turn.compaction?.cost.total ?? 0];
+  }
+
+  function renderBars() {
+    let max = 0;
+    for (const lane of run.lanes) for (const turn of lane.turns) if (turn) max = Math.max(max, sum(costParts(turn)));
+    const top = niceMax(max);
+    for (const lane of run.lanes) {
+      lane.el.querySelector(".axis").textContent = max ? `Top of the scale: ${money(top)}` : "";
+      lane.slots.forEach((slot, index) => {
+        const turn = lane.turns[index];
+        const parts = turn ? costParts(turn) : [0, 0, 0, 0];
+        const waiting = !turn && index === lane.active && lane.status === "asking";
+        const previous = lane.turns[index - 1];
+        const guess = previous ? previous.cost.total / top : 0.15;
+        const bar = slot.firstChild;
+        bar.style.height = turn ? `${Math.max(2, (sum(parts) / top) * 100)}%` : waiting ? `${Math.max(8, Math.min(guess, 1) * 100)}%` : "0";
+        [...bar.children].forEach((segment, part) => (segment.style.flexGrow = share(parts, part)));
+        slot.classList.toggle("active", waiting);
+        slot.classList.toggle("compacted", Boolean(turn?.compaction));
+        slot.classList.toggle("compacting", lane.compacting === index);
+      });
+    }
+  }
+
+  // All the tracks share one scale, the largest total, so a shorter track shows how much less a chat cost.
+  // Each chat after the first shows how its cost compares with the first's over the turns both finished.
+  function renderLane(lane) {
+    const turns = finished(lane);
+    const summary = summarize(turns);
+    const largest = Math.max(...run.lanes.map((other) => summarize(finished(other)).cost));
+    lane.el.querySelector(".total strong").textContent = money(summary.cost);
+    lane.el.querySelector(".total span").textContent = run.events ? "so far" : "in all";
+    lane.el.querySelector(".total small").textContent = turns.length ? `${pct(summary.cached)} of input from the cache` : "";
+    lane.el.querySelector(".track i").style.width = largest ? `${(summary.cost / largest) * 100}%` : "0";
+    const first = laneOf("message");
+    const shared = Math.min(finished(first).length, turns.length);
+    const ratio = lane !== first && shared ? summarize(lane.turns.slice(0, shared)).cost / summarize(first.turns.slice(0, shared)).cost : 0;
+    lane.el.querySelector(".total em").textContent = ratio ? `${ratio.toFixed(1)} times the first chat` : "";
+    const extra = lane.el.querySelector(".extra");
+    extra.hidden = !lane.compact;
+    if (lane.compact) {
+      const compactions = turns.filter((turn) => turn.compaction);
+      extra.textContent = compactions.length
+        ? `Compacted ${plural(compactions.length, "time")}, for ${money(sum(compactions.map((turn) => turn.compaction.cost.total)))} in all. Each summary is new, so the turn after it misses the cache.`
+        : `Compacts once ${tokens(run.compactAfter)} tokens of turns pile up.`;
+    }
+    lane.el.querySelector(".status").innerHTML = {
+      waiting: "Waiting",
+      asking: `<i></i>Turn ${lane.active + 1} of ${run.script.length}`,
+      compacting: `<i></i>Compacting after turn ${lane.compacting + 1}`,
+      done: `${ICONS.check}${plural(turns.length, "turn")}${summary.compactions ? `, ${plural(summary.compactions, "compaction")}` : ""}`,
+      failed: `Stopped after ${plural(turns.length, "turn")}`,
+      stopped: `Stopped after ${plural(turns.length, "turn")}`,
+    }[lane.status];
+    if (lane.status === "failed" && !lane.el.querySelector(".failed")) {
+      const failed = document.createElement("p");
+      failed.className = "failed";
+      failed.textContent = `This chat stopped: ${lane.message}`;
+      lane.el.querySelector(".figure").after(failed);
+    }
+  }
+
+  function turnEl(lane, index) {
+    return lane.log.querySelector(`.turn[data-index="${index}"]`);
+  }
+
+  // Fills in one turn of a chat's conversation: what was asked, Grok's answer, how much of that turn's
+  // prompt was read from the cache, and the compaction that followed it, if any.
+  function renderTurn(lane, index) {
+    let el = turnEl(lane, index);
+    if (!el) {
+      el = document.createElement("div");
+      el.className = "turn";
+      el.dataset.index = index;
+      el.innerHTML = `<span class="turn-head">Turn ${index + 1}</span><div class="t-q"></div><div class="t-a"></div><div class="prompt"><div class="prompt-bar"><i></i><i></i></div><span class="prompt-text"></span></div><div class="divider" hidden></div>`;
+      el.querySelector(".t-q").textContent = keepHyphenated(run.script[index]);
+      lane.log.insertBefore(el, lane.latest);
+      lane.log.hidden = false;
+    }
+    const turn = lane.turns[index];
+    renderAnswer(lane, index);
+    const bar = el.querySelector(".prompt-bar");
+    const [cached, fresh] = bar.children;
+    bar.classList.toggle("waiting", !turn);
+    cached.style.width = turn ? `${(turn.cached_tokens / turn.input_tokens) * 100}%` : "0";
+    fresh.style.width = turn ? `${(1 - turn.cached_tokens / turn.input_tokens) * 100}%` : "0";
+    el.querySelector(".prompt-text").innerHTML = turn
+      ? `This turn's prompt: <b>${tokens(turn.input_tokens)}</b> tokens, <b>${tokens(turn.cached_tokens)}</b> of them read from the cache · <b>${money(turn.cost.total)}</b>`
+      : lane.status === "asking" && index === lane.active ? "Waiting for Grok" : "Didn't finish";
+    const divider = el.querySelector(".divider");
+    const compaction = turn?.compaction;
+    divider.hidden = !compaction && lane.compacting !== index;
+    divider.classList.toggle("pending", !compaction);
+    divider.innerHTML = compaction
+      ? `<span>${ICONS.compact}<b>Compacted ${compaction.messages} messages · ${money(compaction.cost.total)} · ${secs(compaction.total_ms)}</b></span>`
+      : `<span>${ICONS.compact}<b>Compacting the chat</b></span>`;
+    follow(lane);
+  }
+
+  function renderAnswer(lane, index) {
+    const answer = turnEl(lane, index)?.querySelector(".t-a");
+    if (!answer) return;
+    const text = lane.texts[index] ?? "";
+    const typing = !text && lane.status === "asking" && index === lane.active;
+    answer.hidden = !text && !typing;
+    answer.classList.toggle("typing", typing);
+    answer.innerHTML = text ? format(text) : typing ? "<i></i><i></i><i></i>" : "";
+  }
+
+  // The conversation stays on its newest turn unless the reader has scrolled up to read an earlier one.
+  function follow(lane) {
+    if (lane.following) lane.log.scrollTop = lane.log.scrollHeight;
+  }
+
+  function onLogScroll(lane) {
+    const { log } = lane;
+    lane.following = log.scrollHeight - log.scrollTop - log.clientHeight < 40;
+    lane.latest.hidden = lane.following;
+  }
+
+  // Scrolls every chat's conversation to the turn whose bar was clicked, and flashes it. The scroll is
+  // instant, since a smooth one starts near the bottom, where the next streamed word would pull it back.
+  function jump(index) {
+    for (const lane of run.lanes) {
+      const el = turnEl(lane, index);
+      if (!el) continue;
+      lane.following = false;
+      lane.log.scrollTop = el.offsetTop - 16;
+      el.classList.remove("flash");
+      requestAnimationFrame(() => el.classList.add("flash"));
+    }
+  }
+
+  // The tooltip over a bar: the turn's tokens and cost by part, and why it did or didn't hit the cache.
+  function showTip(lane, index, slot) {
+    run.hover = { lane, index, slot };
+    const html = tipHtml(lane, index);
+    if (!html) {
+      tip.hidden = true;
+      return;
+    }
+    tip.innerHTML = html;
+    tip.hidden = false;
+    const rect = slot.getBoundingClientRect();
+    const left = Math.min(Math.max(8, rect.left + rect.width / 2 - tip.offsetWidth / 2), innerWidth - tip.offsetWidth - 8);
+    const above = rect.top - tip.offsetHeight - 10;
+    tip.style.left = `${left}px`;
+    tip.style.top = `${above >= 8 ? above : rect.bottom + 10}px`;
+  }
+
+  function hideTip() {
+    run.hover = null;
+    tip.hidden = true;
+  }
+
+  function tipHtml(lane, index) {
+    const turn = lane.turns[index];
+    const total = turn ? sum(costParts(turn)) : 0;
+    const head = `<div class="tip-head"><span>Turn ${index + 1} · ${escapeHtml(lane.name)}</span>${turn ? `<span>${money(total)}</span>` : ""}</div><p class="tip-q">${escapeHtml(run.script[index])}</p>`;
+    if (!turn) return index === lane.active && lane.status === "asking" ? `${head}<p class="tip-why">Waiting for Grok to answer.</p>` : "";
+    const rows = [
+      ["cached", "Read from the cache", `${tokens(turn.cached_tokens)} tokens`, money(turn.cost.cached)],
+      ["input", "New input", `${tokens(turn.input_tokens - turn.cached_tokens)} tokens`, money(turn.cost.input)],
+      ["output", "Output", `${tokens(turn.output_tokens)} tokens`, money(turn.cost.output)],
+    ];
+    if (turn.compaction) rows.push(["compaction", "Compacting after it", `${turn.compaction.messages} messages`, money(turn.compaction.cost.total)]);
+    else if (lane.compacting === index) rows.push(["compaction", "Compacting after it", "running", ""]);
+    const cells = rows.map(([kind, label, count, cost]) => `<i class="key k-${kind}"></i><span>${label}</span><span>${count}</span><span>${cost}</span>`).join("");
+    return `${head}<div class="tip-rows">${cells}</div><p class="tip-why">${why(lane, index)}</p>`;
+  }
+
+  // Why a turn did or didn't read its prompt from the cache, from what came before it.
+  function why(lane, index) {
+    const turn = lane.turns[index];
+    const stop = turn.cached_tokens ? `after ${tokens(turn.cached_tokens)} tokens` : "at its first token";
+    let text;
+    if (index === 0) text = turn.cached_tokens ? `The chat's first prompt, so only the ${tokens(turn.cached_tokens)} tokens every request starts with came from the cache.` : "The chat's first prompt, so none of it was cached yet.";
+    else if (lane.turns[index - 1]?.compaction) text = `The summary from the compaction before this turn comes first and was new, so the prompt stopped matching ${stop}.`;
+    else if (lane.time === "top") text = `The time at the top changed, so the prompt stopped matching the last one ${stop}.`;
+    else if (turn.cached_tokens / turn.input_tokens < 0.5) text = "The prompt started the way the last one did, but this turn likely reached a server that didn't have the chat cached.";
+    else text = "The prompt started the way the last one did, so all but its newest part came from the cache.";
+    if (turn.compaction) text += ` Then ${turn.compaction.messages} messages were swapped for one summary item, which took ${secs(turn.compaction.total_ms)}.`;
+    return text;
+  }
+
+  // Compares the first two chats over the turns both have finished, so the ratio is fair while one is ahead.
+  function renderVerdict() {
+    const [message, top] = [laneOf("message"), laneOf("top")];
+    const shared = Math.min(finished(message).length, finished(top).length);
+    const verdict = $("verdict");
+    verdict.classList.toggle("waiting", !shared);
+    if (!shared) {
+      verdict.innerHTML = `<span>Playing the same messages in all three chats</span>`;
+      return;
+    }
+    const a = summarize(message.turns.slice(0, shared));
+    const b = summarize(top.turns.slice(0, shared));
+    const done = shared === run.script.length;
+    const over = done ? `the same ${plural(shared, "message")}` : shared === 1 ? "the first message" : `the first ${shared} messages`;
+    verdict.innerHTML = `<strong>${(b.cost / a.cost).toFixed(1)} times</strong><span>as much${done || !run.events ? "" : " so far"} for the chat with the time on top: <b>${money(b.cost)}</b> against <b>${money(a.cost)}</b> for ${over}. It read <b>${pct(b.cached)}</b> of its input from the cache, against <b>${pct(a.cached)}</b>.</span>`;
+  }
+
+  function renderNote() {
+    if (!run.events) return;
+    const spent = sum(run.lanes.map((lane) => summarize(finished(lane)).cost));
+    $("note").innerHTML = `<b>${clock(Date.now() - run.started)}</b> · ${money(spent)} so far`;
+  }
+
+  function finish(results) {
+    run.events?.close();
+    run.events = undefined;
+    clearInterval(run.timer);
+    showRunButton(false);
+    for (const lane of run.lanes) if (lane.status !== "failed") lane.status = "done";
+    run.lanes.forEach(renderLane);
+    renderVerdict();
+    const spent = sum(run.lanes.map((lane) => summarize(finished(lane)).cost));
+    $("note").innerHTML = `Done in <b>${clock(Date.now() - run.started)}</b> · the run cost <b>${money(spent)}</b> at list price`;
+    $("download").href = results;
+    $("download").hidden = false;
+  }
+
+  // Closing the event stream tells the server to stop every chat.
+  function stop(reason) {
+    run.events?.close();
+    run.events = undefined;
+    clearInterval(run.timer);
+    showRunButton(false);
+    for (const lane of run.lanes) {
+      if (lane.status !== "done" && lane.status !== "failed") lane.status = "stopped";
+      lane.compacting = -1;
+    }
+    run.lanes.forEach((lane) => {
+      renderLane(lane);
+      if (lane.active >= 0) renderTurn(lane, lane.active);
+    });
+    renderBars();
+    if (run.lanes.length) renderVerdict();
+    const spent = sum(run.lanes.map((lane) => summarize(finished(lane)).cost));
+    $("note").innerHTML = `${escapeHtml(reason)} after <b>${clock(Date.now() - run.started)}</b> · <b>${money(spent)}</b> spent`;
+    if (!run.lanes.length) {
+      const message = document.createElement("p");
+      message.id = "message";
+      message.textContent = reason;
+      $("start").append(message);
+    }
+  }
+
+  function showRunButton(running) {
+    $("run").hidden = !running && !run.lanes.length;
+    $("run").innerHTML = running ? "Stop" : `${ICONS.play}Play again`;
+    $("run").classList.toggle("stop", running);
+    $("start-run").disabled = running;
+  }
+
+  function summarize(turns) {
+    return {
+      cost: sum(turns.map((turn) => sum(costParts(turn)))),
+      cached: sum(turns.map((turn) => turn.cached_tokens)) / (sum(turns.map((turn) => turn.input_tokens)) || 1),
+      compactions: turns.filter((turn) => turn.compaction).length,
+    };
+  }
+
+  // Helpers ----------------------------------------------------------------------------------------
+
+  function niceMax(value) {
+    if (!value) return 1;
+    const power = 10 ** Math.floor(Math.log10(value));
+    return [1, 1.25, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10].map((step) => step * power).find((step) => step >= value * 0.999);
+  }
+
+  // Grok writes plain sentences here, with the odd bold phrase or list.
+  function format(text) {
+    return escapeHtml(keepHyphenated(text)).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+  }
+
+  // A line can break after a hyphen, which splits words like "to-do" in a narrow bubble, so hyphens
+  // between letters become non-breaking ones.
+  function keepHyphenated(text) {
+    return text.replace(/(\p{L})-(?=\p{L})/gu, "$1\u2011");
+  }
+
+  function sum(values) {
+    return values.reduce((total, value) => total + value, 0);
+  }
+
+  // A bar's segments are sized with flex-grow, and flex items whose flex-grow adds up to less than 1
+  // don't fill their bar, so each gets its share of the total.
+  function share(parts, index) {
+    const total = sum(parts);
+    return total ? parts[index] / total : 0;
+  }
+
+  function money(amount) {
+    return `$${amount.toFixed(amount >= 0.1 ? 3 : 4)}`;
+  }
+
+  function tokens(count) {
+    return Math.round(count).toLocaleString("en");
+  }
+
+  function pct(share) {
+    return `${Math.round(share * 100)}%`;
+  }
+
+  function secs(ms) {
+    return `${(ms / 1000).toFixed(1)} s`;
+  }
+
+  function clock(ms) {
+    const seconds = Math.floor(ms / 1000);
+    return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+  }
+
+  function plural(count, word) {
+    return `${count} ${word}${count === 1 ? "" : "s"}`;
+  }
+
+  function escapeHtml(text) {
+    return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+</script>
+</body>
+</html>

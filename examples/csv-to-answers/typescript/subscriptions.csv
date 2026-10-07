@@ -1,0 +1,757 @@
+month,plan,region,channel,price_usd,customers_start,new_customers,churned_customers,customers_end,mrr_usd
+2025-01,Starter,North America,Organic,9,791,56,31,816,7344
+2025-02,Starter,North America,Organic,9,816,67,31,852,7668
+2025-03,Starter,North America,Organic,9,852,58,34,876,7884
+2025-04,Starter,North America,Organic,9,876,61,33,904,8136
+2025-05,Starter,North America,Organic,9,904,70,51,923,8307
+2025-06,Starter,North America,Organic,9,923,59,42,940,8460
+2025-07,Starter,North America,Organic,9,940,66,34,972,8748
+2025-08,Starter,North America,Organic,9,972,55,37,990,8910
+2025-09,Starter,North America,Organic,9,990,49,47,992,8928
+2025-10,Starter,North America,Organic,9,992,45,43,994,8946
+2025-11,Starter,North America,Organic,9,994,46,49,991,8919
+2025-12,Starter,North America,Organic,9,991,50,41,1000,9000
+2026-01,Starter,North America,Organic,9,1000,62,49,1013,9117
+2026-02,Starter,North America,Organic,9,1013,59,42,1030,9270
+2026-03,Starter,North America,Organic,9,1030,64,36,1058,9522
+2026-04,Starter,North America,Organic,9,1058,64,52,1070,9630
+2026-05,Starter,North America,Organic,9,1070,69,45,1094,9846
+2026-06,Starter,North America,Organic,9,1094,43,47,1090,9810
+2026-07,Starter,North America,Organic,9,1090,45,46,1089,9801
+2026-08,Starter,North America,Organic,9,1089,66,43,1112,10008
+2026-09,Starter,North America,Organic,9,1112,44,35,1121,10089
+2025-01,Starter,North America,Paid,9,564,35,38,561,5049
+2025-02,Starter,North America,Paid,9,561,36,38,559,5031
+2025-03,Starter,North America,Paid,9,559,42,30,571,5139
+2025-04,Starter,North America,Paid,9,571,34,34,571,5139
+2025-05,Starter,North America,Paid,9,571,48,27,592,5328
+2025-06,Starter,North America,Paid,9,592,38,30,600,5400
+2025-07,Starter,North America,Paid,9,600,46,32,614,5526
+2025-08,Starter,North America,Paid,9,614,21,32,603,5427
+2025-09,Starter,North America,Paid,9,603,33,33,603,5427
+2025-10,Starter,North America,Paid,9,603,23,28,598,5382
+2025-11,Starter,North America,Paid,9,598,33,33,598,5382
+2025-12,Starter,North America,Paid,9,598,41,42,597,5373
+2026-01,Starter,North America,Paid,9,597,39,34,602,5418
+2026-02,Starter,North America,Paid,9,602,32,29,605,5445
+2026-03,Starter,North America,Paid,9,605,38,44,599,5391
+2026-04,Starter,North America,Paid,9,599,37,36,600,5400
+2026-05,Starter,North America,Paid,9,600,46,27,619,5571
+2026-06,Starter,North America,Paid,9,619,49,29,639,5751
+2026-07,Starter,North America,Paid,9,639,36,39,636,5724
+2026-08,Starter,North America,Paid,9,636,41,35,642,5778
+2026-09,Starter,North America,Paid,9,642,28,40,630,5670
+2025-01,Starter,North America,Partner,9,287,30,10,307,2763
+2025-02,Starter,North America,Partner,9,307,16,13,310,2790
+2025-03,Starter,North America,Partner,9,310,28,16,322,2898
+2025-04,Starter,North America,Partner,9,322,28,10,340,3060
+2025-05,Starter,North America,Partner,9,340,23,13,350,3150
+2025-06,Starter,North America,Partner,9,350,26,13,363,3267
+2025-07,Starter,North America,Partner,9,363,30,16,377,3393
+2025-08,Starter,North America,Partner,9,377,24,16,385,3465
+2025-09,Starter,North America,Partner,9,385,23,13,395,3555
+2025-10,Starter,North America,Partner,9,395,17,14,398,3582
+2025-11,Starter,North America,Partner,9,398,11,15,394,3546
+2025-12,Starter,North America,Partner,9,394,9,11,392,3528
+2026-01,Starter,North America,Partner,9,392,22,10,404,3636
+2026-02,Starter,North America,Partner,9,404,20,9,415,3735
+2026-03,Starter,North America,Partner,9,415,26,16,425,3825
+2026-04,Starter,North America,Partner,9,425,24,16,433,3897
+2026-05,Starter,North America,Partner,9,433,22,15,440,3960
+2026-06,Starter,North America,Partner,9,440,22,9,453,4077
+2026-07,Starter,North America,Partner,9,453,24,11,466,4194
+2026-08,Starter,North America,Partner,9,466,27,21,472,4248
+2026-09,Starter,North America,Partner,9,472,21,24,469,4221
+2025-01,Starter,Europe,Organic,9,669,49,33,685,6165
+2025-02,Starter,Europe,Organic,9,685,41,26,700,6300
+2025-03,Starter,Europe,Organic,9,700,51,31,720,6480
+2025-04,Starter,Europe,Organic,9,720,52,22,750,6750
+2025-05,Starter,Europe,Organic,9,750,38,23,765,6885
+2025-06,Starter,Europe,Organic,9,765,43,34,774,6966
+2025-07,Starter,Europe,Organic,9,774,38,27,785,7065
+2025-08,Starter,Europe,Organic,9,785,50,37,798,7182
+2025-09,Starter,Europe,Organic,9,798,42,24,816,7344
+2025-10,Starter,Europe,Organic,9,816,44,37,823,7407
+2025-11,Starter,Europe,Organic,9,823,34,35,822,7398
+2025-12,Starter,Europe,Organic,9,822,45,31,836,7524
+2026-01,Starter,Europe,Organic,9,836,46,34,848,7632
+2026-02,Starter,Europe,Organic,9,848,42,30,860,7740
+2026-03,Starter,Europe,Organic,9,860,54,41,873,7857
+2026-04,Starter,Europe,Organic,9,873,49,41,881,7929
+2026-05,Starter,Europe,Organic,9,881,42,42,881,7929
+2026-06,Starter,Europe,Organic,9,881,47,36,892,8028
+2026-07,Starter,Europe,Organic,9,892,38,34,896,8064
+2026-08,Starter,Europe,Organic,9,896,41,28,909,8181
+2026-09,Starter,Europe,Organic,9,909,48,55,902,8118
+2025-01,Starter,Europe,Paid,9,436,21,24,433,3897
+2025-02,Starter,Europe,Paid,9,433,35,22,446,4014
+2025-03,Starter,Europe,Paid,9,446,43,21,468,4212
+2025-04,Starter,Europe,Paid,9,468,32,29,471,4239
+2025-05,Starter,Europe,Paid,9,471,28,19,480,4320
+2025-06,Starter,Europe,Paid,9,480,28,20,488,4392
+2025-07,Starter,Europe,Paid,9,488,27,38,477,4293
+2025-08,Starter,Europe,Paid,9,477,31,28,480,4320
+2025-09,Starter,Europe,Paid,9,480,24,32,472,4248
+2025-10,Starter,Europe,Paid,9,472,21,32,461,4149
+2025-11,Starter,Europe,Paid,9,461,31,23,469,4221
+2025-12,Starter,Europe,Paid,9,469,34,25,478,4302
+2026-01,Starter,Europe,Paid,9,478,19,30,467,4203
+2026-02,Starter,Europe,Paid,9,467,29,28,468,4212
+2026-03,Starter,Europe,Paid,9,468,50,28,490,4410
+2026-04,Starter,Europe,Paid,9,490,28,26,492,4428
+2026-05,Starter,Europe,Paid,9,492,33,31,494,4446
+2026-06,Starter,Europe,Paid,9,494,41,31,504,4536
+2026-07,Starter,Europe,Paid,9,504,26,38,492,4428
+2026-08,Starter,Europe,Paid,9,492,26,24,494,4446
+2026-09,Starter,Europe,Paid,9,494,27,22,499,4491
+2025-01,Starter,Europe,Partner,9,232,13,3,242,2178
+2025-02,Starter,Europe,Partner,9,242,19,8,253,2277
+2025-03,Starter,Europe,Partner,9,253,11,13,251,2259
+2025-04,Starter,Europe,Partner,9,251,16,5,262,2358
+2025-05,Starter,Europe,Partner,9,262,19,10,271,2439
+2025-06,Starter,Europe,Partner,9,271,13,11,273,2457
+2025-07,Starter,Europe,Partner,9,273,22,8,287,2583
+2025-08,Starter,Europe,Partner,9,287,12,13,286,2574
+2025-09,Starter,Europe,Partner,9,286,18,15,289,2601
+2025-10,Starter,Europe,Partner,9,289,25,13,301,2709
+2025-11,Starter,Europe,Partner,9,301,17,13,305,2745
+2025-12,Starter,Europe,Partner,9,305,7,10,302,2718
+2026-01,Starter,Europe,Partner,9,302,15,11,306,2754
+2026-02,Starter,Europe,Partner,9,306,19,11,314,2826
+2026-03,Starter,Europe,Partner,9,314,19,15,318,2862
+2026-04,Starter,Europe,Partner,9,318,15,14,319,2871
+2026-05,Starter,Europe,Partner,9,319,8,17,310,2790
+2026-06,Starter,Europe,Partner,9,310,19,6,323,2907
+2026-07,Starter,Europe,Partner,9,323,12,12,323,2907
+2026-08,Starter,Europe,Partner,9,323,20,10,333,2997
+2026-09,Starter,Europe,Partner,9,333,14,18,329,2961
+2025-01,Starter,Asia Pacific,Organic,9,433,27,16,444,3996
+2025-02,Starter,Asia Pacific,Organic,9,444,35,18,461,4149
+2025-03,Starter,Asia Pacific,Organic,9,461,35,19,477,4293
+2025-04,Starter,Asia Pacific,Organic,9,477,45,27,495,4455
+2025-05,Starter,Asia Pacific,Organic,9,495,26,21,500,4500
+2025-06,Starter,Asia Pacific,Organic,9,500,35,29,506,4554
+2025-07,Starter,Asia Pacific,Organic,9,506,30,24,512,4608
+2025-08,Starter,Asia Pacific,Organic,9,512,23,22,513,4617
+2025-09,Starter,Asia Pacific,Organic,9,513,22,25,510,4590
+2025-10,Starter,Asia Pacific,Organic,9,510,28,18,520,4680
+2025-11,Starter,Asia Pacific,Organic,9,520,26,21,525,4725
+2025-12,Starter,Asia Pacific,Organic,9,525,32,17,540,4860
+2026-01,Starter,Asia Pacific,Organic,9,540,35,26,549,4941
+2026-02,Starter,Asia Pacific,Organic,9,549,30,27,552,4968
+2026-03,Starter,Asia Pacific,Organic,9,552,25,33,544,4896
+2026-04,Starter,Asia Pacific,Organic,9,544,44,30,558,5022
+2026-05,Starter,Asia Pacific,Organic,9,558,32,34,556,5004
+2026-06,Starter,Asia Pacific,Organic,9,556,26,28,554,4986
+2026-07,Starter,Asia Pacific,Organic,9,554,34,31,557,5013
+2026-08,Starter,Asia Pacific,Organic,9,557,18,21,554,4986
+2026-09,Starter,Asia Pacific,Organic,9,554,24,15,563,5067
+2025-01,Starter,Asia Pacific,Paid,9,322,28,28,322,2898
+2025-02,Starter,Asia Pacific,Paid,9,322,24,15,331,2979
+2025-03,Starter,Asia Pacific,Paid,9,331,20,20,331,2979
+2025-04,Starter,Asia Pacific,Paid,9,331,25,24,332,2988
+2025-05,Starter,Asia Pacific,Paid,9,332,32,30,334,3006
+2025-06,Starter,Asia Pacific,Paid,9,334,24,17,341,3069
+2025-07,Starter,Asia Pacific,Paid,9,341,15,19,337,3033
+2025-08,Starter,Asia Pacific,Paid,9,337,18,17,338,3042
+2025-09,Starter,Asia Pacific,Paid,9,338,18,23,333,2997
+2025-10,Starter,Asia Pacific,Paid,9,333,8,20,321,2889
+2025-11,Starter,Asia Pacific,Paid,9,321,11,27,305,2745
+2025-12,Starter,Asia Pacific,Paid,9,305,30,19,316,2844
+2026-01,Starter,Asia Pacific,Paid,9,316,33,19,330,2970
+2026-02,Starter,Asia Pacific,Paid,9,330,25,15,340,3060
+2026-03,Starter,Asia Pacific,Paid,9,340,21,19,342,3078
+2026-04,Starter,Asia Pacific,Paid,9,342,25,20,347,3123
+2026-05,Starter,Asia Pacific,Paid,9,347,23,20,350,3150
+2026-06,Starter,Asia Pacific,Paid,9,350,19,25,344,3096
+2026-07,Starter,Asia Pacific,Paid,9,344,23,19,348,3132
+2026-08,Starter,Asia Pacific,Paid,9,348,20,21,347,3123
+2026-09,Starter,Asia Pacific,Paid,9,347,15,25,337,3033
+2025-01,Starter,Asia Pacific,Partner,9,158,13,6,165,1485
+2025-02,Starter,Asia Pacific,Partner,9,165,11,9,167,1503
+2025-03,Starter,Asia Pacific,Partner,9,167,10,10,167,1503
+2025-04,Starter,Asia Pacific,Partner,9,167,14,8,173,1557
+2025-05,Starter,Asia Pacific,Partner,9,173,15,7,181,1629
+2025-06,Starter,Asia Pacific,Partner,9,181,17,7,191,1719
+2025-07,Starter,Asia Pacific,Partner,9,191,12,3,200,1800
+2025-08,Starter,Asia Pacific,Partner,9,200,7,10,197,1773
+2025-09,Starter,Asia Pacific,Partner,9,197,13,5,205,1845
+2025-10,Starter,Asia Pacific,Partner,9,205,10,8,207,1863
+2025-11,Starter,Asia Pacific,Partner,9,207,6,3,210,1890
+2025-12,Starter,Asia Pacific,Partner,9,210,6,7,209,1881
+2026-01,Starter,Asia Pacific,Partner,9,209,5,16,198,1782
+2026-02,Starter,Asia Pacific,Partner,9,198,6,7,197,1773
+2026-03,Starter,Asia Pacific,Partner,9,197,17,8,206,1854
+2026-04,Starter,Asia Pacific,Partner,9,206,14,10,210,1890
+2026-05,Starter,Asia Pacific,Partner,9,210,15,8,217,1953
+2026-06,Starter,Asia Pacific,Partner,9,217,6,7,216,1944
+2026-07,Starter,Asia Pacific,Partner,9,216,10,13,213,1917
+2026-08,Starter,Asia Pacific,Partner,9,213,11,8,216,1944
+2026-09,Starter,Asia Pacific,Partner,9,216,9,8,217,1953
+2025-01,Starter,Latin America,Organic,9,254,22,14,262,2358
+2025-02,Starter,Latin America,Organic,9,262,26,12,276,2484
+2025-03,Starter,Latin America,Organic,9,276,18,13,281,2529
+2025-04,Starter,Latin America,Organic,9,281,24,15,290,2610
+2025-05,Starter,Latin America,Organic,9,290,16,11,295,2655
+2025-06,Starter,Latin America,Organic,9,295,29,9,315,2835
+2025-07,Starter,Latin America,Organic,9,315,14,17,312,2808
+2025-08,Starter,Latin America,Organic,9,312,19,10,321,2889
+2025-09,Starter,Latin America,Organic,9,321,20,15,326,2934
+2025-10,Starter,Latin America,Organic,9,326,12,15,323,2907
+2025-11,Starter,Latin America,Organic,9,323,13,9,327,2943
+2025-12,Starter,Latin America,Organic,9,327,20,22,325,2925
+2026-01,Starter,Latin America,Organic,9,325,9,22,312,2808
+2026-02,Starter,Latin America,Organic,9,312,11,27,296,2664
+2026-03,Starter,Latin America,Organic,9,296,13,14,295,2655
+2026-04,Starter,Latin America,Organic,9,295,21,17,299,2691
+2026-05,Starter,Latin America,Organic,9,299,22,19,302,2718
+2026-06,Starter,Latin America,Organic,9,302,22,13,311,2799
+2026-07,Starter,Latin America,Organic,9,311,19,17,313,2817
+2026-08,Starter,Latin America,Organic,9,313,30,18,325,2925
+2026-09,Starter,Latin America,Organic,9,325,14,12,327,2943
+2025-01,Starter,Latin America,Paid,9,178,10,17,171,1539
+2025-02,Starter,Latin America,Paid,9,171,16,9,178,1602
+2025-03,Starter,Latin America,Paid,9,178,22,13,187,1683
+2025-04,Starter,Latin America,Paid,9,187,17,13,191,1719
+2025-05,Starter,Latin America,Paid,9,191,17,10,198,1782
+2025-06,Starter,Latin America,Paid,9,198,15,9,204,1836
+2025-07,Starter,Latin America,Paid,9,204,14,18,200,1800
+2025-08,Starter,Latin America,Paid,9,200,13,16,197,1773
+2025-09,Starter,Latin America,Paid,9,197,15,23,189,1701
+2025-10,Starter,Latin America,Paid,9,189,10,11,188,1692
+2025-11,Starter,Latin America,Paid,9,188,11,13,186,1674
+2025-12,Starter,Latin America,Paid,9,186,19,17,188,1692
+2026-01,Starter,Latin America,Paid,9,188,9,14,183,1647
+2026-02,Starter,Latin America,Paid,9,183,20,12,191,1719
+2026-03,Starter,Latin America,Paid,9,191,16,12,195,1755
+2026-04,Starter,Latin America,Paid,9,195,13,8,200,1800
+2026-05,Starter,Latin America,Paid,9,200,14,20,194,1746
+2026-06,Starter,Latin America,Paid,9,194,17,13,198,1782
+2026-07,Starter,Latin America,Paid,9,198,15,17,196,1764
+2026-08,Starter,Latin America,Paid,9,196,12,21,187,1683
+2026-09,Starter,Latin America,Paid,9,187,11,13,185,1665
+2025-01,Starter,Latin America,Partner,9,99,9,8,100,900
+2025-02,Starter,Latin America,Partner,9,100,7,3,104,936
+2025-03,Starter,Latin America,Partner,9,104,12,5,111,999
+2025-04,Starter,Latin America,Partner,9,111,9,6,114,1026
+2025-05,Starter,Latin America,Partner,9,114,7,5,116,1044
+2025-06,Starter,Latin America,Partner,9,116,7,11,112,1008
+2025-07,Starter,Latin America,Partner,9,112,11,9,114,1026
+2025-08,Starter,Latin America,Partner,9,114,2,5,111,999
+2025-09,Starter,Latin America,Partner,9,111,11,7,115,1035
+2025-10,Starter,Latin America,Partner,9,115,8,6,117,1053
+2025-11,Starter,Latin America,Partner,9,117,3,8,112,1008
+2025-12,Starter,Latin America,Partner,9,112,5,8,109,981
+2026-01,Starter,Latin America,Partner,9,109,7,4,112,1008
+2026-02,Starter,Latin America,Partner,9,112,6,3,115,1035
+2026-03,Starter,Latin America,Partner,9,115,11,6,120,1080
+2026-04,Starter,Latin America,Partner,9,120,11,1,130,1170
+2026-05,Starter,Latin America,Partner,9,130,3,4,129,1161
+2026-06,Starter,Latin America,Partner,9,129,6,8,127,1143
+2026-07,Starter,Latin America,Partner,9,127,5,11,121,1089
+2026-08,Starter,Latin America,Partner,9,121,5,2,124,1116
+2026-09,Starter,Latin America,Partner,9,124,5,5,124,1116
+2025-01,Plus,North America,Organic,19,535,41,25,551,10469
+2025-02,Plus,North America,Organic,19,551,44,16,579,11001
+2025-03,Plus,North America,Organic,19,579,35,10,604,11476
+2025-04,Plus,North America,Organic,19,604,47,16,635,12065
+2025-05,Plus,North America,Organic,19,635,37,22,650,12350
+2025-06,Plus,North America,Organic,19,650,30,13,667,12673
+2025-07,Plus,North America,Organic,19,667,39,18,688,13072
+2025-08,Plus,North America,Organic,19,688,24,22,690,13110
+2025-09,Plus,North America,Organic,19,690,28,30,688,13072
+2025-10,Plus,North America,Organic,19,688,33,15,706,13414
+2025-11,Plus,North America,Organic,19,706,36,25,717,13623
+2025-12,Plus,North America,Organic,19,717,26,23,720,13680
+2026-01,Plus,North America,Organic,19,720,31,19,732,13908
+2026-02,Plus,North America,Organic,19,732,42,15,759,14421
+2026-03,Plus,North America,Organic,19,759,37,24,772,14668
+2026-04,Plus,North America,Organic,25,772,38,36,774,19350
+2026-05,Plus,North America,Organic,25,774,43,28,789,19725
+2026-06,Plus,North America,Organic,25,789,22,40,771,19275
+2026-07,Plus,North America,Organic,25,771,28,27,772,19300
+2026-08,Plus,North America,Organic,25,772,28,35,765,19125
+2026-09,Plus,North America,Organic,25,765,23,34,754,18850
+2025-01,Plus,North America,Paid,19,432,25,28,429,8151
+2025-02,Plus,North America,Paid,19,429,27,11,445,8455
+2025-03,Plus,North America,Paid,19,445,22,19,448,8512
+2025-04,Plus,North America,Paid,19,448,23,18,453,8607
+2025-05,Plus,North America,Paid,19,453,30,14,469,8911
+2025-06,Plus,North America,Paid,19,469,23,12,480,9120
+2025-07,Plus,North America,Paid,19,480,30,20,490,9310
+2025-08,Plus,North America,Paid,19,490,24,23,491,9329
+2025-09,Plus,North America,Paid,19,491,24,26,489,9291
+2025-10,Plus,North America,Paid,19,489,30,12,507,9633
+2025-11,Plus,North America,Paid,19,507,17,19,505,9595
+2025-12,Plus,North America,Paid,19,505,22,15,512,9728
+2026-01,Plus,North America,Paid,19,512,24,17,519,9861
+2026-02,Plus,North America,Paid,19,519,31,17,533,10127
+2026-03,Plus,North America,Paid,19,533,15,21,527,10013
+2026-04,Plus,North America,Paid,25,527,24,49,502,12550
+2026-05,Plus,North America,Paid,25,502,28,21,509,12725
+2026-06,Plus,North America,Paid,25,509,26,33,502,12550
+2026-07,Plus,North America,Paid,25,502,20,30,492,12300
+2026-08,Plus,North America,Paid,25,492,18,34,476,11900
+2026-09,Plus,North America,Paid,25,476,21,33,464,11600
+2025-01,Plus,North America,Partner,19,249,16,7,258,4902
+2025-02,Plus,North America,Partner,19,258,15,5,268,5092
+2025-03,Plus,North America,Partner,19,268,20,7,281,5339
+2025-04,Plus,North America,Partner,19,281,22,5,298,5662
+2025-05,Plus,North America,Partner,19,298,15,11,302,5738
+2025-06,Plus,North America,Partner,19,302,23,7,318,6042
+2025-07,Plus,North America,Partner,19,318,22,8,332,6308
+2025-08,Plus,North America,Partner,19,332,7,8,331,6289
+2025-09,Plus,North America,Partner,19,331,11,2,340,6460
+2025-10,Plus,North America,Partner,19,340,9,11,338,6422
+2025-11,Plus,North America,Partner,19,338,14,4,348,6612
+2025-12,Plus,North America,Partner,19,348,6,8,346,6574
+2026-01,Plus,North America,Partner,19,346,16,8,354,6726
+2026-02,Plus,North America,Partner,19,354,17,7,364,6916
+2026-03,Plus,North America,Partner,19,364,17,5,376,7144
+2026-04,Plus,North America,Partner,25,376,9,18,367,9175
+2026-05,Plus,North America,Partner,25,367,17,23,361,9025
+2026-06,Plus,North America,Partner,25,361,9,11,359,8975
+2026-07,Plus,North America,Partner,25,359,9,12,356,8900
+2026-08,Plus,North America,Partner,25,356,11,8,359,8975
+2026-09,Plus,North America,Partner,25,359,4,13,350,8750
+2025-01,Plus,Europe,Organic,19,432,29,13,448,8512
+2025-02,Plus,Europe,Organic,19,448,24,7,465,8835
+2025-03,Plus,Europe,Organic,19,465,48,10,503,9557
+2025-04,Plus,Europe,Organic,19,503,37,12,528,10032
+2025-05,Plus,Europe,Organic,19,528,34,15,547,10393
+2025-06,Plus,Europe,Organic,19,547,28,18,557,10583
+2025-07,Plus,Europe,Organic,19,557,36,13,580,11020
+2025-08,Plus,Europe,Organic,19,580,30,16,594,11286
+2025-09,Plus,Europe,Organic,19,594,25,20,599,11381
+2025-10,Plus,Europe,Organic,19,599,21,21,599,11381
+2025-11,Plus,Europe,Organic,19,599,27,19,607,11533
+2025-12,Plus,Europe,Organic,19,607,27,20,614,11666
+2026-01,Plus,Europe,Organic,19,614,34,17,631,11989
+2026-02,Plus,Europe,Organic,19,631,31,15,647,12293
+2026-03,Plus,Europe,Organic,19,647,43,23,667,12673
+2026-04,Plus,Europe,Organic,25,667,24,42,649,16225
+2026-05,Plus,Europe,Organic,25,649,28,29,648,16200
+2026-06,Plus,Europe,Organic,25,648,29,22,655,16375
+2026-07,Plus,Europe,Organic,25,655,30,32,653,16325
+2026-08,Plus,Europe,Organic,25,653,21,29,645,16125
+2026-09,Plus,Europe,Organic,25,645,23,33,635,15875
+2025-01,Plus,Europe,Paid,19,327,14,13,328,6232
+2025-02,Plus,Europe,Paid,19,328,19,10,337,6403
+2025-03,Plus,Europe,Paid,19,337,20,13,344,6536
+2025-04,Plus,Europe,Paid,19,344,16,5,355,6745
+2025-05,Plus,Europe,Paid,19,355,14,9,360,6840
+2025-06,Plus,Europe,Paid,19,360,15,13,362,6878
+2025-07,Plus,Europe,Paid,19,362,14,12,364,6916
+2025-08,Plus,Europe,Paid,19,364,15,7,372,7068
+2025-09,Plus,Europe,Paid,19,372,20,24,368,6992
+2025-10,Plus,Europe,Paid,19,368,18,14,372,7068
+2025-11,Plus,Europe,Paid,19,372,13,10,375,7125
+2025-12,Plus,Europe,Paid,19,375,24,11,388,7372
+2026-01,Plus,Europe,Paid,19,388,30,18,400,7600
+2026-02,Plus,Europe,Paid,19,400,25,10,415,7885
+2026-03,Plus,Europe,Paid,19,415,16,7,424,8056
+2026-04,Plus,Europe,Paid,25,424,14,30,408,10200
+2026-05,Plus,Europe,Paid,25,408,13,34,387,9675
+2026-06,Plus,Europe,Paid,25,387,23,27,383,9575
+2026-07,Plus,Europe,Paid,25,383,15,26,372,9300
+2026-08,Plus,Europe,Paid,25,372,12,25,359,8975
+2026-09,Plus,Europe,Paid,25,359,24,26,357,8925
+2025-01,Plus,Europe,Partner,19,178,17,4,191,3629
+2025-02,Plus,Europe,Partner,19,191,12,6,197,3743
+2025-03,Plus,Europe,Partner,19,197,16,8,205,3895
+2025-04,Plus,Europe,Partner,19,205,12,7,210,3990
+2025-05,Plus,Europe,Partner,19,210,12,6,216,4104
+2025-06,Plus,Europe,Partner,19,216,11,6,221,4199
+2025-07,Plus,Europe,Partner,19,221,11,5,227,4313
+2025-08,Plus,Europe,Partner,19,227,8,2,233,4427
+2025-09,Plus,Europe,Partner,19,233,10,5,238,4522
+2025-10,Plus,Europe,Partner,19,238,15,10,243,4617
+2025-11,Plus,Europe,Partner,19,243,15,3,255,4845
+2025-12,Plus,Europe,Partner,19,255,11,7,259,4921
+2026-01,Plus,Europe,Partner,19,259,12,8,263,4997
+2026-02,Plus,Europe,Partner,19,263,7,6,264,5016
+2026-03,Plus,Europe,Partner,19,264,5,4,265,5035
+2026-04,Plus,Europe,Partner,25,265,16,14,267,6675
+2026-05,Plus,Europe,Partner,25,267,12,12,267,6675
+2026-06,Plus,Europe,Partner,25,267,8,10,265,6625
+2026-07,Plus,Europe,Partner,25,265,9,15,259,6475
+2026-08,Plus,Europe,Partner,25,259,10,4,265,6625
+2026-09,Plus,Europe,Partner,25,265,6,11,260,6500
+2025-01,Plus,Asia Pacific,Organic,19,310,20,10,320,6080
+2025-02,Plus,Asia Pacific,Organic,19,320,19,7,332,6308
+2025-03,Plus,Asia Pacific,Organic,19,332,26,7,351,6669
+2025-04,Plus,Asia Pacific,Organic,19,351,24,11,364,6916
+2025-05,Plus,Asia Pacific,Organic,19,364,26,10,380,7220
+2025-06,Plus,Asia Pacific,Organic,19,380,23,5,398,7562
+2025-07,Plus,Asia Pacific,Organic,19,398,22,12,408,7752
+2025-08,Plus,Asia Pacific,Organic,19,408,19,13,414,7866
+2025-09,Plus,Asia Pacific,Organic,19,414,19,13,420,7980
+2025-10,Plus,Asia Pacific,Organic,19,420,8,14,414,7866
+2025-11,Plus,Asia Pacific,Organic,19,414,20,8,426,8094
+2025-12,Plus,Asia Pacific,Organic,19,426,20,10,436,8284
+2026-01,Plus,Asia Pacific,Organic,19,436,14,11,439,8341
+2026-02,Plus,Asia Pacific,Organic,19,439,19,14,444,8436
+2026-03,Plus,Asia Pacific,Organic,19,444,26,12,458,8702
+2026-04,Plus,Asia Pacific,Organic,25,458,17,46,429,10725
+2026-05,Plus,Asia Pacific,Organic,25,429,21,26,424,10600
+2026-06,Plus,Asia Pacific,Organic,25,424,17,28,413,10325
+2026-07,Plus,Asia Pacific,Organic,25,413,16,30,399,9975
+2026-08,Plus,Asia Pacific,Organic,25,399,22,30,391,9775
+2026-09,Plus,Asia Pacific,Organic,25,391,13,32,372,9300
+2025-01,Plus,Asia Pacific,Paid,19,239,12,15,236,4484
+2025-02,Plus,Asia Pacific,Paid,19,236,16,11,241,4579
+2025-03,Plus,Asia Pacific,Paid,19,241,12,10,243,4617
+2025-04,Plus,Asia Pacific,Paid,19,243,17,7,253,4807
+2025-05,Plus,Asia Pacific,Paid,19,253,19,9,263,4997
+2025-06,Plus,Asia Pacific,Paid,19,263,25,8,280,5320
+2025-07,Plus,Asia Pacific,Paid,19,280,15,16,279,5301
+2025-08,Plus,Asia Pacific,Paid,19,279,10,9,280,5320
+2025-09,Plus,Asia Pacific,Paid,19,280,12,8,284,5396
+2025-10,Plus,Asia Pacific,Paid,19,284,9,13,280,5320
+2025-11,Plus,Asia Pacific,Paid,19,280,11,11,280,5320
+2025-12,Plus,Asia Pacific,Paid,19,280,12,13,279,5301
+2026-01,Plus,Asia Pacific,Paid,19,279,12,13,278,5282
+2026-02,Plus,Asia Pacific,Paid,19,278,17,11,284,5396
+2026-03,Plus,Asia Pacific,Paid,19,284,13,10,287,5453
+2026-04,Plus,Asia Pacific,Paid,25,287,13,38,262,6550
+2026-05,Plus,Asia Pacific,Paid,25,262,9,22,249,6225
+2026-06,Plus,Asia Pacific,Paid,25,249,6,27,228,5700
+2026-07,Plus,Asia Pacific,Paid,25,228,7,20,215,5375
+2026-08,Plus,Asia Pacific,Paid,25,215,4,30,189,4725
+2026-09,Plus,Asia Pacific,Paid,25,189,12,17,184,4600
+2025-01,Plus,Asia Pacific,Partner,19,126,12,4,134,2546
+2025-02,Plus,Asia Pacific,Partner,19,134,11,6,139,2641
+2025-03,Plus,Asia Pacific,Partner,19,139,7,6,140,2660
+2025-04,Plus,Asia Pacific,Partner,19,140,10,5,145,2755
+2025-05,Plus,Asia Pacific,Partner,19,145,6,5,146,2774
+2025-06,Plus,Asia Pacific,Partner,19,146,6,3,149,2831
+2025-07,Plus,Asia Pacific,Partner,19,149,7,3,153,2907
+2025-08,Plus,Asia Pacific,Partner,19,153,8,8,153,2907
+2025-09,Plus,Asia Pacific,Partner,19,153,7,5,155,2945
+2025-10,Plus,Asia Pacific,Partner,19,155,6,4,157,2983
+2025-11,Plus,Asia Pacific,Partner,19,157,6,1,162,3078
+2025-12,Plus,Asia Pacific,Partner,19,162,3,3,162,3078
+2026-01,Plus,Asia Pacific,Partner,19,162,6,4,164,3116
+2026-02,Plus,Asia Pacific,Partner,19,164,5,5,164,3116
+2026-03,Plus,Asia Pacific,Partner,19,164,10,4,170,3230
+2026-04,Plus,Asia Pacific,Partner,25,170,10,10,170,4250
+2026-05,Plus,Asia Pacific,Partner,25,170,10,11,169,4225
+2026-06,Plus,Asia Pacific,Partner,25,169,5,7,167,4175
+2026-07,Plus,Asia Pacific,Partner,25,167,11,12,166,4150
+2026-08,Plus,Asia Pacific,Partner,25,166,7,15,158,3950
+2026-09,Plus,Asia Pacific,Partner,25,158,3,11,150,3750
+2025-01,Plus,Latin America,Organic,19,217,12,4,225,4275
+2025-02,Plus,Latin America,Organic,19,225,12,7,230,4370
+2025-03,Plus,Latin America,Organic,19,230,21,7,244,4636
+2025-04,Plus,Latin America,Organic,19,244,15,9,250,4750
+2025-05,Plus,Latin America,Organic,19,250,22,9,263,4997
+2025-06,Plus,Latin America,Organic,19,263,11,7,267,5073
+2025-07,Plus,Latin America,Organic,19,267,10,1,276,5244
+2025-08,Plus,Latin America,Organic,19,276,11,10,277,5263
+2025-09,Plus,Latin America,Organic,19,277,9,8,278,5282
+2025-10,Plus,Latin America,Organic,19,278,6,6,278,5282
+2025-11,Plus,Latin America,Organic,19,278,11,7,282,5358
+2025-12,Plus,Latin America,Organic,19,282,9,11,280,5320
+2026-01,Plus,Latin America,Organic,19,280,5,5,280,5320
+2026-02,Plus,Latin America,Organic,19,280,15,7,288,5472
+2026-03,Plus,Latin America,Organic,19,288,13,11,290,5510
+2026-04,Plus,Latin America,Organic,25,290,10,26,274,6850
+2026-05,Plus,Latin America,Organic,25,274,14,23,265,6625
+2026-06,Plus,Latin America,Organic,25,265,13,24,254,6350
+2026-07,Plus,Latin America,Organic,25,254,13,23,244,6100
+2026-08,Plus,Latin America,Organic,25,244,15,18,241,6025
+2026-09,Plus,Latin America,Organic,25,241,8,13,236,5900
+2025-01,Plus,Latin America,Paid,19,136,10,7,139,2641
+2025-02,Plus,Latin America,Paid,19,139,16,8,147,2793
+2025-03,Plus,Latin America,Paid,19,147,12,7,152,2888
+2025-04,Plus,Latin America,Paid,19,152,9,6,155,2945
+2025-05,Plus,Latin America,Paid,19,155,14,6,163,3097
+2025-06,Plus,Latin America,Paid,19,163,13,5,171,3249
+2025-07,Plus,Latin America,Paid,19,171,6,5,172,3268
+2025-08,Plus,Latin America,Paid,19,172,6,5,173,3287
+2025-09,Plus,Latin America,Paid,19,173,7,6,174,3306
+2025-10,Plus,Latin America,Paid,19,174,4,6,172,3268
+2025-11,Plus,Latin America,Paid,19,172,9,9,172,3268
+2025-12,Plus,Latin America,Paid,19,172,6,6,172,3268
+2026-01,Plus,Latin America,Paid,19,172,8,12,168,3192
+2026-02,Plus,Latin America,Paid,19,168,17,7,178,3382
+2026-03,Plus,Latin America,Paid,19,178,13,9,182,3458
+2026-04,Plus,Latin America,Paid,25,182,8,29,161,4025
+2026-05,Plus,Latin America,Paid,25,161,7,17,151,3775
+2026-06,Plus,Latin America,Paid,25,151,4,22,133,3325
+2026-07,Plus,Latin America,Paid,25,133,3,24,112,2800
+2026-08,Plus,Latin America,Paid,25,112,6,14,104,2600
+2026-09,Plus,Latin America,Paid,25,104,1,13,92,2300
+2025-01,Plus,Latin America,Partner,19,84,6,1,89,1691
+2025-02,Plus,Latin America,Partner,19,89,9,3,95,1805
+2025-03,Plus,Latin America,Partner,19,95,3,2,96,1824
+2025-04,Plus,Latin America,Partner,19,96,5,3,98,1862
+2025-05,Plus,Latin America,Partner,19,98,9,2,105,1995
+2025-06,Plus,Latin America,Partner,19,105,5,3,107,2033
+2025-07,Plus,Latin America,Partner,19,107,4,4,107,2033
+2025-08,Plus,Latin America,Partner,19,107,8,4,111,2109
+2025-09,Plus,Latin America,Partner,19,111,2,3,110,2090
+2025-10,Plus,Latin America,Partner,19,110,1,4,107,2033
+2025-11,Plus,Latin America,Partner,19,107,4,4,107,2033
+2025-12,Plus,Latin America,Partner,19,107,7,1,113,2147
+2026-01,Plus,Latin America,Partner,19,113,5,1,117,2223
+2026-02,Plus,Latin America,Partner,19,117,3,6,114,2166
+2026-03,Plus,Latin America,Partner,19,114,5,4,115,2185
+2026-04,Plus,Latin America,Partner,25,115,6,14,107,2675
+2026-05,Plus,Latin America,Partner,25,107,6,10,103,2575
+2026-06,Plus,Latin America,Partner,25,103,2,6,99,2475
+2026-07,Plus,Latin America,Partner,25,99,5,8,96,2400
+2026-08,Plus,Latin America,Partner,25,96,4,3,97,2425
+2026-09,Plus,Latin America,Partner,25,97,7,9,95,2375
+2025-01,Pro,North America,Organic,49,200,13,2,211,10339
+2025-02,Pro,North America,Organic,49,211,8,2,217,10633
+2025-03,Pro,North America,Organic,49,217,8,1,224,10976
+2025-04,Pro,North America,Organic,49,224,7,3,228,11172
+2025-05,Pro,North America,Organic,49,228,19,5,242,11858
+2025-06,Pro,North America,Organic,49,242,15,3,254,12446
+2025-07,Pro,North America,Organic,49,254,7,7,254,12446
+2025-08,Pro,North America,Organic,49,254,12,4,262,12838
+2025-09,Pro,North America,Organic,49,262,10,4,268,13132
+2025-10,Pro,North America,Organic,49,268,7,4,271,13279
+2025-11,Pro,North America,Organic,49,271,6,4,273,13377
+2025-12,Pro,North America,Organic,49,273,15,5,283,13867
+2026-01,Pro,North America,Organic,49,283,11,6,288,14112
+2026-02,Pro,North America,Organic,49,288,16,2,302,14798
+2026-03,Pro,North America,Organic,49,302,13,8,307,15043
+2026-04,Pro,North America,Organic,59,307,8,4,311,18349
+2026-05,Pro,North America,Organic,59,311,12,5,318,18762
+2026-06,Pro,North America,Organic,59,318,6,9,315,18585
+2026-07,Pro,North America,Organic,59,315,8,4,319,18821
+2026-08,Pro,North America,Organic,59,319,11,5,325,19175
+2026-09,Pro,North America,Organic,59,325,14,8,331,19529
+2025-01,Pro,North America,Paid,49,152,6,8,150,7350
+2025-02,Pro,North America,Paid,49,150,6,3,153,7497
+2025-03,Pro,North America,Paid,49,153,14,8,159,7791
+2025-04,Pro,North America,Paid,49,159,5,5,159,7791
+2025-05,Pro,North America,Paid,49,159,11,2,168,8232
+2025-06,Pro,North America,Paid,49,168,14,3,179,8771
+2025-07,Pro,North America,Paid,49,179,6,6,179,8771
+2025-08,Pro,North America,Paid,49,179,6,4,181,8869
+2025-09,Pro,North America,Paid,49,181,11,2,190,9310
+2025-10,Pro,North America,Paid,49,190,6,5,191,9359
+2025-11,Pro,North America,Paid,49,191,6,5,192,9408
+2025-12,Pro,North America,Paid,49,192,6,7,191,9359
+2026-01,Pro,North America,Paid,49,191,7,5,193,9457
+2026-02,Pro,North America,Paid,49,193,7,3,197,9653
+2026-03,Pro,North America,Paid,49,197,14,5,206,10094
+2026-04,Pro,North America,Paid,59,206,15,4,217,12803
+2026-05,Pro,North America,Paid,59,217,8,4,221,13039
+2026-06,Pro,North America,Paid,59,221,4,3,222,13098
+2026-07,Pro,North America,Paid,59,222,7,4,225,13275
+2026-08,Pro,North America,Paid,59,225,3,7,221,13039
+2026-09,Pro,North America,Paid,59,221,6,7,220,12980
+2025-01,Pro,North America,Partner,49,86,7,0,93,4557
+2025-02,Pro,North America,Partner,49,93,7,3,97,4753
+2025-03,Pro,North America,Partner,49,97,5,2,100,4900
+2025-04,Pro,North America,Partner,49,100,5,0,105,5145
+2025-05,Pro,North America,Partner,49,105,6,1,110,5390
+2025-06,Pro,North America,Partner,49,110,5,0,115,5635
+2025-07,Pro,North America,Partner,49,115,3,0,118,5782
+2025-08,Pro,North America,Partner,49,118,4,0,122,5978
+2025-09,Pro,North America,Partner,49,122,5,4,123,6027
+2025-10,Pro,North America,Partner,49,123,3,3,123,6027
+2025-11,Pro,North America,Partner,49,123,4,3,124,6076
+2025-12,Pro,North America,Partner,49,124,8,2,130,6370
+2026-01,Pro,North America,Partner,49,130,1,2,129,6321
+2026-02,Pro,North America,Partner,49,129,6,3,132,6468
+2026-03,Pro,North America,Partner,49,132,9,2,139,6811
+2026-04,Pro,North America,Partner,59,139,2,4,137,8083
+2026-05,Pro,North America,Partner,59,137,5,4,138,8142
+2026-06,Pro,North America,Partner,59,138,6,2,142,8378
+2026-07,Pro,North America,Partner,59,142,6,3,145,8555
+2026-08,Pro,North America,Partner,59,145,4,1,148,8732
+2026-09,Pro,North America,Partner,59,148,2,3,147,8673
+2025-01,Pro,Europe,Organic,49,158,10,2,166,8134
+2025-02,Pro,Europe,Organic,49,166,8,4,170,8330
+2025-03,Pro,Europe,Organic,49,170,9,1,178,8722
+2025-04,Pro,Europe,Organic,49,178,8,3,183,8967
+2025-05,Pro,Europe,Organic,49,183,15,1,197,9653
+2025-06,Pro,Europe,Organic,49,197,21,4,214,10486
+2025-07,Pro,Europe,Organic,49,214,4,4,214,10486
+2025-08,Pro,Europe,Organic,49,214,10,3,221,10829
+2025-09,Pro,Europe,Organic,49,221,10,2,229,11221
+2025-10,Pro,Europe,Organic,49,229,9,5,233,11417
+2025-11,Pro,Europe,Organic,49,233,13,5,241,11809
+2025-12,Pro,Europe,Organic,49,241,10,3,248,12152
+2026-01,Pro,Europe,Organic,49,248,11,1,258,12642
+2026-02,Pro,Europe,Organic,49,258,9,5,262,12838
+2026-03,Pro,Europe,Organic,49,262,13,2,273,13377
+2026-04,Pro,Europe,Organic,59,273,12,9,276,16284
+2026-05,Pro,Europe,Organic,59,276,9,5,280,16520
+2026-06,Pro,Europe,Organic,59,280,6,8,278,16402
+2026-07,Pro,Europe,Organic,59,278,6,4,280,16520
+2026-08,Pro,Europe,Organic,59,280,8,6,282,16638
+2026-09,Pro,Europe,Organic,59,282,9,4,287,16933
+2025-01,Pro,Europe,Paid,49,117,8,6,119,5831
+2025-02,Pro,Europe,Paid,49,119,3,4,118,5782
+2025-03,Pro,Europe,Paid,49,118,4,3,119,5831
+2025-04,Pro,Europe,Paid,49,119,7,4,122,5978
+2025-05,Pro,Europe,Paid,49,122,6,2,126,6174
+2025-06,Pro,Europe,Paid,49,126,6,3,129,6321
+2025-07,Pro,Europe,Paid,49,129,8,2,135,6615
+2025-08,Pro,Europe,Paid,49,135,7,1,141,6909
+2025-09,Pro,Europe,Paid,49,141,7,4,144,7056
+2025-10,Pro,Europe,Paid,49,144,4,3,145,7105
+2025-11,Pro,Europe,Paid,49,145,7,5,147,7203
+2025-12,Pro,Europe,Paid,49,147,1,3,145,7105
+2026-01,Pro,Europe,Paid,49,145,7,7,145,7105
+2026-02,Pro,Europe,Paid,49,145,7,2,150,7350
+2026-03,Pro,Europe,Paid,49,150,11,5,156,7644
+2026-04,Pro,Europe,Paid,59,156,9,6,159,9381
+2026-05,Pro,Europe,Paid,59,159,8,4,163,9617
+2026-06,Pro,Europe,Paid,59,163,6,5,164,9676
+2026-07,Pro,Europe,Paid,59,164,5,4,165,9735
+2026-08,Pro,Europe,Paid,59,165,8,2,171,10089
+2026-09,Pro,Europe,Paid,59,171,4,5,170,10030
+2025-01,Pro,Europe,Partner,49,74,4,2,76,3724
+2025-02,Pro,Europe,Partner,49,76,5,0,81,3969
+2025-03,Pro,Europe,Partner,49,81,3,3,81,3969
+2025-04,Pro,Europe,Partner,49,81,2,0,83,4067
+2025-05,Pro,Europe,Partner,49,83,5,0,88,4312
+2025-06,Pro,Europe,Partner,49,88,2,2,88,4312
+2025-07,Pro,Europe,Partner,49,88,4,1,91,4459
+2025-08,Pro,Europe,Partner,49,91,0,4,87,4263
+2025-09,Pro,Europe,Partner,49,87,4,1,90,4410
+2025-10,Pro,Europe,Partner,49,90,3,2,91,4459
+2025-11,Pro,Europe,Partner,49,91,2,1,92,4508
+2025-12,Pro,Europe,Partner,49,92,4,2,94,4606
+2026-01,Pro,Europe,Partner,49,94,5,2,97,4753
+2026-02,Pro,Europe,Partner,49,97,4,2,99,4851
+2026-03,Pro,Europe,Partner,49,99,0,2,97,4753
+2026-04,Pro,Europe,Partner,59,97,2,1,98,5782
+2026-05,Pro,Europe,Partner,59,98,2,4,96,5664
+2026-06,Pro,Europe,Partner,59,96,4,2,98,5782
+2026-07,Pro,Europe,Partner,59,98,1,3,96,5664
+2026-08,Pro,Europe,Partner,59,96,2,0,98,5782
+2026-09,Pro,Europe,Partner,59,98,1,3,96,5664
+2025-01,Pro,Asia Pacific,Organic,49,114,5,2,117,5733
+2025-02,Pro,Asia Pacific,Organic,49,117,11,4,124,6076
+2025-03,Pro,Asia Pacific,Organic,49,124,4,1,127,6223
+2025-04,Pro,Asia Pacific,Organic,49,127,12,3,136,6664
+2025-05,Pro,Asia Pacific,Organic,49,136,6,3,139,6811
+2025-06,Pro,Asia Pacific,Organic,49,139,8,1,146,7154
+2025-07,Pro,Asia Pacific,Organic,49,146,7,4,149,7301
+2025-08,Pro,Asia Pacific,Organic,49,149,7,6,150,7350
+2025-09,Pro,Asia Pacific,Organic,49,150,3,2,151,7399
+2025-10,Pro,Asia Pacific,Organic,49,151,4,3,152,7448
+2025-11,Pro,Asia Pacific,Organic,49,152,5,5,152,7448
+2025-12,Pro,Asia Pacific,Organic,49,152,5,4,153,7497
+2026-01,Pro,Asia Pacific,Organic,49,153,12,3,162,7938
+2026-02,Pro,Asia Pacific,Organic,49,162,7,6,163,7987
+2026-03,Pro,Asia Pacific,Organic,49,163,7,4,166,8134
+2026-04,Pro,Asia Pacific,Organic,59,166,7,4,169,9971
+2026-05,Pro,Asia Pacific,Organic,59,169,10,2,177,10443
+2026-06,Pro,Asia Pacific,Organic,59,177,4,4,177,10443
+2026-07,Pro,Asia Pacific,Organic,59,177,7,3,181,10679
+2026-08,Pro,Asia Pacific,Organic,59,181,8,4,185,10915
+2026-09,Pro,Asia Pacific,Organic,59,185,2,4,183,10797
+2025-01,Pro,Asia Pacific,Paid,49,73,4,5,72,3528
+2025-02,Pro,Asia Pacific,Paid,49,72,6,4,74,3626
+2025-03,Pro,Asia Pacific,Paid,49,74,6,1,79,3871
+2025-04,Pro,Asia Pacific,Paid,49,79,1,3,77,3773
+2025-05,Pro,Asia Pacific,Paid,49,77,3,3,77,3773
+2025-06,Pro,Asia Pacific,Paid,49,77,4,2,79,3871
+2025-07,Pro,Asia Pacific,Paid,49,79,7,4,82,4018
+2025-08,Pro,Asia Pacific,Paid,49,82,3,2,83,4067
+2025-09,Pro,Asia Pacific,Paid,49,83,3,2,84,4116
+2025-10,Pro,Asia Pacific,Paid,49,84,3,5,82,4018
+2025-11,Pro,Asia Pacific,Paid,49,82,4,1,85,4165
+2025-12,Pro,Asia Pacific,Paid,49,85,2,3,84,4116
+2026-01,Pro,Asia Pacific,Paid,49,84,2,2,84,4116
+2026-02,Pro,Asia Pacific,Paid,49,84,7,0,91,4459
+2026-03,Pro,Asia Pacific,Paid,49,91,6,1,96,4704
+2026-04,Pro,Asia Pacific,Paid,59,96,5,1,100,5900
+2026-05,Pro,Asia Pacific,Paid,59,100,6,2,104,6136
+2026-06,Pro,Asia Pacific,Paid,59,104,4,7,101,5959
+2026-07,Pro,Asia Pacific,Paid,59,101,6,3,104,6136
+2026-08,Pro,Asia Pacific,Paid,59,104,7,4,107,6313
+2026-09,Pro,Asia Pacific,Paid,59,107,5,3,109,6431
+2025-01,Pro,Asia Pacific,Partner,49,45,1,0,46,2254
+2025-02,Pro,Asia Pacific,Partner,49,46,2,1,47,2303
+2025-03,Pro,Asia Pacific,Partner,49,47,3,2,48,2352
+2025-04,Pro,Asia Pacific,Partner,49,48,5,0,53,2597
+2025-05,Pro,Asia Pacific,Partner,49,53,4,0,57,2793
+2025-06,Pro,Asia Pacific,Partner,49,57,4,0,61,2989
+2025-07,Pro,Asia Pacific,Partner,49,61,3,3,61,2989
+2025-08,Pro,Asia Pacific,Partner,49,61,2,1,62,3038
+2025-09,Pro,Asia Pacific,Partner,49,62,1,0,63,3087
+2025-10,Pro,Asia Pacific,Partner,49,63,2,3,62,3038
+2025-11,Pro,Asia Pacific,Partner,49,62,1,1,62,3038
+2025-12,Pro,Asia Pacific,Partner,49,62,1,1,62,3038
+2026-01,Pro,Asia Pacific,Partner,49,62,4,1,65,3185
+2026-02,Pro,Asia Pacific,Partner,49,65,7,1,71,3479
+2026-03,Pro,Asia Pacific,Partner,49,71,4,2,73,3577
+2026-04,Pro,Asia Pacific,Partner,59,73,0,0,73,4307
+2026-05,Pro,Asia Pacific,Partner,59,73,3,2,74,4366
+2026-06,Pro,Asia Pacific,Partner,59,74,2,1,75,4425
+2026-07,Pro,Asia Pacific,Partner,59,75,3,2,76,4484
+2026-08,Pro,Asia Pacific,Partner,59,76,3,1,78,4602
+2026-09,Pro,Asia Pacific,Partner,59,78,1,0,79,4661
+2025-01,Pro,Latin America,Organic,49,70,7,2,75,3675
+2025-02,Pro,Latin America,Organic,49,75,4,0,79,3871
+2025-03,Pro,Latin America,Organic,49,79,3,3,79,3871
+2025-04,Pro,Latin America,Organic,49,79,3,1,81,3969
+2025-05,Pro,Latin America,Organic,49,81,2,4,79,3871
+2025-06,Pro,Latin America,Organic,49,79,7,1,85,4165
+2025-07,Pro,Latin America,Organic,49,85,2,2,85,4165
+2025-08,Pro,Latin America,Organic,49,85,3,2,86,4214
+2025-09,Pro,Latin America,Organic,49,86,2,2,86,4214
+2025-10,Pro,Latin America,Organic,49,86,5,3,88,4312
+2025-11,Pro,Latin America,Organic,49,88,0,1,87,4263
+2025-12,Pro,Latin America,Organic,49,87,1,0,88,4312
+2026-01,Pro,Latin America,Organic,49,88,3,3,88,4312
+2026-02,Pro,Latin America,Organic,49,88,7,3,92,4508
+2026-03,Pro,Latin America,Organic,49,92,4,1,95,4655
+2026-04,Pro,Latin America,Organic,59,95,6,3,98,5782
+2026-05,Pro,Latin America,Organic,59,98,4,1,101,5959
+2026-06,Pro,Latin America,Organic,59,101,1,4,98,5782
+2026-07,Pro,Latin America,Organic,59,98,5,6,97,5723
+2026-08,Pro,Latin America,Organic,59,97,6,0,103,6077
+2026-09,Pro,Latin America,Organic,59,103,1,6,98,5782
+2025-01,Pro,Latin America,Paid,49,48,2,2,48,2352
+2025-02,Pro,Latin America,Paid,49,48,1,2,47,2303
+2025-03,Pro,Latin America,Paid,49,47,3,1,49,2401
+2025-04,Pro,Latin America,Paid,49,49,5,1,53,2597
+2025-05,Pro,Latin America,Paid,49,53,7,1,59,2891
+2025-06,Pro,Latin America,Paid,49,59,1,1,59,2891
+2025-07,Pro,Latin America,Paid,49,59,4,0,63,3087
+2025-08,Pro,Latin America,Paid,49,63,1,1,63,3087
+2025-09,Pro,Latin America,Paid,49,63,7,1,69,3381
+2025-10,Pro,Latin America,Paid,49,69,4,3,70,3430
+2025-11,Pro,Latin America,Paid,49,70,3,1,72,3528
+2025-12,Pro,Latin America,Paid,49,72,2,3,71,3479
+2026-01,Pro,Latin America,Paid,49,71,1,2,70,3430
+2026-02,Pro,Latin America,Paid,49,70,1,1,70,3430
+2026-03,Pro,Latin America,Paid,49,70,5,2,73,3577
+2026-04,Pro,Latin America,Paid,59,73,5,3,75,4425
+2026-05,Pro,Latin America,Paid,59,75,7,4,78,4602
+2026-06,Pro,Latin America,Paid,59,78,1,4,75,4425
+2026-07,Pro,Latin America,Paid,59,75,4,0,79,4661
+2026-08,Pro,Latin America,Paid,59,79,1,4,76,4484
+2026-09,Pro,Latin America,Paid,59,76,2,1,77,4543
+2025-01,Pro,Latin America,Partner,49,27,0,2,25,1225
+2025-02,Pro,Latin America,Partner,49,25,2,0,27,1323
+2025-03,Pro,Latin America,Partner,49,27,2,1,28,1372
+2025-04,Pro,Latin America,Partner,49,28,2,1,29,1421
+2025-05,Pro,Latin America,Partner,49,29,1,0,30,1470
+2025-06,Pro,Latin America,Partner,49,30,1,0,31,1519
+2025-07,Pro,Latin America,Partner,49,31,0,0,31,1519
+2025-08,Pro,Latin America,Partner,49,31,0,0,31,1519
+2025-09,Pro,Latin America,Partner,49,31,0,0,31,1519
+2025-10,Pro,Latin America,Partner,49,31,5,1,35,1715
+2025-11,Pro,Latin America,Partner,49,35,2,0,37,1813
+2025-12,Pro,Latin America,Partner,49,37,3,2,38,1862
+2026-01,Pro,Latin America,Partner,49,38,1,0,39,1911
+2026-02,Pro,Latin America,Partner,49,39,0,1,38,1862
+2026-03,Pro,Latin America,Partner,49,38,1,0,39,1911
+2026-04,Pro,Latin America,Partner,59,39,4,2,41,2419
+2026-05,Pro,Latin America,Partner,59,41,1,2,40,2360
+2026-06,Pro,Latin America,Partner,59,40,4,2,42,2478
+2026-07,Pro,Latin America,Partner,59,42,2,1,43,2537
+2026-08,Pro,Latin America,Partner,59,43,2,1,44,2596
+2026-09,Pro,Latin America,Partner,59,44,2,2,44,2596

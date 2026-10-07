@@ -1,0 +1,19 @@
+{
+  "voices": { "Maya": "ara", "Sam": "rex" },
+  "turns": [
+    { "speaker": "Maya", "text": "Thanks for jumping on, Sam. Two things today: the launch date, and pricing for the Pro plan." },
+    { "speaker": "Sam", "text": "Morning, Maya. Engineering says we're on track, so the twenty-first still works." },
+    { "speaker": "Maya", "text": "Great, then let's lock in October twenty-first." },
+    { "speaker": "Sam", "text": "Agreed. I'll tell the support team today." },
+    { "speaker": "Maya", "text": "Now, pricing. I was going to say we keep it at twelve dollars a month, but [long-pause] the survey says people really want an annual plan." },
+    { "speaker": "Sam", "text": "So what if it's twelve a month, or a hundred dollars a year? That's about two months free." },
+    { "speaker": "Maya", "text": "I like that. Let's go with twelve a month and a hundred a year." },
+    { "speaker": "Sam", "text": "Okay. I'll update the pricing page and the checkout by Friday." },
+    { "speaker": "Maya", "text": "Can you make it Thursday? I want a day for QA before the newsletter goes out." },
+    { "speaker": "Sam", "text": "Sure, Thursday works." },
+    { "speaker": "Maya", "text": "And I'll write the announcement and send it to legal by Wednesday." },
+    { "speaker": "Sam", "text": "One more thing. Do we give existing customers a discount?" },
+    { "speaker": "Maya", "text": "Let's not decide that today. I'll ask finance, and we'll pick it up next week." },
+    { "speaker": "Sam", "text": "Sounds good. Thanks, Maya." }
+  ]
+}

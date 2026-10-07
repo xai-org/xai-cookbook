@@ -60,7 +60,19 @@
           "video-generation",
           "voice",
           "text-to-speech",
-          "x-data"
+          "speech-to-text",
+          "x-data",
+          "web-search",
+          "code-execution",
+          "collections",
+          "mcp",
+          "tool-search",
+          "shell",
+          "multi-agent",
+          "files",
+          "batch",
+          "prompt-caching",
+          "compaction"
         ]
       }
     },

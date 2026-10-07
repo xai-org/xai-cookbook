@@ -1,0 +1,770 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Bug Report to Fix</title>
+<style>
+  /* The look every SpaceXAI Cookbook page shares, after x.ai. */
+  :root {
+    --bg: #fff;
+    --card: #f9f8f6;
+    --secondary: #f2f1ef;
+    --secondary-hover: #e9e8e5;
+    --tint: rgb(10 10 10 / 0.04);
+    --line: rgb(10 10 10 / 0.08);
+    --border: rgb(10 10 10 / 0.15);
+    --fg: #0a0a0a;
+    --muted: rgb(10 10 10 / 0.6);
+    --faint: rgb(10 10 10 / 0.36);
+    --accent: #ff6308;
+    --accent-soft: rgb(255 99 8 / 0.1);
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; font: 14px/22px var(--sans); background: var(--bg); color: var(--fg); -webkit-font-smoothing: antialiased; }
+  button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
+  a { color: inherit; }
+  svg { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  @keyframes blink { 50% { opacity: 0.3; } }
+  @keyframes pulse { to { background-color: var(--secondary-hover); } }
+  @keyframes appear { from { opacity: 0; transform: translateY(4px); } }
+
+  .site { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 12px; height: 60px; padding: 0 20px; background: rgb(255 255 255 / 0.85); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+  .logo { flex: none; margin-right: 4px; color: var(--fg); }
+  .logo svg { display: block; width: 52px; height: 20px; fill: currentColor; stroke: none; }
+  .crumbs { display: flex; align-items: center; gap: 8px; min-width: 0; color: var(--muted); white-space: nowrap; }
+  .crumbs svg { width: 12px; height: 12px; color: var(--faint); }
+  .crumbs h1 { margin: 0; overflow: hidden; text-overflow: ellipsis; font-size: inherit; line-height: inherit; font-weight: 500; color: var(--fg); }
+  .site .pill { flex: none; margin-left: auto; }
+  .models { flex: none; height: 26px; padding: 0 10px; border-radius: 9999px; box-shadow: inset 0 0 0 1px var(--line); font-size: 12px; font-weight: 500; line-height: 26px; color: var(--muted); }
+  .pill { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 40px; padding: 0 18px; border-radius: 9999px; font-size: 14px; font-weight: 500; white-space: nowrap; text-decoration: none; }
+  .pill-sm { height: 32px; padding: 0 14px; font-size: 13px; }
+  .pill-primary { background: var(--fg); color: #fff; }
+  .pill-primary:hover { background: #202329; }
+  .pill-secondary { background: var(--secondary); color: var(--fg); }
+  .pill-secondary:hover { background: var(--secondary-hover); }
+  .pill:disabled { opacity: 0.4; cursor: default; }
+  .pill svg { width: 14px; height: 14px; }
+  .field { min-width: 0; height: 40px; padding: 0 18px; border: 1px solid var(--border); border-radius: 9999px; background: var(--bg); color: var(--fg); font: inherit; outline: none; }
+  .field:focus { border-color: var(--fg); }
+  .field::placeholder { color: var(--faint); }
+  .surface { display: flex; flex-direction: column; gap: 8px; height: calc(100vh - 72px); min-height: 560px; margin: 0 12px 12px; padding: 8px; border-radius: 20px; background: var(--card); }
+  .panel { min-width: 0; padding: 20px 22px; border-radius: 16px; background: var(--bg); }
+  .label { margin: 0; font-size: 13px; font-weight: 500; color: var(--muted); }
+  @media (max-width: 900px) {
+    .models { display: none; }
+  }
+  @media (max-width: 640px) {
+    .site { padding: 0 16px; }
+    .crumbs > span, .crumbs > svg { display: none; }
+    .surface { margin: 0 8px 8px; }
+  }
+
+  /* Bug Report to Fix */
+  :root {
+    --good: #16a34a;
+    --good-soft: rgb(22 163 74 / 0.1);
+    --bad: #e5484d;
+    --bad-soft: rgb(229 72 77 / 0.1);
+    --ink: #0a0a0a;
+    --ink-line: rgb(255 255 255 / 0.08);
+    --ink-fg: #f2f1ef;
+    --ink-muted: rgb(242 241 239 / 0.62);
+    --ink-faint: rgb(242 241 239 / 0.36);
+    --ink-good: #5fd38d;
+    --ink-bad: #ff8b85;
+    --ink-warn: #ffc95c;
+  }
+  .surface { min-height: 640px; }
+  .workspace { flex: 1; display: grid; grid-template-columns: 300px minmax(0, 1.1fr) minmax(0, 1fr); gap: 8px; min-height: 0; }
+
+  .rail { display: flex; flex-direction: column; gap: 14px; min-height: 0; overflow: auto; padding: 16px; }
+  .rail-head { display: flex; align-items: center; gap: 8px; min-height: 24px; }
+  .state { display: inline-flex; align-items: center; gap: 6px; height: 22px; margin-left: auto; padding: 0 9px; border-radius: 9999px; background: var(--secondary); font-size: 12px; font-weight: 500; color: var(--muted); }
+  .state.working::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: blink 1s ease-in-out infinite; }
+  .state.fixed { background: var(--good-soft); color: var(--good); }
+  .state.unfixed, .state.failed { background: var(--bad-soft); color: var(--bad); }
+  #form { display: flex; flex-direction: column; gap: 10px; }
+  .composer { display: flex; flex-direction: column; gap: 10px; }
+  .samples { display: grid; gap: 6px; min-height: 216px; }
+  .sample { display: grid; gap: 2px; padding: 10px 12px; border-radius: 12px; background: var(--card); text-align: left; animation: appear 0.3s ease-out; }
+  .sample:hover { background: var(--secondary); }
+  .sample strong { font-size: 13px; line-height: 18px; font-weight: 500; }
+  .sample span { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; font-size: 12px; line-height: 17px; color: var(--muted); }
+  .or { margin: 4px 0 -4px; font-size: 12px; color: var(--faint); }
+  .report-field { width: 100%; min-height: 120px; resize: vertical; padding: 11px 14px; border: 1px solid var(--border); border-radius: 14px; background: var(--bg); color: var(--fg); font: 13px/20px var(--sans); outline: none; }
+  .report-field:focus { border-color: var(--fg); }
+  .report-field::placeholder { color: var(--faint); }
+  .issue { padding: 14px 16px; border-radius: 14px; background: var(--card); animation: appear 0.3s ease-out; }
+  .issue h2 { margin: 0 0 6px; font-size: 15px; line-height: 21px; font-weight: 500; }
+  .issue p { margin: 0; font-size: 13px; line-height: 20px; color: var(--muted); white-space: pre-wrap; overflow-wrap: anywhere; }
+  #go { width: 100%; }
+
+  .ledger { display: flex; flex-direction: column; gap: 8px; padding-top: 14px; border-top: 1px solid var(--line); animation: appear 0.3s ease-out; }
+  .ledger-head { display: flex; align-items: baseline; justify-content: space-between; }
+  .ledger-head span { font-size: 12px; color: var(--faint); }
+  .turns { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
+  .turn-row { display: grid; grid-template-columns: 18px 44px minmax(0, 1fr) 34px 50px; align-items: center; gap: 8px; height: 24px; font-size: 12px; font-variant-numeric: tabular-nums; animation: appear 0.3s ease-out; }
+  .turn-row .n { color: var(--faint); }
+  .turn-row .pct, .turn-row .cost { text-align: right; color: var(--muted); }
+  .bar { height: 6px; overflow: hidden; border-radius: 3px; background: var(--secondary); }
+  .bar i { display: block; width: 0; height: 100%; border-radius: inherit; background: var(--fg); transition: width 0.6s; }
+  .turn-row.compaction { grid-template-columns: 18px minmax(0, 1fr) 50px; color: var(--accent); }
+  .turn-row.compaction .cost { color: var(--accent); }
+  .totals { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 4px; }
+  .total { padding: 10px 12px; border-radius: 12px; background: var(--card); }
+  .total strong { display: block; font-size: 18px; line-height: 24px; font-weight: 500; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; }
+  .total span { font-size: 12px; color: var(--muted); }
+  .context { display: grid; gap: 6px; font-size: 12px; color: var(--muted); }
+  .context .bar i { background: var(--accent); }
+
+  .hero { grid-column: span 2; display: grid; align-content: center; justify-items: center; gap: 18px; padding: 40px 32px; text-align: center; }
+  .hero h2 { margin: 0; font-size: 40px; line-height: 1.1; font-weight: 450; letter-spacing: -0.02em; }
+  .hero > p { max-width: 620px; margin: 0 0 8px; font-size: 16px; line-height: 26px; color: var(--muted); }
+  .hero-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; width: min(720px, 100%); text-align: left; }
+  .hero-card { display: flex; flex-direction: column; gap: 10px; padding: 16px 18px; border-radius: 14px; background: var(--card); }
+  .mini-tree { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; font: 12px/20px var(--mono); color: var(--muted); }
+  .mini-tree .dir { color: var(--faint); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { padding: 0 8px; border-radius: 6px; background: var(--bg); box-shadow: inset 0 0 0 1px var(--line); font: 12px/24px var(--mono); }
+  .hint { margin: 0; font-size: 13px; line-height: 20px; color: var(--muted); }
+
+  .terminal { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; grid-template-columns: minmax(0, 1fr); min-height: 0; overflow: hidden; border-radius: 16px; background: var(--ink); color: var(--ink-fg); }
+  .term-bar { display: flex; align-items: center; gap: 14px; height: 44px; padding: 0 16px; border-bottom: 1px solid var(--ink-line); font: 12px var(--mono); color: var(--ink-muted); }
+  .lights { display: flex; gap: 7px; }
+  .lights i { width: 11px; height: 11px; border-radius: 50%; }
+  .term-bar .spacer { flex: 1; }
+  .log { overflow: auto; padding: 6px 18px 18px; font: 12px/19px var(--mono); }
+  .log > * { animation: appear 0.25s ease-out; }
+  .boot { margin: 8px 0; color: var(--ink-faint); }
+  .turn-sep { display: flex; align-items: center; gap: 10px; margin: 16px 0 8px; font-size: 11px; color: var(--ink-faint); }
+  .turn-sep i { flex: 1; height: 1px; background: var(--ink-line); }
+  .thought { margin: 6px 0; color: var(--ink-faint); }
+  .thought-head { display: inline-flex; align-items: center; gap: 8px; font: inherit; color: inherit; }
+  .thought.live .thought-head::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: blink 1s ease-in-out infinite; }
+  .thought.done .thought-head::after { content: "›"; }
+  .thought.done.open .thought-head::after { content: "⌄"; }
+  .thought-text { max-height: 57px; margin-top: 2px; overflow: hidden; white-space: pre-wrap; overflow-wrap: anywhere; font-style: italic; -webkit-mask-image: linear-gradient(to bottom, transparent, #000 45%); mask-image: linear-gradient(to bottom, transparent, #000 45%); }
+  .thought.done .thought-text { display: none; }
+  .thought.done.open .thought-text { display: block; max-height: none; -webkit-mask-image: none; mask-image: none; }
+  .say { margin: 10px 0; padding-left: 12px; border-left: 2px solid var(--accent); font: 13px/20px var(--sans); color: var(--ink-fg); white-space: pre-wrap; overflow-wrap: anywhere; }
+  .cmd { margin: 10px 0; }
+  .cmd-line { display: flex; gap: 8px; font-weight: 600; color: #fff; }
+  .cmd-line .prompt { color: var(--accent); }
+  .cmd-text { min-width: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .cursor { flex: none; width: 7px; height: 14px; margin-top: 3px; background: var(--ink-fg); animation: blink 1s ease-in-out infinite; }
+  .out { margin: 3px 0 0; padding-left: 16px; font: inherit; color: var(--ink-muted); white-space: pre-wrap; overflow-wrap: anywhere; }
+  .out:empty { display: none; }
+  .out .pass { color: var(--ink-good); }
+  .out .fail { color: var(--ink-bad); }
+  .out .info { color: var(--ink-faint); }
+  .out .err { color: var(--ink-bad); }
+  .more { padding: 0; font: inherit; color: var(--ink-faint); text-decoration: underline dotted; }
+  .exit { padding-left: 16px; color: var(--ink-bad); }
+  .approval { display: flex; align-items: center; gap: 10px; margin: 8px 0 4px 16px; padding: 10px 10px 10px 14px; border-radius: 12px; background: rgb(255 201 92 / 0.08); box-shadow: inset 0 0 0 1px rgb(255 201 92 / 0.4); font-family: var(--sans); animation: appear 0.25s ease-out; }
+  .approval-text { flex: 1; min-width: 0; }
+  .approval strong { display: block; font-size: 13px; line-height: 19px; font-weight: 500; color: var(--ink-warn); }
+  .approval span { font-size: 12px; line-height: 17px; color: var(--ink-muted); }
+  .approval button { height: 32px; padding: 0 16px; border-radius: 9999px; font-size: 13px; font-weight: 500; }
+  .approval .deny { background: rgb(255 255 255 / 0.1); color: var(--ink-fg); }
+  .approval .deny:hover { background: rgb(255 255 255 / 0.16); }
+  .approval .approve { background: var(--ink-fg); color: var(--ink); }
+  .approval button:disabled { opacity: 0.5; cursor: default; }
+  .answer { padding-left: 16px; font-family: var(--sans); color: var(--ink-warn); }
+  .answer.yes { color: var(--ink-muted); }
+  .note { display: flex; align-items: center; gap: 8px; margin: 10px 0; color: var(--ink-good); }
+  .note svg { width: 14px; height: 14px; }
+  .note .counts { color: var(--ink-faint); }
+  .note.bad, .note.stop { color: var(--ink-bad); }
+  .note.compact { color: var(--accent); }
+  .verify { margin: 16px 0 6px; padding: 10px 14px; border-radius: 12px; background: rgb(95 211 141 / 0.1); font-family: var(--sans); color: var(--ink-good); }
+  .verify.fail { background: rgb(255 139 133 / 0.1); color: var(--ink-bad); }
+  .term-status { display: flex; align-items: center; gap: 10px; height: 38px; padding: 0 16px; border-top: 1px solid var(--ink-line); font-size: 12px; color: var(--ink-muted); }
+  .term-status .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: blink 1s ease-in-out infinite; }
+  .term-status[data-kind="waiting"] .dot { background: var(--ink-warn); }
+  .term-status[data-kind="waiting"] { color: var(--ink-warn); }
+  .term-status[data-kind="done"] .dot { background: var(--ink-good); animation: none; }
+  .term-status[data-kind="failed"] .dot { background: var(--ink-bad); animation: none; }
+  .term-status .spacer { flex: 1; }
+  #status-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #clock { flex: none; font-variant-numeric: tabular-nums; }
+
+  .repo { display: flex; flex-direction: column; min-height: 0; padding: 0; overflow: hidden; }
+  .repo-head { display: flex; align-items: baseline; gap: 10px; padding: 14px 18px 8px; }
+  .repo-head strong { font-weight: 500; }
+  #repo-path { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: rtl; font: 12px var(--mono); color: var(--faint); }
+  .tree { display: grid; gap: 1px; margin: 0; padding: 0 10px 10px; list-style: none; border-bottom: 1px solid var(--line); }
+  .tree li { display: flex; align-items: center; gap: 8px; height: 25px; padding: 0 8px; border-radius: 8px; font: 12px var(--mono); color: var(--muted); transition: color 0.3s; }
+  .tree li svg { flex: none; width: 13px; height: 13px; color: var(--faint); }
+  .tree .dir { color: var(--faint); }
+  .tree li.read { color: var(--fg); }
+  .tree .seen { opacity: 0; transition: opacity 0.3s; }
+  .tree li.read .seen { opacity: 1; }
+  .tree li.changed { background: var(--card); color: var(--fg); }
+  .tree .counts { margin-left: auto; font: 500 11px var(--sans); white-space: nowrap; }
+  .add { color: var(--good); }
+  .del { color: var(--bad); }
+  .tag { padding: 0 6px; border-radius: 5px; background: var(--secondary); font: 600 10px/17px var(--sans); color: var(--muted); }
+  .tag.added { background: var(--good-soft); color: var(--good); }
+  .diffs { flex: 1; display: grid; align-content: start; gap: 10px; min-height: 0; overflow: auto; padding: 12px; }
+  .file-diff { overflow: hidden; border-radius: 12px; box-shadow: inset 0 0 0 1px var(--line); animation: appear 0.3s ease-out; }
+  .file-head { display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 12px; border-bottom: 1px solid var(--line); background: var(--card); font: 12px var(--mono); }
+  .file-head .counts { margin-left: auto; font: 500 12px var(--sans); }
+  table.diff { width: 100%; border-collapse: collapse; font: 12px/20px var(--mono); }
+  .diff td { padding: 0; vertical-align: top; }
+  .diff .no { width: 1%; min-width: 34px; padding: 0 8px; text-align: right; color: var(--faint); user-select: none; }
+  .diff .code { padding: 0 12px 0 6px; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .diff .sign { display: inline-block; width: 14px; color: var(--faint); user-select: none; }
+  .diff tr.added { background: #e9f9ee; }
+  .diff tr.added .no { background: #d2f4dc; }
+  .diff tr.added .sign { color: var(--good); }
+  .diff tr.removed { background: #fdeceb; }
+  .diff tr.removed .no { background: #fbd9d7; }
+  .diff tr.removed .sign { color: var(--bad); }
+  .diff tr.hunk td { padding: 2px 12px; background: var(--card); color: var(--faint); }
+  .token.comment { color: #6e7781; }
+  .token.keyword { color: #cf222e; }
+  .token.string, .token.template-string { color: #0a3069; }
+  .token.number, .token.boolean { color: #0550ae; }
+  .token.function { color: #8250df; }
+  .token.class-name, .token.builtin { color: #953800; }
+  .result { display: flex; align-items: center; gap: 12px; margin: 0 12px 12px; padding: 12px 12px 12px 16px; border-radius: 14px; background: var(--good-soft); animation: appear 0.3s ease-out; }
+  .result.fail { background: var(--bad-soft); }
+  .result svg { flex: none; width: 18px; height: 18px; color: var(--good); }
+  .result.fail svg { color: var(--bad); }
+  .result-text { flex: 1; min-width: 0; }
+  .result-text strong { display: block; font-weight: 500; }
+  .result-text span { font-size: 13px; color: var(--muted); }
+
+  @media (max-width: 1100px) {
+    .surface { height: auto; }
+    .workspace { grid-template-columns: minmax(0, 1fr); }
+    .hero { grid-column: auto; }
+    .terminal { height: 560px; }
+    .repo { height: 560px; }
+    .hero-cards { grid-template-columns: minmax(0, 1fr); }
+  }
+</style>
+</head>
+<body>
+<header class="site">
+  <a class="logo" href="https://x.ai" target="_blank" rel="noopener" aria-label="SpaceXAI"><svg viewBox="0 0 759 290.2" aria-hidden="true"><g transform="translate(-674.5,-388.5)"><path d="M1433.19 388.934C1345.69 396.068 1001.73 438.71 763.235 678.467H674.732L684.62 668.612C734.53 620.395 955.373 416.045 1433.19 388.668V388.934Z"/><path d="M1133.66 678.467H1064.29L927.618 578.979C940.213 571.058 952.888 563.515 965.603 556.33L1133.66 678.467Z"/><path d="M1022.8 678.468H953.463L932.43 663.169H814.998C823.265 655.828 831.635 648.702 840.092 641.784H902.996L870.444 618.106C882.079 609.448 893.843 601.155 905.701 593.211L1022.8 678.468Z"/><path d="M770.433 495.02L823.901 533.876C810.594 541.712 798.139 549.468 786.514 557.055L701.158 494.986L770.433 495.02Z"/></g></svg></a>
+  <nav class="crumbs"><span>Cookbook</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg><h1>Bug Report to Fix</h1></nav>
+  <span class="models">grok-4.7 with the shell tool</span>
+  <a class="pill pill-secondary pill-sm" href="https://github.com/xai-org/xai-cookbook/tree/main/examples/bug-report-to-fix" target="_blank" rel="noopener">View code</a>
+</header>
+
+<main class="surface">
+  <div class="workspace">
+    <aside class="panel rail">
+      <div class="rail-head"><p class="label">Bug report</p><span class="state" id="state" hidden></span></div>
+      <form id="form">
+        <div class="composer" id="composer">
+          <div class="samples" id="samples"></div>
+          <p class="or">Or describe your own</p>
+          <textarea id="report" class="report-field" aria-label="Bug report" placeholder="What went wrong, and what should have happened?"></textarea>
+        </div>
+        <article class="issue" id="issue" hidden><h2 id="issue-title"></h2><p id="issue-body"></p></article>
+        <button id="go" class="pill pill-primary"></button>
+      </form>
+      <section class="ledger" id="ledger" hidden>
+        <div class="ledger-head"><p class="label">Turns</p><span>input tokens and how much was cached</span></div>
+        <ol class="turns" id="turns"></ol>
+        <div class="totals">
+          <div class="total"><strong id="total-cost">$0.00</strong><span>cost</span></div>
+          <div class="total"><strong id="total-cached">0%</strong><span>cached</span></div>
+          <div class="total"><strong id="total-time">0:00</strong><span>time</span></div>
+        </div>
+        <div class="context"><span id="context-label"></span><div class="bar"><i id="context-bar"></i></div></div>
+      </section>
+    </aside>
+
+    <section class="panel hero" id="hero">
+      <h2>Describe a bug, and watch Grok fix it</h2>
+      <p>Grok works in a fresh copy of tiny-checkout, the checkout code of a small store. It reads the repo's skill, reproduces the bug with a failing test, fixes the code, and reruns the tests until they pass. A run takes about a minute.</p>
+      <div class="hero-cards">
+        <div class="hero-card"><p class="label">tiny-checkout</p><ul class="mini-tree" id="hero-tree"></ul></div>
+        <div class="hero-card">
+          <p class="label">Runs right away, inside the copy</p>
+          <div class="chips" id="allowed"></div>
+          <p class="label">Asks you first</p>
+          <p class="hint">Everything else, like rm, git, or anything with a pipe or a redirect. If you deny it, Grok is told it didn't run.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="terminal" id="terminal" hidden>
+      <div class="term-bar"><span class="lights" aria-hidden="true"><i style="background: #ff5f57"></i><i style="background: #febc2e"></i><i style="background: #28c840"></i></span><span>tiny-checkout</span><span class="spacer"></span><span id="turn-label"></span></div>
+      <div class="log" id="log"></div>
+      <div class="term-status" id="status"><span class="dot"></span><span id="status-text"></span><span class="spacer"></span><span id="clock"></span></div>
+    </section>
+
+    <section class="panel repo" id="repo" hidden>
+      <div class="repo-head"><strong>Repo</strong><span id="repo-path"></span></div>
+      <ul class="tree" id="tree"></ul>
+      <div class="diffs" id="diffs"></div>
+      <div class="result" id="result" hidden></div>
+    </section>
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1/prism.min.js" data-manual></script>
+<script>
+  const $ = (id) => document.getElementById(id);
+  const ICONS = {
+    play: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3.2v9.6L12.5 8z" fill="currentColor" stroke="none"/></svg>',
+    stop: '<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="4" y="4" width="8" height="8" rx="1.5" fill="currentColor" stroke="none"/></svg>',
+    plus: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3.5v9M3.5 8h9"/></svg>',
+    file: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 1.8h5l3 3v9.4H4z"/><path d="M9 1.8v3h3"/></svg>',
+    eye: '<svg class="seen" viewBox="0 0 16 16" aria-label="Read"><path d="M1.5 8s2.4-4.5 6.5-4.5S14.5 8 14.5 8 12.1 12.5 8 12.5 1.5 8 1.5 8z"/><circle cx="8" cy="8" r="1.8"/></svg>',
+    pencil: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10.5 2.5l3 3L6 13l-3.5.5L3 10z"/></svg>',
+    check: '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5"/><path d="M5.2 8.2l2 2 3.6-4"/></svg>',
+    cross: '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5"/><path d="M5.8 5.8l4.4 4.4M10.2 5.8l-4.4 4.4"/></svg>',
+    download: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.5v8M4.5 7 8 10.5 11.5 7M2.5 13.5h11"/></svg>',
+  };
+  // Command output longer than this many lines is shown as its start and end, with the rest a click away.
+  const LONG_OUTPUT = 24;
+  let setup = { samples: [], files: [], allowed: [] };
+  let mode = "idle";
+  let events;
+  let run;
+  let commands = new Map();
+  let diffs = new Map();
+  let thought;
+  let say;
+
+  init();
+
+  async function init() {
+    setMode("idle");
+    setup = await (await fetch("/api/setup")).json();
+    $("samples").innerHTML = setup.samples.map((sample, index) => `<button type="button" class="sample" data-index="${index}"><strong>${escapeHtml(sample.title)}</strong><span>${escapeHtml(sample.body)}</span></button>`).join("");
+    $("samples").querySelectorAll(".sample").forEach((button) => {
+      button.onclick = () => {
+        $("report").value = reportText(setup.samples[button.dataset.index]);
+        start();
+      };
+    });
+    $("hero-tree").innerHTML = setup.files.map((path) => `<li>${pathHtml(path)}</li>`).join("");
+    $("allowed").innerHTML = setup.allowed.map((command) => `<span class="chip">${escapeHtml(command)}</span>`).join("");
+    if (!$("report").value) $("report").value = reportText(setup.samples[0]);
+  }
+
+  $("form").onsubmit = (event) => {
+    event.preventDefault();
+    if (mode === "running") return stop();
+    if (mode === "finished") return setMode("idle");
+    start();
+  };
+
+  async function start() {
+    const report = $("report").value.trim();
+    if (!report) return $("report").focus();
+    reset(report);
+    try {
+      const response = await fetch("/api/runs", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ report }) });
+      if (!response.ok) throw new Error(await response.text());
+      const { id } = await response.json();
+      listen(new EventSource(`/api/events?run=${id}`));
+    } catch (error) {
+      finish("failed", error.message);
+    }
+  }
+
+  function listen(source) {
+    events = source;
+    const on = (name, handler) => source.addEventListener(name, (message) => handler(JSON.parse(message.data)));
+
+    on("start", ({ dir, files, compactAt }) => {
+      run.compactAt = compactAt;
+      $("repo-path").textContent = `${dir}/repo`;
+      renderTree(files);
+      append(element("div", "boot", `Copied tiny-checkout to ${escapeHtml(dir)}/repo`));
+    });
+    on("turn", ({ turn }) => {
+      endThought();
+      say = undefined;
+      run.turn = turn;
+      $("turn-label").textContent = `turn ${turn}`;
+      append(element("div", "turn-sep", `<span>Turn ${turn}</span><i></i><span class="usage" data-turn="${turn}"></span>`));
+      setStatus(`Turn ${turn} · Grok is thinking`);
+    });
+    on("reasoning", ({ text }) => {
+      if (!thought) {
+        const block = element("div", "thought live", '<button type="button" class="thought-head">Thinking</button><div class="thought-text"></div>');
+        block.querySelector(".thought-head").onclick = () => block.classList.toggle("open");
+        thought = { block, since: Date.now() };
+        append(block);
+      }
+      const box = thought.block.querySelector(".thought-text");
+      update(() => {
+        box.textContent += text;
+        box.scrollTop = box.scrollHeight;
+      });
+    });
+    on("text", ({ text }) => {
+      endThought();
+      if (!say) say = append(element("div", "say"));
+      update(() => (say.textContent += text));
+    });
+    on("command", ({ id, command }) => {
+      endThought();
+      say = undefined;
+      const entry = element("div", "cmd", '<div class="cmd-line"><span class="prompt">$</span><span class="cmd-text"></span><span class="cursor"></span></div>');
+      entry.querySelector(".cmd-text").textContent = command;
+      commands.set(id, entry);
+      append(entry);
+      markRead(command);
+      setStatus(`Running ${command}`);
+    });
+    on("approval", ({ id, token, command, reason }) => {
+      const card = element("div", "approval", '<div class="approval-text"><strong>Needs your approval</strong><span></span></div><button type="button" class="deny">Deny</button><button type="button" class="approve">Approve</button>');
+      card.querySelector("span").textContent = `It doesn't run on its own because ${reason}.`;
+      const answer = async (approve) => {
+        card.querySelectorAll("button").forEach((button) => (button.disabled = true));
+        await fetch("/api/approvals", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ token, approve }) });
+      };
+      card.querySelector(".deny").onclick = () => answer(false);
+      card.querySelector(".approve").onclick = () => answer(true);
+      update(() => commands.get(id)?.append(card), true);
+      setStatus(`Waiting for you to approve or deny ${command}`, "waiting");
+    });
+    on("answered", ({ id, approved }) => {
+      const entry = commands.get(id);
+      update(() => {
+        entry?.querySelector(".approval")?.remove();
+        entry?.append(element("div", `answer ${approved ? "yes" : ""}`, approved ? "Approved. Running it in the copy." : "Denied. Grok was told the command didn't run."));
+      });
+      setStatus(approved ? "Running the approved command" : `Turn ${run.turn} · Grok is thinking`);
+    });
+    on("result", ({ id, stdout, stderr, exitCode, timedOut, denied }) => {
+      const entry = commands.get(id);
+      if (!entry) return;
+      update(() => {
+        entry.querySelector(".cursor")?.remove();
+        if (!denied) entry.append(outputBlock(stdout, stderr));
+        if (timedOut) entry.append(element("div", "exit", "Timed out"));
+        else if (exitCode && !denied) entry.append(element("div", "exit", `Exit code ${exitCode}`));
+      });
+      setStatus(`Turn ${run.turn} · Grok is thinking`);
+    });
+    on("write", ({ path, error }) => {
+      endThought();
+      say = undefined;
+      if (error) append(element("div", "note bad", `${ICONS.cross}<span>Couldn't write ${escapeHtml(path)}: ${escapeHtml(error)}</span>`));
+      else append(element("div", "note", `${ICONS.pencil}<span>Wrote ${escapeHtml(path)}</span><span class="counts" data-path="${escapeHtml(path)}"></span>`));
+      setStatus(`Wrote ${path}`);
+    });
+    on("changes", ({ changes }) => renderChanges(changes));
+    on("usage", (usage) => {
+      run.cost += usage.cost;
+      run.input += usage.inputTokens;
+      run.cached += usage.cachedTokens;
+      run.context = usage.inputTokens;
+      const label = $("log").querySelector(`.usage[data-turn="${usage.turn}"]`);
+      if (label) label.textContent = `${tokens(usage.inputTokens)} tokens in · ${percent(usage.cachedTokens, usage.inputTokens)} cached`;
+      addTurnRow(usage);
+      updateTotals();
+    });
+    on("compacted", ({ messages, tokens: count, cost }) => {
+      run.cost += cost;
+      append(element("div", "note compact", `<span>⇣ Compacted ${plural(messages, "message")}, ${tokens(count)} tokens, into one item for the next turn</span>`));
+      const row = element("li", "turn-row compaction", `<span class="n">⇣</span><span>Compacted ${plural(messages, "message")}</span><span class="cost">${money(cost)}</span>`);
+      $("turns").append(row);
+      updateTotals();
+    });
+    on("verified", ({ pass, output }) => {
+      const count = output.match(/ℹ tests (\d+)/)?.[1];
+      const failed = Number(output.match(/ℹ fail (\d+)/)?.[1] ?? 0);
+      const detail = count ? (pass ? `all ${count} tests pass` : `${failed} of ${count} tests fail`) : pass ? "the tests pass" : "the tests fail";
+      append(element("div", `verify ${pass ? "" : "fail"}`, `${pass ? "✔" : "✖"} The app ran node --test itself to check: ${detail}.`));
+    });
+    on("done", (fix) => {
+      showResult(fix);
+      finish(fix.testsPass && fix.changes.length ? "fixed" : "unfixed");
+    });
+    on("failure", ({ message }) => finish("failed", message));
+    source.onerror = () => finish("failed", "Lost the connection to the server.");
+  }
+
+  function stop() {
+    append(element("div", "note stop", `${ICONS.stop}<span>Stopped. The server cancelled the request and any running command.</span>`));
+    finish("stopped");
+  }
+
+  // Ends the run on the page, however it ended.
+  function finish(state, message) {
+    events?.close();
+    events = undefined;
+    endThought();
+    clearInterval(run?.timer);
+    document.querySelectorAll(".cursor, .approval").forEach((node) => node.remove());
+    if (message) append(element("div", "note bad", `${ICONS.cross}<span>${escapeHtml(message)}</span>`));
+    const labels = { fixed: "Fixed", unfixed: "Not fixed", stopped: "Stopped", failed: "Failed" };
+    setState(state, labels[state]);
+    setStatus(state === "fixed" ? `Done in ${plural(run?.turn ?? 0, "turn")}` : labels[state], state === "fixed" ? "done" : "failed");
+    setMode("finished");
+  }
+
+  function reset(report) {
+    events?.close();
+    commands = new Map();
+    diffs = new Map();
+    thought = undefined;
+    say = undefined;
+    run = { started: Date.now(), turn: 0, cost: 0, input: 0, cached: 0, context: 0, compactAt: 0 };
+    run.timer = setInterval(tick, 1000);
+    const [title, ...rest] = report.split("\n");
+    $("issue-title").textContent = title;
+    $("issue-body").textContent = rest.join("\n").trim();
+    $("issue-body").hidden = !rest.join("").trim();
+    $("hero").hidden = true;
+    $("terminal").hidden = false;
+    $("repo").hidden = false;
+    $("ledger").hidden = true;
+    $("turns").replaceChildren();
+    $("log").replaceChildren();
+    $("diffs").replaceChildren();
+    $("result").hidden = true;
+    $("turn-label").textContent = "";
+    $("repo-path").textContent = "";
+    renderTree(setup.files);
+    updateTotals();
+    tick();
+    setState("working", "Fixing");
+    setStatus("Copying the repo");
+    setMode("running");
+  }
+
+  function setMode(next) {
+    mode = next;
+    $("composer").hidden = mode !== "idle";
+    $("issue").hidden = mode === "idle";
+    $("go").className = `pill ${mode === "running" ? "pill-secondary" : "pill-primary"}`;
+    $("go").innerHTML = mode === "running" ? `${ICONS.stop}Stop` : mode === "finished" ? `${ICONS.plus}New report` : `${ICONS.play}Fix it`;
+    if (mode === "idle" && !$("report").value && setup.samples[0]) $("report").value = reportText(setup.samples[0]);
+  }
+
+  function setState(kind, text) {
+    $("state").className = `state ${kind}`;
+    $("state").textContent = text;
+    $("state").hidden = false;
+  }
+
+  function setStatus(text, kind = "working") {
+    $("status-text").textContent = text;
+    $("status").dataset.kind = kind;
+  }
+
+  function tick() {
+    const seconds = Math.floor((Date.now() - run.started) / 1000);
+    const clock = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+    $("clock").textContent = `${money(run.cost)} · ${clock}`;
+    $("total-time").textContent = clock;
+  }
+
+  function endThought() {
+    if (!thought) return;
+    const seconds = Math.max(1, Math.round((Date.now() - thought.since) / 1000));
+    thought.block.classList.replace("live", "done");
+    thought.block.querySelector(".thought-head").textContent = `Thought for ${plural(seconds, "second")}`;
+    thought = undefined;
+  }
+
+  // The log follows new output, unless it's been scrolled up to read something earlier. Where it was
+  // is measured before the change, since a long output would put the end out of reach.
+  function update(change, always = false) {
+    const log = $("log");
+    const atEnd = log.scrollHeight - log.scrollTop - log.clientHeight < 80;
+    const result = change();
+    if (always || atEnd) log.scrollTop = log.scrollHeight;
+    return result;
+  }
+
+  function append(node) {
+    return update(() => $("log").appendChild(node));
+  }
+
+  // Colors test results, folds node --test's summary into one line, and shortens long output. Grok gets
+  // all of it, but the page leaves out stack traces, which push a failure's diff out of view.
+  function outputBlock(stdout, stderr) {
+    const lines = [...splitLines(stdout).map((text) => ({ text })), ...splitLines(stderr).map((text) => ({ text, error: true }))];
+    const summary = lines.filter(({ text }) => /^ℹ (tests|pass|fail|duration_ms) /.test(text)).map(({ text }) => text.slice(2).replace("duration_ms ", "").replace(/^([\d.]+)$/, (ms) => `${Math.round(ms)} ms`));
+    let stack = false;
+    const kept = lines.filter(({ text }) => {
+      if (/^\s+at /.test(text)) stack = true;
+      else if (!/^\s/.test(text)) stack = false;
+      return !stack && !text.startsWith("ℹ ");
+    });
+    if (summary.length) kept.push({ text: `ℹ ${summary.join(" · ")}`, info: true });
+    const block = element("pre", "out");
+    const show = (part) => part.map((line) => `<span class="${lineClass(line)}">${escapeHtml(line.text)}</span>`).join("\n");
+    if (kept.length <= LONG_OUTPUT) {
+      block.innerHTML = show(kept);
+    } else {
+      block.innerHTML = `${show(kept.slice(0, 8))}\n<button type="button" class="more">${kept.length - 20} more lines</button>\n${show(kept.slice(-12))}`;
+      block.querySelector(".more").onclick = () => (block.innerHTML = show(kept));
+    }
+    return block;
+  }
+
+  function lineClass({ text, error, info }) {
+    const start = text.trimStart();
+    if (start.startsWith("✔")) return "pass";
+    if (start.startsWith("✖") || /^ℹ.*fail [1-9]/.test(start)) return "fail";
+    if (info || start.startsWith("ℹ")) return "info";
+    return error ? "err" : "";
+  }
+
+  function renderTree(files) {
+    $("tree").innerHTML = files.map((path) => `<li data-path="${escapeHtml(path)}">${ICONS.file}<span>${pathHtml(path)}</span>${ICONS.eye}<span class="counts"></span></li>`).join("");
+  }
+
+  // Marks every file a command names, so the tree shows what Grok has looked at.
+  function markRead(command) {
+    for (const row of $("tree").querySelectorAll("li")) {
+      const path = row.dataset.path;
+      if (command.split(/\s+/).some((word) => word.replace(/^["']|["']$/g, "").replace(/^\.\//, "") === path)) row.classList.add("read");
+    }
+  }
+
+  function renderChanges(changes) {
+    let latest;
+    for (const change of changes) {
+      let row = $("tree").querySelector(`li[data-path="${CSS.escape(change.path)}"]`);
+      if (!row) {
+        row = element("li", "", `${ICONS.file}<span>${pathHtml(change.path)}</span>${ICONS.eye}<span class="counts"></span>`);
+        row.dataset.path = change.path;
+        $("tree").append(row);
+      }
+      row.classList.add("changed");
+      row.querySelector(".counts").innerHTML = `${change.status === "added" ? '<span class="tag added">new</span> ' : ""}${counts(change)}`;
+      $("log").querySelectorAll(`.note .counts[data-path="${CSS.escape(change.path)}"]`).forEach((label) => (label.innerHTML = counts(change)));
+      if (diffs.get(change.path)?.patch === change.patch) continue;
+      const card = fileDiff(change);
+      const old = diffs.get(change.path)?.card;
+      if (old) old.replaceWith(card);
+      else $("diffs").append(card);
+      diffs.set(change.path, { patch: change.patch, card });
+      latest = card;
+    }
+    for (const [path, { card }] of diffs) {
+      if (changes.some((change) => change.path === path)) continue;
+      card.remove();
+      diffs.delete(path);
+      $("tree").querySelector(`li[data-path="${CSS.escape(path)}"]`)?.classList.remove("changed");
+    }
+    [...diffs.values()].sort((a, b) => (a.card.dataset.path < b.card.dataset.path ? -1 : 1)).forEach(({ card }) => $("diffs").append(card));
+    latest?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }
+
+  // A unified diff as a table, with line numbers from the hunk headers.
+  function fileDiff(change) {
+    const card = element("div", "file-diff", `<div class="file-head"><span>${escapeHtml(change.path)}</span>${change.status === "added" ? '<span class="tag added">new</span>' : ""}<span class="counts">${counts(change)}</span></div>`);
+    card.dataset.path = change.path;
+    const rows = [];
+    let before = 0;
+    let after = 0;
+    for (const line of change.patch.split("\n").slice(2)) {
+      if (!line) continue;
+      if (line.startsWith("@@")) {
+        const [, oldStart, newStart] = line.match(/^@@ -(\d+)(?:,\d+)? \+(\d+)/) ?? [];
+        before = Number(oldStart);
+        after = Number(newStart);
+        rows.push(`<tr class="hunk"><td colspan="3">${escapeHtml(line)}</td></tr>`);
+        continue;
+      }
+      const sign = line[0];
+      const code = highlight(line.slice(1));
+      if (sign === "+") rows.push(`<tr class="added"><td class="no"></td><td class="no">${after++}</td><td class="code"><span class="sign">+</span>${code}</td></tr>`);
+      else if (sign === "-") rows.push(`<tr class="removed"><td class="no">${before++}</td><td class="no"></td><td class="code"><span class="sign">−</span>${code}</td></tr>`);
+      else rows.push(`<tr><td class="no">${before++}</td><td class="no">${after++}</td><td class="code"><span class="sign"> </span>${code}</td></tr>`);
+    }
+    card.insertAdjacentHTML("beforeend", `<table class="diff">${rows.join("")}</table>`);
+    return card;
+  }
+
+  // Prism loads from a CDN. If it didn't load, the code still shows, just without colors.
+  function highlight(code) {
+    return window.Prism ? Prism.highlight(code, Prism.languages.javascript, "javascript") : escapeHtml(code);
+  }
+
+  function addTurnRow({ turn, inputTokens, cachedTokens, cost }) {
+    $("ledger").hidden = false;
+    const share = inputTokens ? (cachedTokens / inputTokens) * 100 : 0;
+    const row = element("li", "turn-row", `<span class="n">${turn}</span><span>${tokens(inputTokens)}</span><span class="bar"><i></i></span><span class="pct">${Math.round(share)}%</span><span class="cost">${money(cost)}</span>`);
+    $("turns").append(row);
+    requestAnimationFrame(() => (row.querySelector("i").style.width = `${share}%`));
+  }
+
+  function updateTotals() {
+    $("total-cost").textContent = money(run.cost);
+    $("total-cached").textContent = percent(run.cached, run.input);
+    $("clock").textContent = `${money(run.cost)} · ${$("total-time").textContent}`;
+    if (!run.compactAt) return;
+    $("context-label").textContent = `Last input ${tokens(run.context)} tokens. Grok compacts the conversation past ${tokens(run.compactAt)}.`;
+    $("context-bar").style.width = `${Math.min(100, (run.context / run.compactAt) * 100)}%`;
+  }
+
+  function showResult(fix) {
+    const pass = fix.testsPass && fix.changes.length;
+    const files = plural(fix.changes.length, "file");
+    const text = pass ? "Fixed, and every test passes" : fix.changes.length ? "Some tests still fail" : "No files changed";
+    const detail = `${files} changed · ${plural(fix.turns, "turn")} · ${fix.seconds} s · ${money(fix.cost)}`;
+    $("result").className = `result ${pass ? "" : "fail"}`;
+    $("result").innerHTML = `${pass ? ICONS.check : ICONS.cross}<div class="result-text"><strong>${text}</strong><span>${detail}</span></div>${fix.patch ? `<a class="pill pill-secondary pill-sm" href="${fix.patch}" download>${ICONS.download}fix.patch</a>` : ""}`;
+    $("result").hidden = false;
+  }
+
+  function counts({ added, removed }) {
+    return `<span class="add">+${added}</span> <span class="del">−${removed}</span>`;
+  }
+
+  function pathHtml(path) {
+    const slash = path.lastIndexOf("/");
+    return slash < 0 ? escapeHtml(path) : `<span class="dir">${escapeHtml(path.slice(0, slash + 1))}</span>${escapeHtml(path.slice(slash + 1))}`;
+  }
+
+  function reportText(sample) {
+    return `${sample.title}\n\n${sample.body}`;
+  }
+
+  function element(tag, className, html = "") {
+    const node = document.createElement(tag);
+    node.className = className;
+    node.innerHTML = html;
+    return node;
+  }
+
+  function splitLines(text) {
+    const trimmed = text.replace(/\s+$/, "");
+    return trimmed ? trimmed.split("\n") : [];
+  }
+
+  function tokens(count) {
+    return count >= 1000 ? `${(count / 1000).toFixed(1)}k` : String(count);
+  }
+
+  function percent(part, whole) {
+    return `${whole ? Math.round((part / whole) * 100) : 0}%`;
+  }
+
+  function money(dollars) {
+    return `$${dollars.toFixed(dollars < 0.1 ? 3 : 2)}`;
+  }
+
+  function plural(count, word) {
+    return `${count} ${word}${count === 1 ? "" : "s"}`;
+  }
+
+  function escapeHtml(text) {
+    return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+</script>
+</body>
+</html>

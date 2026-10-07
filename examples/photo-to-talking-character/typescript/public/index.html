@@ -1,0 +1,695 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Photo to Talking Character</title>
+<style>
+  /* The look every SpaceXAI Cookbook page shares, after x.ai. */
+  :root {
+    --bg: #fff;
+    --card: #f9f8f6;
+    --secondary: #f2f1ef;
+    --secondary-hover: #e9e8e5;
+    --tint: rgb(10 10 10 / 0.04);
+    --line: rgb(10 10 10 / 0.08);
+    --border: rgb(10 10 10 / 0.15);
+    --fg: #0a0a0a;
+    --muted: rgb(10 10 10 / 0.6);
+    --faint: rgb(10 10 10 / 0.36);
+    --accent: #ff6308;
+    --accent-soft: rgb(255 99 8 / 0.1);
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; font: 14px/22px var(--sans); background: var(--bg); color: var(--fg); -webkit-font-smoothing: antialiased; }
+  button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
+  a { color: inherit; }
+  svg { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  @keyframes blink { 50% { opacity: 0.3; } }
+  @keyframes pulse { to { background-color: var(--secondary-hover); } }
+  @keyframes fade { from { opacity: 0; } }
+
+  .site { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 12px; height: 60px; padding: 0 20px; background: rgb(255 255 255 / 0.85); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+  .logo { flex: none; margin-right: 4px; color: var(--fg); }
+  .logo svg { display: block; width: 52px; height: 20px; fill: currentColor; stroke: none; }
+  .crumbs { display: flex; align-items: center; gap: 8px; min-width: 0; color: var(--muted); white-space: nowrap; }
+  .crumbs svg { width: 12px; height: 12px; color: var(--faint); }
+  .crumbs h1 { margin: 0; overflow: hidden; text-overflow: ellipsis; font-size: inherit; line-height: inherit; font-weight: 500; color: var(--fg); }
+  .site .pill { flex: none; margin-left: auto; }
+  .models { flex: none; height: 26px; padding: 0 10px; border-radius: 9999px; box-shadow: inset 0 0 0 1px var(--line); font-size: 12px; font-weight: 500; line-height: 26px; color: var(--muted); }
+  .pill { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 40px; padding: 0 18px; border-radius: 9999px; font-size: 14px; font-weight: 500; white-space: nowrap; text-decoration: none; }
+  .pill-sm { height: 32px; padding: 0 14px; font-size: 13px; }
+  .pill-primary { background: var(--fg); color: #fff; }
+  .pill-primary:hover { background: #202329; }
+  .pill-secondary { background: var(--secondary); color: var(--fg); }
+  .pill-secondary:hover { background: var(--secondary-hover); }
+  .pill:disabled { opacity: 0.4; cursor: default; }
+  .pill svg { width: 14px; height: 14px; }
+  .field { min-width: 0; height: 40px; padding: 0 18px; border: 1px solid var(--border); border-radius: 9999px; background: var(--bg); color: var(--fg); font: inherit; outline: none; }
+  .field:focus { border-color: var(--fg); }
+  .field::placeholder { color: var(--faint); }
+  .surface { display: flex; flex-direction: column; gap: 8px; height: calc(100vh - 72px); min-height: 560px; margin: 0 12px 12px; padding: 8px; border-radius: 20px; background: var(--card); }
+  .panel { min-width: 0; padding: 20px 22px; border-radius: 16px; background: var(--bg); }
+  .label { margin: 0; font-size: 13px; font-weight: 500; color: var(--muted); }
+  @media (max-width: 900px) {
+    .models { display: none; }
+  }
+  @media (max-width: 640px) {
+    .site { padding: 0 16px; }
+    .crumbs > span, .crumbs > svg { display: none; }
+    .surface { margin: 0 8px 8px; }
+  }
+
+  /* Photo to Talking Character */
+  :root {
+    --bad: #e5484d;
+  }
+  .tone-0 { --tone: #ff6308; --tone-soft: rgb(255 99 8 / 0.1); }
+  .tone-1 { --tone: #7c3aed; --tone-soft: rgb(124 58 237 / 0.1); }
+  .studio { display: grid; grid-template-columns: 380px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); gap: 8px; }
+
+  .cast { display: flex; flex-direction: column; gap: 12px; overflow: auto; }
+  form { display: grid; gap: 10px; }
+  #controls { display: grid; gap: 10px; min-width: 0; margin: 0; padding: 0; border: 0; }
+  .card { display: grid; grid-template-columns: 84px minmax(0, 1fr); gap: 12px; padding: 12px; border-radius: 16px; background: var(--card); }
+  .portrait { position: relative; display: grid; place-items: center; width: 84px; height: 84px; overflow: hidden; border: 1.5px dashed var(--border); border-radius: 12px; background: var(--bg); color: var(--faint); font-size: 11px; line-height: 14px; text-align: center; cursor: pointer; }
+  .portrait:hover, .portrait.over { border-color: var(--tone); background: var(--tone-soft); color: var(--tone); }
+  .portrait.filled { border: 0; }
+  .portrait input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+  .portrait img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .portrait img:not([src]) { display: none; }
+  .portrait svg { display: block; width: 22px; height: 22px; margin: 0 auto 4px; }
+  .portrait.filled span { display: none; }
+  .card-main { display: grid; align-content: space-between; min-width: 0; }
+  .card-head { display: flex; align-items: center; height: 22px; }
+  .role { font-weight: 500; }
+  .tags { display: flex; gap: 4px; }
+  .tag { padding: 0 6px; border-radius: 6px; background: var(--tone-soft); color: var(--tone); font: 500 11px/20px var(--mono); }
+  .remove { display: grid; place-items: center; width: 24px; height: 24px; margin-left: auto; border-radius: 50%; color: var(--faint); }
+  .remove:hover { background: var(--secondary); color: var(--fg); }
+  .remove svg { width: 12px; height: 12px; }
+  .voice-row { display: flex; gap: 6px; }
+  .voice-row select { flex: 1; min-width: 0; height: 34px; padding: 0 30px 0 14px; border: 1px solid var(--border); border-radius: 9999px; background: var(--bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 6l4 4 4-4' fill='none' stroke='%23999' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 12px center / 12px; color: var(--fg); font: inherit; appearance: none; outline: none; cursor: pointer; }
+  .hear { display: grid; place-items: center; flex: none; width: 34px; height: 34px; border-radius: 50%; background: var(--secondary); color: var(--fg); }
+  .hear:hover { background: var(--secondary-hover); }
+  .hear svg { width: 12px; height: 12px; fill: currentColor; stroke: none; }
+  .hear.loading { animation: pulse 0.6s ease-in-out infinite alternate; }
+  .hear.playing { background: var(--tone); color: #fff; }
+  .line { grid-column: 1 / -1; width: 100%; height: 66px; padding: 9px 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg); color: var(--fg); font: inherit; resize: none; outline: none; }
+  .line::placeholder { color: var(--faint); }
+  .line:focus, .voice-row select:focus { border-color: var(--fg); }
+  .add { display: flex; align-items: center; justify-content: center; gap: 6px; height: 44px; border: 1.5px dashed var(--border); border-radius: 16px; color: var(--muted); font-weight: 500; }
+  .add:hover { border-color: var(--fg); color: var(--fg); }
+  .add svg { width: 14px; height: 14px; }
+  fieldset:disabled .portrait, fieldset:disabled select { cursor: default; }
+  fieldset:disabled .remove, fieldset:disabled .add { display: none; }
+  .buttons { display: flex; gap: 8px; margin-top: 4px; }
+  .buttons .pill-primary { flex: 1; }
+  #go.stop { background: var(--secondary); color: var(--fg); }
+  .cost { margin: 0; font-size: 13px; color: var(--faint); }
+  #note { margin: 0; color: var(--bad); }
+  #note:empty { display: none; }
+  .result { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 14px; margin: 4px 0 0; padding-top: 16px; border-top: 1px solid var(--line); font-size: 13px; }
+  .result dt { color: var(--faint); }
+  .result dd { margin: 0; }
+  #saved { font-family: var(--mono); font-size: 12px; overflow-wrap: anywhere; }
+
+  .stage { display: grid; grid-template-rows: minmax(0, 1fr) auto auto; gap: 12px; min-height: 0; padding: 12px; }
+  .monitor { display: grid; place-items: center; min-height: 0; container-type: size; }
+  .screen { position: relative; width: min(100cqw, 100cqh * 16 / 9); aspect-ratio: 16 / 9; overflow: hidden; border-radius: 12px; background: radial-gradient(ellipse at 50% 110%, #2b2b2b, #0a0a0a 70%); color: #f2f1ef; }
+  .screen video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #0a0a0a; animation: fade 0.4s ease-out; }
+  .screen-note { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; padding: 0 24px; text-align: center; color: rgb(242 241 239 / 0.62); }
+  .screen-note p { max-width: 460px; margin: 0; }
+  .empty-title { margin: 0 0 8px !important; font-size: 28px; line-height: 34px; font-weight: 450; letter-spacing: -0.01em; color: #f2f1ef; }
+  .examples { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 18px; }
+  .examples button { display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 16px 0 6px; border-radius: 9999px; background: rgb(255 255 255 / 0.1); color: #f2f1ef; font-size: 13px; font-weight: 500; }
+  .examples button:hover { background: rgb(255 255 255 / 0.16); }
+  .examples img { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; }
+  .examples img + img { margin-left: -14px; }
+  .lineup { position: absolute; inset: 0; display: flex; align-items: flex-end; justify-content: center; gap: 6%; padding: 0 6% 12%; }
+  .actor { display: flex; flex-direction: column; align-items: center; gap: 16px; width: min(28%, 44cqh); }
+  .actor img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 16px; box-shadow: 0 24px 48px -20px rgb(0 0 0 / 0.9); animation: fade 0.4s ease-out; }
+  .bubble { position: relative; max-width: 120%; margin: 0; padding: 10px 16px; border-radius: 18px; background: #fff; color: var(--fg); font-size: clamp(12px, 1.5cqw, 16px); line-height: 1.4; text-align: center; overflow-wrap: anywhere; }
+  .bubble::after { content: ""; position: absolute; left: 50%; top: 100%; margin-left: -8px; border: 8px solid transparent; border-top-color: #fff; border-bottom: 0; }
+  .bubble:empty { display: none; }
+  .voice-name { display: flex; align-items: center; gap: 6px; font-size: 12px; line-height: 16px; color: rgb(242 241 239 / 0.62); }
+  .voice-name i { width: 6px; height: 6px; border-radius: 50%; background: var(--tone); }
+  .lineup.rendering .actor { animation: breathe 1.4s ease-in-out infinite alternate; }
+  .lineup.rendering .actor:nth-child(2) { animation-delay: 0.7s; }
+  @keyframes breathe { to { opacity: 0.55; } }
+  .render { position: absolute; left: 20px; right: 20px; bottom: 16px; display: grid; gap: 8px; font-size: 13px; line-height: 18px; color: rgb(242 241 239 / 0.8); font-variant-numeric: tabular-nums; }
+  .render-text { display: flex; justify-content: space-between; }
+  .render-bar { height: 3px; overflow: hidden; border-radius: 2px; background: rgb(255 255 255 / 0.16); }
+  .render-bar i { display: block; width: 0; height: 100%; border-radius: inherit; background: #fff; transition: width 0.8s ease; }
+  .tap { position: absolute; inset: 0; display: grid; place-items: center; width: 100%; }
+  .tap svg { width: 64px; height: 64px; padding: 22px 20px 22px 24px; border-radius: 50%; background: rgb(0 0 0 / 0.5); color: #fff; fill: #fff; stroke: none; }
+  .tap.playing svg { display: none; }
+
+  .transport { display: flex; align-items: center; gap: 12px; min-height: 36px; padding: 0 4px; }
+  #play { display: grid; place-items: center; flex: none; width: 36px; height: 36px; border-radius: 50%; background: var(--fg); color: #fff; }
+  #play:disabled { opacity: 0.2; cursor: default; }
+  #play svg { width: 12px; height: 12px; fill: currentColor; stroke: none; }
+  #timecode { flex: none; font: 12px var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+  .scrub { position: relative; flex: 1; height: 4px; border-radius: 2px; background: var(--secondary); }
+  .scrub.ready { cursor: pointer; }
+  .scrub i { position: absolute; left: 0; top: 0; bottom: 0; width: 0; border-radius: inherit; background: var(--fg); }
+
+  .request { height: 216px; overflow: auto; padding: 14px 18px 16px; border-radius: 12px; background: var(--card); }
+  .request-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 6px; }
+  .request-head .label { flex: 1; }
+  #params { font: 12px var(--mono); color: var(--faint); white-space: nowrap; }
+  #prompt { margin: 0; font-size: 13px; line-height: 22px; white-space: pre-wrap; }
+  .chip { display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 6px 0 2px; border-radius: 6px; background: var(--tone-soft); color: var(--tone); font: 500 11px/20px var(--mono); white-space: nowrap; vertical-align: 1px; }
+  .chip img { width: 16px; height: 16px; border-radius: 4px; object-fit: cover; }
+  .chip svg { width: 12px; height: 12px; margin-left: 2px; }
+  .refs { display: flex; flex-wrap: wrap; gap: 6px 32px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); font: 12px/20px var(--mono); }
+  .ref, .ref > span { display: flex; align-items: center; gap: 6px; }
+  .key { margin-right: 4px; color: var(--faint); }
+  .code { color: var(--tone); }
+
+  @media (max-width: 1000px) {
+    .surface { height: auto; }
+    .studio { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto; }
+    .stage { order: -1; }
+    .monitor { height: 54vw; }
+    .request { height: auto; }
+  }
+</style>
+</head>
+<body>
+<header class="site">
+  <a class="logo" href="https://x.ai" target="_blank" rel="noopener" aria-label="SpaceXAI"><svg viewBox="0 0 759 290.2" aria-hidden="true"><g transform="translate(-674.5,-388.5)"><path d="M1433.19 388.934C1345.69 396.068 1001.73 438.71 763.235 678.467H674.732L684.62 668.612C734.53 620.395 955.373 416.045 1433.19 388.668V388.934Z"/><path d="M1133.66 678.467H1064.29L927.618 578.979C940.213 571.058 952.888 563.515 965.603 556.33L1133.66 678.467Z"/><path d="M1022.8 678.468H953.463L932.43 663.169H814.998C823.265 655.828 831.635 648.702 840.092 641.784H902.996L870.444 618.106C882.079 609.448 893.843 601.155 905.701 593.211L1022.8 678.468Z"/><path d="M770.433 495.02L823.901 533.876C810.594 541.712 798.139 549.468 786.514 557.055L701.158 494.986L770.433 495.02Z"/></g></svg></a>
+  <nav class="crumbs"><span>Cookbook</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg><h1>Photo to Talking Character</h1></nav>
+  <span class="models">Grok Imagine video and built-in voices</span>
+  <a class="pill pill-secondary pill-sm" href="https://github.com/xai-org/xai-cookbook/tree/main/examples/photo-to-talking-character" target="_blank" rel="noopener">View code</a>
+</header>
+
+<main class="surface studio">
+  <aside class="panel cast">
+    <p class="label">Cast</p>
+    <form id="form">
+      <fieldset id="controls">
+        <div id="cards" class="cards"></div>
+        <button type="button" class="add" id="add"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg>Add a character who answers</button>
+      </fieldset>
+      <div class="buttons">
+        <button class="pill pill-primary" id="go">Make it talk</button>
+        <button type="button" class="pill pill-secondary" id="sample">Sample</button>
+      </div>
+      <p class="cost">About $1.40 and a minute for the sample</p>
+      <p id="note"></p>
+    </form>
+    <dl class="result" id="result" hidden>
+      <dt>Rendered in</dt><dd id="rendered"></dd>
+      <dt>Cost</dt><dd id="cost"></dd>
+      <dt>Saved in</dt><dd id="saved"></dd>
+    </dl>
+  </aside>
+
+  <section class="panel stage">
+    <div class="monitor">
+      <div class="screen" id="screen">
+        <div class="lineup" id="lineup"></div>
+        <div class="screen-note" id="screen-note">
+          <p class="empty-title">Make a picture talk</p>
+          <p>Add a drawing, a mascot, or a pet photo, pick a voice, and write a line. A second character can answer in another voice.</p>
+          <div class="examples"><button type="button" id="try"><img src="/sample-dog.jpg" alt=""><img src="/sample-cat.jpg" alt="">Try the dog and the cat</button></div>
+        </div>
+        <video id="video" playsinline hidden></video>
+        <button type="button" class="tap" id="tap" aria-label="Play or pause" hidden><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9.5-5.5z"/></svg></button>
+        <div class="render" id="render" hidden>
+          <div class="render-text"><span id="render-status"></span><span id="clock"></span></div>
+          <div class="render-bar"><i id="render-bar"></i></div>
+        </div>
+      </div>
+    </div>
+    <div class="transport">
+      <button type="button" id="play" disabled aria-label="Play"></button>
+      <span id="timecode">0:00 / 0:00</span>
+      <div class="scrub" id="scrub"><i id="scrub-bar"></i></div>
+      <a id="download" class="pill pill-secondary pill-sm" download hidden><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.5v8M4.5 7 8 10.5 11.5 7M2.5 13.5h11"/></svg>Download MP4</a>
+    </div>
+    <section class="request">
+      <div class="request-head"><p class="label">The request</p><span id="params"></span></div>
+      <p id="prompt"></p>
+      <div class="refs">
+        <span class="ref"><span class="key">reference_images</span><span id="ref-images"></span></span>
+        <span class="ref"><span class="key">reference_audios</span><span id="ref-audios"></span></span>
+      </div>
+    </section>
+  </section>
+</main>
+
+<template id="card">
+  <div class="card">
+    <label class="portrait">
+      <input type="file" accept="image/jpeg,image/png,image/webp" aria-label="Picture">
+      <img alt="">
+      <span><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 15l5-5 4 4 3-3 6 6"/><circle cx="15.5" cy="8.5" r="1.5"/></svg>Add a picture</span>
+    </label>
+    <div class="card-main">
+      <div class="card-head">
+        <span class="role"></span>
+        <button type="button" class="remove" aria-label="Remove this character"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
+      </div>
+      <div class="tags"><span class="tag image-tag"></span><span class="tag audio-tag"></span></div>
+      <div class="voice-row">
+        <select class="voice" aria-label="Voice"></select>
+        <button type="button" class="hear" aria-label="Hear the line in this voice"></button>
+      </div>
+    </div>
+    <textarea class="line" maxlength="200" aria-label="What they say" placeholder="What they say"></textarea>
+  </div>
+</template>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  const TYPES = ["image/jpeg", "image/png", "image/webp"];
+  const ROLES = ["Speaks first", "Answers"];
+  const VOICES = ["rex", "luna"];
+  const SAMPLE = [
+    { picture: "/sample-dog.jpg", voice: "rex", line: "Hi! I'm a drawing, and I can talk now! Do you want to be best friends?" },
+    { picture: "/sample-cat.jpg", voice: "luna", line: "I'm a cat. We'll see." },
+  ];
+  const ICONS = {
+    play: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9.5-5.5z"/></svg>',
+    pause: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 2.5h3v11h-3zM9.5 2.5h3v11h-3z"/></svg>',
+    stop: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 3.5h9v9h-9z"/></svg>',
+    image: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 15l5-5 4 4 3-3 6 6"/></svg>',
+    voice: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 6v4M5.5 3.5v9M8.5 5v6M11.5 2.5v11M14 6.5v3"/></svg>',
+  };
+  const video = $("video");
+  const preview = new Audio();
+  const actors = new WeakMap();
+  let voices = [];
+  let cast = [character(0)];
+  let running = false;
+  let events = null;
+  let hearing = -1;
+  let renderStatus = "";
+  let renderingSince = 0;
+  let timer = 0;
+  let promptTimer = 0;
+  let frame = 0;
+
+  $("play").innerHTML = ICONS.play;
+  renderCards();
+  renderLineup();
+  refreshPrompt();
+  loadVoices();
+
+  async function loadVoices() {
+    try {
+      const response = await fetch("/api/voices");
+      if (!response.ok) throw new Error(await response.text());
+      voices = await response.json();
+      renderCards();
+    } catch (error) {
+      note(`Couldn't load the voices: ${error.message}`);
+    }
+  }
+
+  function character(index) {
+    return { file: null, url: null, voice: VOICES[index], line: "" };
+  }
+
+  // The cards are made again only when a character is added, removed, or replaced, so typing in a
+  // line never loses its place.
+  function renderCards() {
+    $("cards").replaceChildren(
+      ...cast.map((character, index) => {
+        const card = $("card").content.firstElementChild.cloneNode(true);
+        card.classList.add(`tone-${index}`);
+        card.querySelector(".role").textContent = ROLES[index];
+        card.querySelector(".image-tag").textContent = `<IMAGE_${index}>`;
+        card.querySelector(".audio-tag").textContent = `<AUDIO_${index}>`;
+        card.querySelector(".remove").hidden = index === 0;
+        card.querySelector(".remove").onclick = () => remove(index);
+
+        const portrait = card.querySelector(".portrait");
+        portrait.classList.toggle("filled", Boolean(character.url));
+        if (character.url) portrait.querySelector("img").src = character.url;
+        portrait.querySelector("input").onchange = (event) => choose(index, event.target.files[0]);
+        portrait.ondragenter = () => portrait.classList.add("over");
+        portrait.ondragleave = () => portrait.classList.remove("over");
+        portrait.ondrop = (event) => {
+          event.preventDefault();
+          portrait.classList.remove("over");
+          if (!$("controls").disabled) choose(index, event.dataTransfer.files[0]);
+        };
+
+        const select = card.querySelector(".voice");
+        select.innerHTML = voiceOptions(character.voice);
+        select.value = character.voice;
+        select.onchange = () => {
+          character.voice = select.value;
+          stopHearing();
+          changed();
+        };
+        card.querySelector(".hear").onclick = () => hear(index);
+
+        const line = card.querySelector(".line");
+        line.value = character.line;
+        line.oninput = () => {
+          character.line = line.value;
+          changed();
+        };
+        return card;
+      }),
+    );
+    $("add").hidden = cast.length >= ROLES.length;
+    updateHearButtons();
+  }
+
+  // Voices come with a gender, though the docs don't list it yet. Without one, they go in one list.
+  function voiceOptions(selected) {
+    const option = (voice) => `<option value="${voice.voice_id}">${escapeHtml(voice.name)}</option>`;
+    if (!voices.length) return `<option value="${selected}">${capitalize(selected)}</option>`;
+    if (!voices.every((voice) => voice.gender)) return voices.map(option).join("");
+    const genders = [...new Set(voices.map((voice) => voice.gender))].sort();
+    return genders.map((gender) => `<optgroup label="${capitalize(gender)} voices">${voices.filter((voice) => voice.gender === gender).map(option).join("")}</optgroup>`).join("");
+  }
+
+  function choose(index, file) {
+    if (!file) return;
+    if (!TYPES.includes(file.type)) return note("Choose a JPEG, PNG, or WebP picture.");
+    if (file.size > 10 * 1024 * 1024) return note("Choose a picture of 10 MB or less.");
+    note("");
+    if (cast[index].url) URL.revokeObjectURL(cast[index].url);
+    Object.assign(cast[index], { file, url: URL.createObjectURL(file) });
+    renderCards();
+    changed();
+  }
+
+  $("add").onclick = () => {
+    cast.push(character(cast.length));
+    renderCards();
+    changed();
+    $("cards").lastElementChild.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  };
+
+  function remove(index) {
+    stopHearing();
+    if (cast[index].url) URL.revokeObjectURL(cast[index].url);
+    cast.splice(index, 1);
+    renderCards();
+    changed();
+  }
+
+  $("sample").onclick = $("try").onclick = async () => {
+    note("");
+    stopHearing();
+    const files = await Promise.all(SAMPLE.map(async ({ picture }) => new File([await (await fetch(picture)).blob()], picture.slice(1), { type: "image/jpeg" })));
+    cast.forEach((character) => character.url && URL.revokeObjectURL(character.url));
+    cast = SAMPLE.map(({ voice, line }, index) => ({ file: files[index], url: URL.createObjectURL(files[index]), voice, line }));
+    renderCards();
+    changed();
+  };
+
+  // A file dropped anywhere but on a picture would open in the tab, so the page takes those drops.
+  document.ondragover = (event) => event.preventDefault();
+  document.ondrop = (event) => event.preventDefault();
+
+  // Anything that changes the cast changes the scene, so the last video gives way to the new cast.
+  function changed() {
+    if (!running && video.getAttribute("src")) clearVideo();
+    renderLineup();
+    clearTimeout(promptTimer);
+    promptTimer = setTimeout(refreshPrompt, 150);
+  }
+
+  // The stage shows each character with a picture and its line in a speech bubble, until the video arrives.
+  function renderLineup() {
+    const onStage = cast.filter((character) => character.url);
+    $("screen-note").hidden = onStage.length > 0;
+    $("lineup").replaceChildren(...cast.flatMap((character, index) => (character.url ? [actor(character, index)] : [])));
+  }
+
+  // Each character keeps its element, so its picture doesn't fade in again while a line is typed.
+  function actor(character, index) {
+    let element = actors.get(character);
+    if (!element) {
+      element = document.createElement("div");
+      element.innerHTML = `<p class="bubble"></p><img alt=""><span class="voice-name"><i></i><span></span></span>`;
+      actors.set(character, element);
+    }
+    element.className = `actor tone-${index}`;
+    const image = element.querySelector("img");
+    if (image.getAttribute("src") !== character.url) image.src = character.url;
+    element.querySelector(".bubble").textContent = character.line.trim();
+    element.querySelector(".voice-name span").textContent = voiceName(character.voice);
+    return element;
+  }
+
+  // The server writes the prompt, so the page shows exactly what it's about to send.
+  async function refreshPrompt() {
+    const params = new URLSearchParams(cast.map((character) => ["line", character.line.trim() || "…"]));
+    const response = await fetch(`/api/prompt?${params}`);
+    if (!response.ok || running) return;
+    const { prompt, seconds } = await response.json();
+    showRequest(prompt, seconds);
+  }
+
+  function showRequest(prompt, seconds) {
+    $("params").textContent = `grok-imagine-video-1.5 · ${seconds} seconds · 720p · 16:9`;
+    $("prompt").replaceChildren(...prompt.split(/(<(?:IMAGE|AUDIO)_\d+>)/).map((part) => {
+      const tag = part.match(/^<(IMAGE|AUDIO)_(\d+)>$/);
+      return tag ? chip(tag[1], Number(tag[2])) : document.createTextNode(part);
+    }));
+    $("ref-images").replaceChildren(...cast.map((_, index) => chip("IMAGE", index)));
+    $("ref-audios").innerHTML = cast.map((character, index) => `<span class="code tone-${index}">{ voice_id: "${escapeHtml(character.voice)}" }</span>`).join("");
+  }
+
+  // A tag in the prompt, with the picture or the voice it stands for.
+  function chip(kind, index) {
+    const element = document.createElement("span");
+    element.className = `chip tone-${index}`;
+    const url = cast[index]?.url;
+    element.innerHTML = kind === "AUDIO" ? ICONS.voice : url ? `<img src="${url}" alt="">` : ICONS.image;
+    element.append(`<${kind}_${index}>`);
+    return element;
+  }
+
+  $("form").onsubmit = async (event) => {
+    event.preventDefault();
+    if (running) return stop("Stopped. A video that has started keeps rendering and is billed anyway, because the API can't cancel one.");
+    if (cast.some((character) => !character.file || !character.line.trim())) return note("Give each character a picture and a line.");
+    note("");
+    stopHearing();
+    clearVideo();
+    setRunning(true);
+    setRender("Uploading the pictures");
+    let ids;
+    try {
+      ids = await Promise.all(cast.map(async (character) => {
+        const upload = await fetch("/api/pictures", { method: "POST", body: character.file });
+        if (!upload.ok) throw new Error(await upload.text());
+        return (await upload.json()).id;
+      }));
+    } catch (error) {
+      return stop(`Couldn't upload the pictures: ${error.message}`);
+    }
+    if (!running) return;
+
+    const params = new URLSearchParams();
+    cast.forEach((character, index) => {
+      params.append("picture", ids[index]);
+      params.append("voice", character.voice);
+      params.append("line", character.line.trim());
+    });
+    setRender("Sending the request");
+    events = new EventSource(`/api/scene?${params}`);
+    const on = (name, handler) => events.addEventListener(name, (message) => handler(JSON.parse(message.data)));
+
+    on("started", ({ prompt, seconds }) => {
+      showRequest(prompt, seconds);
+      renderingSince = Date.now();
+      setRender(`Rendering ${seconds} seconds of video`, 0);
+      timer = setInterval(tick, 1000);
+      tick();
+    });
+    on("progress", ({ percent }) => setRender(null, percent));
+    on("done", ({ video: url, cost, dir }) => {
+      $("rendered").textContent = clock((Date.now() - renderingSince) / 1000);
+      $("cost").textContent = `$${cost.toFixed(2)} for the video`;
+      $("saved").textContent = `${dir}/`;
+      $("result").hidden = false;
+      stop();
+      showVideo(url, dir);
+    });
+    on("failure", ({ message }) => stop(`Couldn't make the video: ${message}`));
+    // Without this, the browser would reconnect and ask for another video.
+    events.onerror = () => stop("Lost the connection to the server.");
+  };
+
+  function setRunning(value) {
+    running = value;
+    $("go").textContent = value ? "Stop" : "Make it talk";
+    $("go").classList.toggle("stop", value);
+    $("controls").disabled = value;
+    $("sample").disabled = value;
+    $("lineup").classList.toggle("rendering", value);
+    $("render").hidden = !value;
+    if (value) $("screen").scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }
+
+  // Until the video starts rendering, the status says what's happening. Then the bar shows how far along it is.
+  function setRender(status, percent) {
+    if (status) renderStatus = status;
+    $("render-status").textContent = percent === undefined ? renderStatus : `${renderStatus} · ${percent}%`;
+    $("render-bar").style.width = `${percent ?? 0}%`;
+  }
+
+  function tick() {
+    $("clock").textContent = renderingSince ? clock((Date.now() - renderingSince) / 1000) : "";
+  }
+
+  function stop(message) {
+    running = false;
+    events?.close();
+    events = null;
+    clearInterval(timer);
+    renderingSince = 0;
+    $("clock").textContent = "";
+    setRunning(false);
+    if (message) note(message);
+  }
+
+  function showVideo(url, dir) {
+    $("lineup").hidden = true;
+    video.src = url;
+    video.hidden = false;
+    $("tap").hidden = false;
+    $("play").disabled = false;
+    $("scrub").classList.add("ready");
+    $("download").href = url;
+    $("download").download = `${dir.split("/").pop()}.mp4`;
+    $("download").hidden = false;
+    video.play().catch(() => {});
+  }
+
+  function clearVideo() {
+    video.pause();
+    video.removeAttribute("src");
+    video.load();
+    video.hidden = true;
+    $("tap").hidden = true;
+    $("tap").classList.remove("playing");
+    $("play").disabled = true;
+    $("play").innerHTML = ICONS.play;
+    $("scrub").classList.remove("ready");
+    $("download").hidden = true;
+    $("result").hidden = true;
+    $("lineup").hidden = false;
+    updateTransport();
+  }
+
+  // Plays the line in the chosen voice. Each preview is a short text-to-speech request.
+  async function hear(index) {
+    if (hearing === index) return stopHearing();
+    stopHearing();
+    video.pause();
+    hearing = index;
+    const { voice, line } = cast[index];
+    const button = $("cards").children[index].querySelector(".hear");
+    button.classList.add("loading");
+    try {
+      const text = line.trim() || `Hi! This is what ${voiceName(voice)} sounds like.`;
+      const response = await fetch(`/api/preview?${new URLSearchParams({ voice, text })}`);
+      if (!response.ok) throw new Error(await response.text());
+      const audio = await response.blob();
+      if (hearing !== index) return;
+      if (preview.src) URL.revokeObjectURL(preview.src);
+      preview.src = URL.createObjectURL(audio);
+      await preview.play();
+    } catch (error) {
+      if (hearing === index) {
+        note(`Couldn't play the voice: ${error.message}`);
+        stopHearing();
+      }
+    } finally {
+      button.classList.remove("loading");
+    }
+  }
+
+  function stopHearing() {
+    hearing = -1;
+    preview.pause();
+    updateHearButtons();
+  }
+
+  preview.onplay = preview.onpause = updateHearButtons;
+  preview.onended = stopHearing;
+
+  function updateHearButtons() {
+    [...$("cards").children].forEach((card, index) => {
+      const playing = index === hearing && !preview.paused;
+      const button = card.querySelector(".hear");
+      button.classList.toggle("playing", playing);
+      button.innerHTML = playing ? ICONS.stop : ICONS.play;
+    });
+  }
+
+  $("play").onclick = $("tap").onclick = () => (video.paused ? video.play() : video.pause());
+  addEventListener("keydown", (event) => {
+    if (event.code !== "Space" || event.target.closest("input, textarea, select, button") || $("play").disabled) return;
+    event.preventDefault();
+    $("play").click();
+  });
+  video.onplay = () => {
+    stopHearing();
+    $("play").innerHTML = ICONS.pause;
+    $("tap").classList.add("playing");
+    follow();
+  };
+  video.onpause = video.onended = () => {
+    $("play").innerHTML = ICONS.play;
+    $("tap").classList.remove("playing");
+  };
+  video.onloadedmetadata = video.onseeked = updateTransport;
+  $("scrub").onclick = (event) => {
+    if (!video.duration) return;
+    const { left, width } = $("scrub").getBoundingClientRect();
+    video.currentTime = Math.min(Math.max((event.clientX - left) / width, 0), 1) * video.duration;
+  };
+
+  function follow() {
+    cancelAnimationFrame(frame);
+    updateTransport();
+    if (!video.paused) frame = requestAnimationFrame(follow);
+  }
+
+  function updateTransport() {
+    const known = Number.isFinite(video.duration) && video.duration > 0;
+    $("timecode").textContent = `${clock(known ? video.currentTime : 0)} / ${clock(known ? video.duration : 0)}`;
+    $("scrub-bar").style.width = `${known ? (video.currentTime / video.duration) * 100 : 0}%`;
+  }
+
+  function voiceName(id) {
+    return voices.find((voice) => voice.voice_id === id)?.name ?? capitalize(id);
+  }
+
+  function clock(seconds) {
+    const whole = Math.floor(seconds);
+    return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, "0")}`;
+  }
+
+  function capitalize(text) {
+    return text.charAt(0).toUpperCase() + text.slice(1);
+  }
+
+  function note(text) {
+    $("note").textContent = text;
+  }
+
+  function escapeHtml(text) {
+    return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+</script>
+</body>
+</html>

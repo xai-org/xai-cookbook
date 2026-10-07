@@ -1,0 +1,634 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Docs to Cited Answers</title>
+<style>
+  /* The look every SpaceXAI Cookbook page shares, after x.ai. */
+  :root {
+    --bg: #fff;
+    --card: #f9f8f6;
+    --secondary: #f2f1ef;
+    --secondary-hover: #e9e8e5;
+    --tint: rgb(10 10 10 / 0.04);
+    --line: rgb(10 10 10 / 0.08);
+    --border: rgb(10 10 10 / 0.15);
+    --fg: #0a0a0a;
+    --muted: rgb(10 10 10 / 0.6);
+    --faint: rgb(10 10 10 / 0.36);
+    --accent: #ff6308;
+    --accent-soft: rgb(255 99 8 / 0.1);
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; font: 14px/22px var(--sans); background: var(--bg); color: var(--fg); -webkit-font-smoothing: antialiased; }
+  button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
+  a { color: inherit; }
+  svg { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  @keyframes blink { 50% { opacity: 0.3; } }
+  @keyframes pulse { to { background-color: var(--secondary-hover); } }
+  @keyframes appear { from { opacity: 0; transform: translateY(4px); } }
+
+  .site { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 12px; height: 60px; padding: 0 20px; background: rgb(255 255 255 / 0.85); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+  .logo { flex: none; margin-right: 4px; color: var(--fg); }
+  .logo svg { display: block; width: 52px; height: 20px; fill: currentColor; stroke: none; }
+  .crumbs { display: flex; align-items: center; gap: 8px; min-width: 0; color: var(--muted); white-space: nowrap; }
+  .crumbs svg { width: 12px; height: 12px; color: var(--faint); }
+  .crumbs h1 { margin: 0; overflow: hidden; text-overflow: ellipsis; font-size: inherit; line-height: inherit; font-weight: 500; color: var(--fg); }
+  .site .pill { flex: none; margin-left: auto; }
+  .models { flex: none; height: 26px; padding: 0 10px; border-radius: 9999px; box-shadow: inset 0 0 0 1px var(--line); font-size: 12px; font-weight: 500; line-height: 26px; color: var(--muted); }
+  .pill { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 40px; padding: 0 18px; border-radius: 9999px; font-size: 14px; font-weight: 500; white-space: nowrap; text-decoration: none; }
+  .pill-sm { height: 32px; padding: 0 14px; font-size: 13px; }
+  .pill-primary { background: var(--fg); color: #fff; }
+  .pill-primary:hover { background: #202329; }
+  .pill-secondary { background: var(--secondary); color: var(--fg); }
+  .pill-secondary:hover { background: var(--secondary-hover); }
+  .pill:disabled { opacity: 0.4; cursor: default; }
+  .pill svg { width: 14px; height: 14px; }
+  .field { min-width: 0; height: 40px; padding: 0 18px; border: 1px solid var(--border); border-radius: 9999px; background: var(--bg); color: var(--fg); font: inherit; outline: none; }
+  .field:focus { border-color: var(--fg); }
+  .field::placeholder { color: var(--faint); }
+  .surface { display: flex; flex-direction: column; gap: 8px; height: calc(100vh - 72px); min-height: 560px; margin: 0 12px 12px; padding: 8px; border-radius: 20px; background: var(--card); }
+  .panel { min-width: 0; padding: 20px 22px; border-radius: 16px; background: var(--bg); }
+  .label { margin: 0; font-size: 13px; font-weight: 500; color: var(--muted); }
+  @media (max-width: 900px) {
+    .models { display: none; }
+  }
+  @media (max-width: 640px) {
+    .site { padding: 0 16px; }
+    .crumbs > span, .crumbs > svg { display: none; }
+    .surface { margin: 0 8px 8px; }
+  }
+
+  /* Docs to Cited Answers */
+  :root {
+    --warn: #e5484d;
+    --warn-soft: rgb(229 72 77 / 0.1);
+  }
+  code { font: 12px/18px var(--mono); }
+  .toolbar { display: flex; align-items: center; gap: 8px; padding: 8px; border-radius: 16px; background: var(--bg); }
+  .input { position: relative; display: flex; min-width: 0; }
+  .input > svg { position: absolute; left: 16px; top: 12px; width: 16px; height: 16px; color: var(--faint); pointer-events: none; }
+  .input .field { flex: 1; padding-left: 42px; }
+  .input.ask { flex: 1; }
+  .input.filter { flex: 0 1 380px; }
+  .input.filter .field { font: 13px var(--mono); }
+  #go { min-width: 92px; }
+  #go.stop { background: var(--secondary); color: var(--fg); }
+  #go svg { width: 12px; height: 12px; fill: currentColor; stroke: none; }
+
+  .workspace { flex: 1; display: grid; grid-template-columns: 296px minmax(0, 1fr); gap: 8px; min-height: 0; }
+  .workspace.asked { grid-template-columns: 296px minmax(0, 1fr) 420px; }
+  .workspace.empty { grid-template-columns: minmax(0, 1fr); }
+  .workspace > .panel { min-height: 0; overflow-y: auto; scrollbar-width: thin; }
+  .panel-head { display: flex; align-items: baseline; gap: 8px; margin: 0 0 12px; }
+  .panel-head .status { min-width: 0; overflow: hidden; color: var(--faint); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+
+  .library { display: flex; flex-direction: column; gap: 26px; }
+  .facet { display: grid; gap: 6px; margin-bottom: 12px; }
+  .facet-name { font: 12px var(--mono); color: var(--muted); }
+  .segmented { display: flex; gap: 2px; padding: 3px; border-radius: 9999px; background: var(--secondary); }
+  .segmented button { flex: 1 1 auto; height: 28px; padding: 0 8px; border-radius: 9999px; color: var(--muted); font-size: 13px; font-weight: 500; white-space: nowrap; transition: background 0.2s, color 0.2s; }
+  .segmented button:hover { color: var(--fg); }
+  .segmented button.active { background: var(--bg); color: var(--fg); box-shadow: 0 1px 2px rgb(10 10 10 / 0.08); }
+  .note { margin: 0; font-size: 12px; line-height: 18px; color: var(--faint); }
+  .docs { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
+  .doc { display: grid; grid-template-columns: 32px minmax(0, 1fr); align-items: center; column-gap: 10px; padding: 6px 8px; margin: 0 -8px; border-radius: 10px; transition: opacity 0.3s; }
+  .doc .kind { grid-row: span 2; display: grid; place-items: center; width: 32px; height: 38px; border-radius: 6px 10px 6px 6px; background: var(--secondary); font: 600 9px var(--mono); letter-spacing: 0.04em; color: var(--muted); transition: background 0.3s, color 0.3s; }
+  .doc .name { overflow: hidden; font-size: 13px; font-weight: 500; line-height: 18px; text-overflow: ellipsis; white-space: nowrap; }
+  .doc .meta { font-size: 12px; line-height: 16px; color: var(--faint); }
+  .doc.out { opacity: 0.3; }
+  .doc.cited .kind { background: var(--accent); color: #fff; }
+  .samples { display: grid; gap: 2px; margin: 0 -10px; }
+  .sample { display: grid; gap: 2px; padding: 8px 10px; border-radius: 10px; text-align: left; }
+  .sample:hover { background: var(--card); }
+  .sample span { font-size: 13px; line-height: 18px; }
+  .sample code { font-size: 11px; line-height: 16px; color: var(--faint); }
+
+  .thread { display: flex; flex-direction: column; gap: 0; padding: 0 34px; }
+  .start, .setup { display: grid; justify-items: center; gap: 16px; max-width: 620px; margin: auto; padding: 40px 0; text-align: center; }
+  .start h2, .setup h2 { margin: 0; font-size: 40px; line-height: 1.1; font-weight: 450; letter-spacing: -0.02em; }
+  .start p, .setup p { margin: 0 0 8px; font-size: 16px; line-height: 26px; color: var(--muted); }
+  .start .samples { grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; margin: 0; }
+  .start .sample { padding: 14px 16px; border-radius: 14px; background: var(--card); }
+  .start .sample:hover { background: var(--secondary); }
+  .start .sample span { font-size: 14px; line-height: 20px; }
+  .setup ol { margin: 0; padding: 0 0 0 20px; text-align: left; font-size: 15px; line-height: 24px; color: var(--muted); }
+  .setup li + li { margin-top: 8px; }
+
+  .turn { position: relative; display: grid; gap: 14px; padding: 30px 0; animation: appear 0.3s ease-out; }
+  .turn + .turn { border-top: 1px solid var(--line); }
+  .thread:has(.turn + .turn) .turn:not(.active) { cursor: pointer; }
+  .thread:has(.turn + .turn) .turn.active::before { content: ""; position: absolute; left: -18px; top: 36px; width: 3px; height: 22px; border-radius: 2px; background: var(--fg); }
+  .turn-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+  .question { margin: 0; font-size: 22px; line-height: 30px; font-weight: 500; letter-spacing: -0.01em; }
+  .filter-chip { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: 9999px; background: var(--secondary); font: 12px var(--mono); color: var(--muted); white-space: nowrap; }
+  .filter-chip svg { width: 12px; height: 12px; }
+  .steps { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+  .steps:empty { display: none; }
+  .steps i { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: blink 1s ease-in-out infinite; }
+  .thinking { display: flex; flex-direction: column; justify-content: flex-end; max-height: 54px; overflow: hidden; font: 11px/18px var(--mono); color: var(--faint); white-space: pre-wrap; -webkit-mask-image: linear-gradient(to bottom, transparent, #000 60%); mask-image: linear-gradient(to bottom, transparent, #000 60%); }
+  .thinking:empty { display: none; }
+  .answer { font-size: 17px; line-height: 29px; letter-spacing: -0.005em; }
+  .answer:empty { display: none; }
+  .answer.writing::after { content: ""; display: inline-block; width: 8px; height: 17px; margin-left: 3px; border-radius: 2px; background: var(--fg); vertical-align: -2px; animation: blink 1s ease-in-out infinite; }
+  .cite { display: inline-grid; place-items: center; min-width: 21px; height: 21px; margin: 0 1px; padding: 0 6px; border-radius: 7px; background: var(--accent-soft); color: var(--accent); font-size: 12px; font-weight: 600; line-height: 21px; letter-spacing: 0; vertical-align: 2px; transition: background 0.15s, color 0.15s; }
+  .cite:hover, .cite.focus { background: var(--accent); color: #fff; }
+  .not-found { display: flex; align-items: flex-start; gap: 14px; padding: 18px 20px; border-radius: 16px; background: var(--card); }
+  .not-found svg { flex: none; width: 22px; height: 22px; margin-top: 2px; color: var(--muted); }
+  .not-found strong { display: block; font-size: 17px; line-height: 26px; font-weight: 500; }
+  .not-found span { display: block; margin-top: 2px; color: var(--muted); }
+  .turn-foot { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 12px; color: var(--faint); }
+  .turn-foot:empty { display: none; }
+  .turn-foot .warn { color: var(--warn); }
+  .error { margin: 0; padding: 12px 16px; border-radius: 12px; background: var(--warn-soft); color: var(--warn); font-size: 14px; line-height: 22px; overflow-wrap: anywhere; }
+  .stopped { margin: 0; color: var(--muted); font-size: 14px; }
+
+  .passages-panel { display: flex; flex-direction: column; }
+  .passage-list { display: grid; gap: 8px; }
+  .passage { display: grid; gap: 8px; padding: 14px 16px 15px; border-radius: 14px; background: var(--card); box-shadow: inset 0 0 0 1.5px transparent; transition: box-shadow 0.2s, opacity 0.3s; animation: appear 0.3s ease-out; scroll-margin: 8px; }
+  .passage header { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .passage .num { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 7px; background: var(--bg); font-size: 12px; font-weight: 600; color: var(--muted); transition: background 0.2s, color 0.2s; }
+  .passage.cited .num { background: var(--accent); color: #fff; }
+  .passage .file { min-width: 0; overflow: hidden; font-size: 13px; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
+  .passage .page { flex: none; font-size: 12px; color: var(--muted); }
+  .passage .score { flex: none; display: flex; align-items: center; gap: 6px; margin-left: auto; font: 11px var(--mono); color: var(--faint); }
+  .passage .score span { width: 36px; height: 4px; overflow: hidden; border-radius: 2px; background: var(--secondary-hover); }
+  .passage .score i { display: block; height: 100%; border-radius: 2px; background: var(--muted); }
+  .passage .chips { display: flex; flex-wrap: wrap; gap: 4px; }
+  .passage .chips span { padding: 0 8px; border-radius: 9999px; background: var(--bg); font: 11px/20px var(--mono); color: var(--muted); }
+  .passage p { margin: 0; font-size: 13px; line-height: 20px; color: var(--muted); white-space: pre-line; overflow-wrap: anywhere; }
+  .passage p b { font-weight: 600; color: var(--fg); }
+  .passage mark { border-radius: 3px; background: var(--accent-soft); color: var(--fg); box-shadow: 0 0 0 2px var(--accent-soft); }
+  .passage.focus { box-shadow: inset 0 0 0 1.5px var(--accent); }
+  .passage-list.answered .passage:not(.cited) { opacity: 0.45; }
+  .passage-list.answered .passage:not(.cited):hover { opacity: 1; }
+  .passage.loading { gap: 10px; }
+  .skeleton { height: 12px; border-radius: 6px; background: var(--secondary); animation: pulse 1s ease-in-out infinite alternate; }
+  .passages-panel .note { margin-top: 2px; }
+
+  @media (max-width: 1180px) {
+    .surface { height: auto; }
+    .workspace, .workspace.asked { grid-template-columns: minmax(0, 1fr); }
+    .workspace > .panel { overflow: visible; }
+    .input.filter { flex-basis: 260px; }
+  }
+</style>
+</head>
+<body>
+<header class="site">
+  <a class="logo" href="https://x.ai" target="_blank" rel="noopener" aria-label="SpaceXAI"><svg viewBox="0 0 759 290.2" aria-hidden="true"><g transform="translate(-674.5,-388.5)"><path d="M1433.19 388.934C1345.69 396.068 1001.73 438.71 763.235 678.467H674.732L684.62 668.612C734.53 620.395 955.373 416.045 1433.19 388.668V388.934Z"/><path d="M1133.66 678.467H1064.29L927.618 578.979C940.213 571.058 952.888 563.515 965.603 556.33L1133.66 678.467Z"/><path d="M1022.8 678.468H953.463L932.43 663.169H814.998C823.265 655.828 831.635 648.702 840.092 641.784H902.996L870.444 618.106C882.079 609.448 893.843 601.155 905.701 593.211L1022.8 678.468Z"/><path d="M770.433 495.02L823.901 533.876C810.594 541.712 798.139 549.468 786.514 557.055L701.158 494.986L770.433 495.02Z"/></g></svg></a>
+  <nav class="crumbs"><span>Cookbook</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg><h1>Docs to Cited Answers</h1></nav>
+  <span class="models">grok-4.7 and Collections</span>
+  <a class="pill pill-secondary pill-sm" href="https://github.com/xai-org/xai-cookbook/tree/main/examples/docs-to-cited-answers" target="_blank" rel="noopener">View code</a>
+</header>
+
+<main class="surface">
+  <form id="form" class="toolbar">
+    <label class="input ask">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.5"/><path d="m10.5 10.5 3 3"/></svg>
+      <input id="question" class="field" required autocomplete="off" aria-label="Question" placeholder="Ask a question about your documents">
+    </label>
+    <label class="input filter" title="An AIP-160 filter on the documents' metadata fields">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 3.5h11l-4 5v4l-3 1.5V8.5z"/></svg>
+      <input id="filter" class="field" autocomplete="off" spellcheck="false" aria-label="Filter" placeholder="No filter, every document counts">
+    </label>
+    <button id="go" class="pill pill-primary">Ask</button>
+  </form>
+
+  <div class="workspace" id="workspace">
+    <aside class="panel library" id="library">
+      <section>
+        <div class="panel-head"><p class="label">Which documents count</p></div>
+        <div id="facets"></div>
+        <p class="note" id="custom-note" hidden>A custom filter. The search applies it as you typed it.</p>
+      </section>
+      <section>
+        <div class="panel-head"><p class="label">Library</p><span class="status" id="doc-count"></span></div>
+        <ul class="docs" id="docs"></ul>
+      </section>
+      <section id="try" hidden>
+        <div class="panel-head"><p class="label">Try asking</p></div>
+        <div class="samples" id="samples"></div>
+      </section>
+    </aside>
+
+    <section class="panel thread" id="thread">
+      <div class="start" id="start">
+        <h2>Ask your documents</h2>
+        <p>Grok answers from the passages a search finds in your collection and cites each one, so you can check it. A metadata filter decides which documents count. When the documents don't say, it tells you instead of guessing.</p>
+        <div class="samples" id="start-samples"></div>
+      </div>
+      <div class="setup" id="setup" hidden>
+        <h2>Upload the documents first</h2>
+        <p>The page answers from a collection that <code>npm run ingest</code> creates. Creating it takes a management key as well as your API key.</p>
+        <ol>
+          <li>In the <a href="https://console.x.ai" target="_blank" rel="noopener">SpaceXAI Console</a>, open Settings, then Management Keys, and create a key that can create collections and add documents to them.</li>
+          <li>Add it to <code>.env</code> at the root of the repo as <code>XAI_MANAGEMENT_API_KEY</code>.</li>
+          <li>Run <code>npm run ingest</code>, then reload this page.</li>
+        </ol>
+      </div>
+    </section>
+
+    <aside class="panel passages-panel" id="passages-panel" hidden>
+      <div class="panel-head"><p class="label">Passages</p><span class="status" id="passages-status"></span></div>
+      <div class="passage-list" id="passages"></div>
+    </aside>
+  </div>
+</main>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  const ICONS = {
+    stop: '<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="3" width="10" height="10" rx="2"/></svg>',
+    funnel: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 3.5h11l-4 5v4l-3 1.5V8.5z"/></svg>',
+    notFound: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5M8.5 8.5l4 4M12.5 8.5l-4 4"/></svg>',
+  };
+  // Questions about the sample handbook, each with the filter it's asked under.
+  const SAMPLES = [
+    { question: "Can I return a sale item after 30 days?", filter: 'version="2026"' },
+    { question: "Can I return a sale item after 30 days?", filter: 'version="2025"' },
+    { question: "How soon after a trip do I have to submit expenses?", filter: 'team="Finance"' },
+    { question: "Do we offer a student discount?", filter: 'version="2026"' },
+  ];
+  const CITATION = /\[(\d+(?:\s*,\s*\d+)*)\]/g;
+  const facets = new Map();
+  const turns = [];
+  let documents = [];
+  let selection = {};
+  let custom = false;
+  let active;
+  let current;
+  let events;
+  let citedKey = "";
+
+  init();
+
+  async function init() {
+    const response = await fetch("/api/collection");
+    if (!response.ok) return showSetup();
+    const collection = await response.json();
+    documents = collection.documents;
+    for (const doc of documents) {
+      for (const [key, value] of Object.entries(doc.fields)) {
+        if (!facets.has(key)) facets.set(key, new Set());
+        facets.get(key).add(value);
+      }
+    }
+    // Start with the newest version, so questions are about the documents in effect now.
+    const versions = [...(facets.get("version") ?? [])].sort();
+    if (versions.length) selection.version = versions.at(-1);
+    $("doc-count").textContent = `${plural(documents.length, "document")} in ${collection.collection_name}`;
+    const samples = SAMPLES.map((sample, index) => `<button type="button" class="sample" data-index="${index}"><span>${escapeHtml(sample.question)}</span><code>${escapeHtml(sample.filter)}</code></button>`).join("");
+    $("samples").innerHTML = samples;
+    $("start-samples").innerHTML = samples;
+    setFilter(filterFor(selection));
+  }
+
+  document.addEventListener("click", (event) => {
+    const sample = event.target.closest(".sample");
+    if (!sample || events) return;
+    const { question, filter } = SAMPLES[sample.dataset.index];
+    $("question").value = question;
+    setFilter(filter);
+    $("form").requestSubmit();
+  });
+
+  $("facets").onclick = (event) => {
+    const button = event.target.closest("button");
+    if (!button) return;
+    if (custom) selection = {};
+    const key = button.parentElement.dataset.key;
+    if (button.dataset.value) selection[key] = button.dataset.value;
+    else delete selection[key];
+    setFilter(filterFor(selection));
+  };
+
+  $("filter").oninput = () => setFilter($("filter").value);
+
+  // Shows the filter in the field, and in the library which documents it leaves out.
+  function setFilter(filter) {
+    if ($("filter").value !== filter) $("filter").value = filter;
+    const parsed = parseFilter(filter);
+    custom = !parsed;
+    selection = parsed ?? {};
+    $("custom-note").hidden = !custom;
+    renderFacets();
+    renderDocs();
+  }
+
+  function filterFor(selection) {
+    return Object.entries(selection).map(([key, value]) => `${key}="${value}"`).join(" AND ");
+  }
+
+  // A filter made only of key="value" pairs joined by AND can be shown in the library. Anything else,
+  // like OR, != or comparisons, still goes to the search as it is.
+  function parseFilter(filter) {
+    const pairs = {};
+    if (!filter.trim()) return pairs;
+    for (const part of filter.trim().split(/\s+AND\s+/)) {
+      const match = part.match(/^(\w+)\s*=\s*(?:"([^"]*)"|'([^']*)'|([\w.-]+))$/);
+      if (!match || match[1] in pairs) return null;
+      pairs[match[1]] = match[2] ?? match[3] ?? match[4];
+    }
+    return pairs;
+  }
+
+  function renderFacets() {
+    $("facets").innerHTML = [...facets]
+      .map(([key, values]) => {
+        const options = ["", ...[...values].sort()].map((value) => {
+          const on = !custom && (selection[key] ?? "") === value;
+          return `<button type="button" class="${on ? "active" : ""}" data-value="${escapeHtml(value)}">${value ? escapeHtml(value) : "Any"}</button>`;
+        });
+        return `<div class="facet"><span class="facet-name">${escapeHtml(key)}</span><div class="segmented" data-key="${escapeHtml(key)}">${options.join("")}</div></div>`;
+      })
+      .join("");
+  }
+
+  function renderDocs() {
+    const cited = active ? citedFiles(active) : new Set();
+    $("docs").innerHTML = documents
+      .map((doc) => {
+        const out = !custom && Object.entries(selection).some(([key, value]) => doc.fields[key] !== value);
+        const kind = doc.filename.split(".").pop().toUpperCase().slice(0, 4);
+        return `<li class="doc${out ? " out" : ""}${cited.has(doc.file_id) ? " cited" : ""}" title="${escapeHtml(doc.filename)}"><span class="kind">${escapeHtml(kind)}</span><span class="name">${escapeHtml(doc.filename)}</span><span class="meta">${Object.values(doc.fields).map(escapeHtml).join(" · ")}</span></li>`;
+      })
+      .join("");
+  }
+
+  $("form").onsubmit = (event) => {
+    event.preventDefault();
+    if (events) return stop({ stopped: true });
+    const question = $("question").value.trim();
+    if (question) ask(question, $("filter").value.trim());
+  };
+
+  function ask(question, filter) {
+    const turn = addTurn(question, filter);
+    current = turn;
+    setRunning(true);
+    events = new EventSource(`/api/answer?${new URLSearchParams({ question, filter })}`);
+    const on = (name, handler) => events.addEventListener(name, (message) => handler(JSON.parse(message.data)));
+
+    on("passages", ({ passages }) => {
+      turn.passages = passages;
+      turn.step = passages.length ? "reading" : "done";
+      updateTurn(turn);
+      if (turn === active) renderPassages();
+    });
+    on("reasoning", ({ text }) => {
+      turn.reasoning += text;
+      turn.el.querySelector(".thinking").textContent = turn.step === "reading" ? turn.reasoning.slice(-320) : "";
+    });
+    on("quotes", ({ quotes }) => {
+      turn.quotes = quotes;
+      if (turn === active) renderHighlights();
+    });
+    on("text", ({ text }) => {
+      turn.text += text;
+      turn.step = "writing";
+      updateTurn(turn);
+    });
+    on("done", (result) => {
+      Object.assign(turn, { result, text: result.text, quotes: result.quotes, step: "done", seconds: (Date.now() - turn.started) / 1000 });
+      updateTurn(turn);
+      if (turn === active) renderPassages();
+      stop();
+    });
+    on("failure", ({ message }) => stop({ error: message }));
+    events.onerror = () => stop({ error: "Lost the connection to the server." });
+  }
+
+  function stop({ stopped, error } = {}) {
+    events?.close();
+    events = undefined;
+    setRunning(false);
+    const turn = current;
+    current = undefined;
+    if (!turn || turn.step === "done") return;
+    Object.assign(turn, { step: "stopped", stopped, error });
+    updateTurn(turn);
+    if (turn === active) renderPassages();
+  }
+
+  function setRunning(running) {
+    $("go").innerHTML = running ? `${ICONS.stop}Stop` : "Ask";
+    $("go").classList.toggle("stop", running);
+  }
+
+  function addTurn(question, filter) {
+    $("start").hidden = true;
+    $("try").hidden = false;
+    $("workspace").classList.add("asked");
+    $("passages-panel").hidden = false;
+    const el = document.createElement("article");
+    el.className = "turn";
+    el.innerHTML = `<header class="turn-head"><h2 class="question">${escapeHtml(question)}</h2><span class="filter-chip">${ICONS.funnel}${filter ? escapeHtml(filter) : "No filter"}</span></header><div class="steps"></div><div class="thinking"></div><div class="answer"></div><footer class="turn-foot"></footer>`;
+    const turn = { el, question, filter, passages: null, quotes: [], text: "", reasoning: "", step: "searching", started: Date.now() };
+    el.onclick = (event) => {
+      if (turn !== active && !event.target.closest(".cite")) activate(turn);
+    };
+    $("thread").append(el);
+    turns.push(turn);
+    activate(turn);
+    updateTurn(turn);
+    return turn;
+  }
+
+  function activate(turn) {
+    active = turn;
+    turns.forEach((other) => other.el.classList.toggle("active", other === turn));
+    renderPassages();
+    renderDocs();
+  }
+
+  function updateTurn(turn) {
+    const { el } = turn;
+    el.querySelector(".steps").innerHTML = stepHtml(turn);
+    if (turn.step !== "reading") el.querySelector(".thinking").textContent = "";
+    const answer = el.querySelector(".answer");
+    if (turn.error) answer.innerHTML = `<p class="error">${escapeHtml(turn.error)}</p>`;
+    else if (turn.stopped) answer.innerHTML = `${formatAnswer(turn.text)}<p class="stopped">Stopped.</p>`;
+    else if (turn.result && !turn.result.found) answer.innerHTML = notFoundHtml(turn);
+    else answer.innerHTML = formatAnswer(turn.text);
+    answer.classList.toggle("writing", turn.step === "writing");
+    el.querySelector(".turn-foot").innerHTML = footHtml(turn);
+    if (turn === active) markCited();
+    // Keep the question being answered, and its answer as it streams in, in view.
+    if (turn === current) $("thread").scrollTop = $("thread").scrollHeight;
+  }
+
+  function stepHtml(turn) {
+    if (turn.step === "searching") return `<i></i>Searching ${turn.filter ? "the documents that match the filter" : "every document"}`;
+    if (turn.step === "reading") return `<i></i>Reading ${plural(turn.passages.length, "passage")} from ${plural(new Set(turn.passages.map((passage) => passage.file_id)).size, "document")}`;
+    if (turn.step === "writing") return "<i></i>Writing the answer";
+    return "";
+  }
+
+  function notFoundHtml(turn) {
+    const filter = turn.filter ? `<code>${escapeHtml(turn.filter)}</code>` : "";
+    const detail = turn.passages?.length
+      ? `Grok read ${plural(turn.passages.length, "passage")} from the documents${filter ? ` where ${filter}` : ""}, and none of them answer this.`
+      : `No documents match ${filter || "the filter"}, so there was nothing to search.`;
+    return `<div class="not-found">${ICONS.notFound}<div><strong>${escapeHtml(turn.result.text)}</strong><span>${detail}</span></div></div>`;
+  }
+
+  function footHtml(turn) {
+    if (!turn.result) return "";
+    const parts = [`${turn.seconds.toFixed(1)} s`];
+    parts.push(turn.result.tokens ? `${turn.result.tokens.toLocaleString("en")} tokens, $${turn.result.cost.toFixed(4)}` : "Grok wasn't asked, so no cost");
+    const quotes = turn.result.quotes;
+    const missing = quotes.filter((quote) => !quote.checked).length;
+    if (missing) parts.push(`<span class="warn">${missing} of ${plural(quotes.length, "quote")} not in its passage</span>`);
+    else if (turn.result.found) parts.push(`${plural(quotes.length, "quote")}, checked word for word`);
+    return parts.map((part) => `<span>${part}</span>`).join("");
+  }
+
+  function renderPassages() {
+    const turn = active;
+    const list = $("passages");
+    if (!turn.passages) {
+      $("passages-status").textContent = turn.step === "searching" ? "Searching" : "";
+      list.innerHTML = turn.step === "searching" ? Array.from({ length: 3 }, () => '<div class="passage loading"><div class="skeleton" style="width: 55%"></div><div class="skeleton" style="width: 92%"></div><div class="skeleton" style="width: 84%"></div><div class="skeleton" style="width: 40%"></div></div>').join("") : "";
+      return;
+    }
+    $("passages-status").textContent = turn.passages.length ? `the top ${plural(turn.passages.length, "match", "matches")}${turn.filter ? ` where ${turn.filter}` : ""}` : "";
+    if (!turn.passages.length) {
+      list.innerHTML = `<p class="note">No documents match ${turn.filter ? `<code>${escapeHtml(turn.filter)}</code>` : "the filter"}.</p>`;
+      return;
+    }
+    const top = Math.max(...turn.passages.map((passage) => passage.score));
+    list.innerHTML = turn.passages.map((passage) => passageCard(passage, top)).join("");
+    list.classList.toggle("answered", !!turn.result);
+    renderHighlights();
+    markCited();
+  }
+
+  function passageCard(passage, top) {
+    const fields = Object.entries(passage.fields).map(([key, value]) => `<span>${escapeHtml(key)} ${escapeHtml(value)}</span>`).join("");
+    const width = Math.max(8, Math.round((passage.score / top) * 100));
+    return `<article class="passage" data-number="${passage.number}">
+      <header><span class="num">${passage.number}</span><span class="file">${escapeHtml(passage.filename)}</span>${passage.page ? `<span class="page">page ${passage.page}</span>` : ""}<span class="score" title="How closely the passage matches the question, from the search"><span><i style="width: ${width}%"></i></span>${passage.score.toFixed(2)}</span></header>
+      <div class="chips">${fields}</div>
+      <p></p>
+    </article>`;
+  }
+
+  // Highlights each quote in its passage, word by word as Grok copies it, and keeps the passage it's
+  // quoting in view.
+  function renderHighlights() {
+    const turn = active;
+    if (!turn?.passages) return;
+    for (const passage of turn.passages) {
+      const text = $("passages").querySelector(`[data-number="${passage.number}"] p`);
+      const quotes = turn.quotes.filter((quote) => quote.passage === passage.number && quote.quote).map((quote) => quote.quote);
+      if (text) text.innerHTML = highlight(displayText(passage.text), quotes);
+    }
+    markCited();
+    const quoting = turn === current ? turn.quotes.at(-1)?.passage : undefined;
+    if (quoting && quoting !== turn.scrolledTo) {
+      turn.scrolledTo = quoting;
+      $("passages").querySelector(`[data-number="${quoting}"]`)?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }
+  }
+
+  // Lines a PDF wrapped are joined back into paragraphs, and blank lines are dropped to keep passages
+  // short. Markdown headings get a marker in place of their # signs, which highlight() makes bold.
+  function displayText(text) {
+    return text.replace(/^#+\s*/gm, "\u0001").replace(/([^\n])\n(?=[^\n])/g, "$1 ").replace(/\n{2,}/g, "\n");
+  }
+
+  function highlight(text, quotes) {
+    const ranges = quotes.map((quote) => findQuote(text, quote)).filter(Boolean).sort((a, b) => a[0] - b[0]);
+    let html = "";
+    let at = 0;
+    for (const [start, end] of ranges) {
+      if (end <= at) continue;
+      const from = Math.max(start, at);
+      html += `${escapeHtml(text.slice(at, from))}<mark>${escapeHtml(text.slice(from, end))}</mark>`;
+      at = end;
+    }
+    return (html + escapeHtml(text.slice(at))).replace(/\u0001([^\n]*)/g, "<b>$1</b>");
+  }
+
+  // Matches a quote however its words are spaced or wrapped, and with straight or curly quote marks.
+  function findQuote(text, quote) {
+    const words = quote.trim().split(/\s+/).filter(Boolean);
+    if (!words.length) return null;
+    const pattern = words.map((word) => word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/['’]/g, "['’]").replace(/["“”]/g, '["“”]')).join("\\s+");
+    const match = new RegExp(pattern, "i").exec(text);
+    return match && [match.index, match.index + match[0].length];
+  }
+
+  // The passages an answer cites: the ones in its brackets and the ones it quotes.
+  function citedNumbers(turn) {
+    if (turn.error || (turn.result && !turn.result.found)) return new Set();
+    const numbers = [...turn.text.matchAll(CITATION)].flatMap((match) => match[1].split(",").map(Number));
+    for (const quote of turn.quotes) if (quote.passage && quote.quote) numbers.push(quote.passage);
+    return new Set(numbers);
+  }
+
+  function citedFiles(turn) {
+    const numbers = citedNumbers(turn);
+    return new Set((turn.passages ?? []).filter((passage) => numbers.has(passage.number)).map((passage) => passage.file_id));
+  }
+
+  // Marks the cited passages, and their documents in the library as soon as Grok starts quoting them.
+  function markCited() {
+    const numbers = citedNumbers(active);
+    $("passages").querySelectorAll(".passage[data-number]").forEach((card) => card.classList.toggle("cited", numbers.has(Number(card.dataset.number))));
+    const key = [...citedFiles(active)].sort().join();
+    if (key !== citedKey) {
+      citedKey = key;
+      renderDocs();
+    }
+  }
+
+  function formatAnswer(text) {
+    return escapeHtml(text).replace(CITATION, (_, list) => list.split(",").map((number) => `<button type="button" class="cite" data-n="${number.trim()}">${number.trim()}</button>`).join(""));
+  }
+
+  // Pointing at a citation shows its passage, for whichever answer it's in.
+  $("thread").addEventListener("mouseover", (event) => {
+    const cite = event.target.closest(".cite");
+    if (!cite) return;
+    const turn = turns.find((candidate) => candidate.el.contains(cite));
+    if (turn !== active) activate(turn);
+    focusPassage(Number(cite.dataset.n));
+  });
+  $("thread").addEventListener("mouseout", (event) => {
+    if (event.target.closest(".cite")) focusPassage(undefined);
+  });
+
+  function focusPassage(number) {
+    $("passages").querySelectorAll(".passage[data-number]").forEach((card) => {
+      const on = Number(card.dataset.number) === number;
+      card.classList.toggle("focus", on);
+      if (on) card.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    });
+  }
+
+  function showSetup() {
+    $("start").hidden = true;
+    $("setup").hidden = false;
+    $("library").hidden = true;
+    $("workspace").classList.add("empty");
+    for (const id of ["question", "filter", "go"]) $(id).disabled = true;
+  }
+
+  function plural(count, word, words = `${word}s`) {
+    return `${count} ${count === 1 ? word : words}`;
+  }
+
+  function escapeHtml(text) {
+    return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+</script>
+</body>
+</html>

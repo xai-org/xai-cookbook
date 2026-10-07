@@ -1,0 +1,106 @@
+{
+  "seller": "Tessellate, a product analytics platform",
+  "accounts": [
+    {
+      "id": "acct_stripe",
+      "name": "Stripe",
+      "domain": "stripe.com",
+      "stage": "Customer",
+      "plan": "Enterprise, 400 seats",
+      "arr": 186000,
+      "customer_since": "2023-03-14",
+      "renewal_date": "2027-03-31",
+      "owner": "Maya Chen",
+      "contacts": [
+        { "name": "Dana Whitfield", "title": "VP of Product Analytics", "role": "Champion", "email": "dana.whitfield@example.com", "phone": "+1 415 555 0142", "last_contact": "2026-09-12" },
+        { "name": "Marcus Oyelaran", "title": "Director of Data Engineering", "role": "Technical lead", "email": "marcus.oyelaran@example.com", "phone": "+1 415 555 0177", "last_contact": "2026-09-12" },
+        { "name": "Priya Natarajan", "title": "Procurement Manager", "role": "Procurement", "email": "priya.natarajan@example.com", "phone": "+1 415 555 0118", "last_contact": "2026-06-03" }
+      ],
+      "meetings": [
+        { "date": "2026-09-12", "type": "Quarterly business review", "attendees": ["Dana Whitfield", "Marcus Oyelaran"], "notes": "Weekly active users up 30% since spring. Dana wants funnel analysis for the Connect team before their planning cycle. Marcus raised the warehouse sync lag again and wants a fix date." },
+        { "date": "2026-06-03", "type": "Expansion discovery", "attendees": ["Dana Whitfield", "Priya Natarajan"], "notes": "The Connect team, about 120 analysts, is choosing between us and building in-house. Priya needs a security review before any new order." },
+        { "date": "2026-03-18", "type": "Renewal", "attendees": ["Dana Whitfield", "Priya Natarajan"], "notes": "Renewed for a year with 50 more seats. Asked for a roadmap preview of AI-assisted queries." }
+      ],
+      "deals": [
+        { "name": "Connect team expansion", "stage": "Proposal", "amount": 95000, "close_date": "2026-11-20", "next_step": "Send the revised proposal once the security review is done", "discount_floor": 0.15 }
+      ],
+      "tickets": [
+        { "id": "T-4821", "subject": "Warehouse sync lagging by six hours or more", "priority": "P2", "status": "Open", "opened": "2026-09-28" },
+        { "id": "T-4710", "subject": "SSO group mapping drops new hires", "priority": "P3", "status": "Closed", "opened": "2026-08-14" }
+      ]
+    },
+    {
+      "id": "acct_shopify",
+      "name": "Shopify",
+      "domain": "shopify.com",
+      "stage": "Customer",
+      "plan": "Business, 250 seats",
+      "arr": 142000,
+      "customer_since": "2024-01-22",
+      "renewal_date": "2026-12-15",
+      "owner": "Jordan Reyes",
+      "contacts": [
+        { "name": "Aisha Rahman", "title": "Director of Analytics", "role": "Economic buyer", "email": "aisha.rahman@example.com", "phone": "+1 613 555 0163", "last_contact": "2026-09-24" },
+        { "name": "Tom Becker", "title": "Senior Data Analyst", "role": "Power user", "email": "tom.becker@example.com", "phone": "+1 613 555 0109", "last_contact": "2026-09-24" },
+        { "name": "Elena Varga", "title": "Head of Merchant Insights", "role": "Former champion, left in August", "email": "elena.varga@example.com", "phone": "+1 613 555 0131", "last_contact": "2026-07-10" }
+      ],
+      "meetings": [
+        { "date": "2026-09-24", "type": "Renewal kickoff", "attendees": ["Aisha Rahman", "Tom Becker"], "notes": "First meeting with Aisha, who took over from Elena. She asked for a usage report and cost per active user, and said the team is looking at consolidating analytics tools." },
+        { "date": "2026-07-10", "type": "Quarterly business review", "attendees": ["Elena Varga", "Tom Becker"], "notes": "Merchant insights dashboards are the most used feature. Tom asked for faster dashboards on peak days." }
+      ],
+      "deals": [
+        { "name": "2027 renewal", "stage": "Negotiation", "amount": 142000, "close_date": "2026-12-15", "next_step": "Send Aisha the usage report by October 10", "discount_floor": 0.1 }
+      ],
+      "tickets": [
+        { "id": "T-4855", "subject": "Dashboards time out during peak traffic", "priority": "P1", "status": "Open", "opened": "2026-10-01" },
+        { "id": "T-4799", "subject": "CSV export drops non-ASCII characters", "priority": "P3", "status": "Closed", "opened": "2026-08-30" }
+      ]
+    },
+    {
+      "id": "acct_duolingo",
+      "name": "Duolingo",
+      "domain": "duolingo.com",
+      "stage": "Prospect",
+      "plan": null,
+      "arr": 0,
+      "customer_since": null,
+      "renewal_date": null,
+      "owner": "Maya Chen",
+      "contacts": [
+        { "name": "Kenji Watanabe", "title": "Product Manager, Growth", "role": "Evaluator", "email": "kenji.watanabe@example.com", "phone": "+1 412 555 0156", "last_contact": "2026-09-30" },
+        { "name": "Sofia Marquez", "title": "Director of Data Science", "role": "Decision maker", "email": "sofia.marquez@example.com", "phone": "+1 412 555 0184", "last_contact": "2026-09-30" }
+      ],
+      "meetings": [
+        { "date": "2026-09-30", "type": "Demo", "attendees": ["Kenji Watanabe", "Sofia Marquez"], "notes": "Most interested in retention cohorts and experiment analysis. They run an in-house stack today. Sofia asked how we handle data from hundreds of experiments at once." }
+      ],
+      "deals": [
+        { "name": "Growth team pilot", "stage": "Evaluation", "amount": 60000, "close_date": "2026-12-31", "next_step": "Scope the pilot with Kenji", "discount_floor": 0.2 }
+      ],
+      "tickets": []
+    },
+    {
+      "id": "acct_figma",
+      "name": "Figma",
+      "domain": "figma.com",
+      "stage": "Customer",
+      "plan": "Team, 80 seats",
+      "arr": 38000,
+      "customer_since": "2025-05-06",
+      "renewal_date": "2027-05-06",
+      "owner": "Jordan Reyes",
+      "contacts": [
+        { "name": "Noah Lindqvist", "title": "Analytics Lead", "role": "Champion", "email": "noah.lindqvist@example.com", "phone": "+1 628 555 0125", "last_contact": "2026-08-19" },
+        { "name": "Grace Okafor", "title": "Head of Product Operations", "role": "Economic buyer", "email": "grace.okafor@example.com", "phone": "+1 628 555 0190", "last_contact": "2026-05-12" }
+      ],
+      "meetings": [
+        { "date": "2026-08-19", "type": "Check-in", "attendees": ["Noah Lindqvist"], "notes": "Usage steady. Noah wants to roll out to the product teams behind their newer products, which would need the Enterprise tier for SSO and audit logs." }
+      ],
+      "deals": [
+        { "name": "Enterprise tier upgrade", "stage": "Discovery", "amount": 72000, "close_date": "2027-01-31", "next_step": "Get Grace on a call about SSO and audit logs", "discount_floor": 0.12 }
+      ],
+      "tickets": [
+        { "id": "T-4836", "subject": "Slack alerts arrive twice", "priority": "P3", "status": "Open", "opened": "2026-09-17" }
+      ]
+    }
+  ]
+}

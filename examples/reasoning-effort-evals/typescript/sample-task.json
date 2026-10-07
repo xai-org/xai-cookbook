@@ -1,0 +1,255 @@
+{
+  "name": "Support ticket triage",
+  "prompt": [
+    "You triage support tickets for Fernbill, an invoicing and payments app for small businesses. For each ticket, choose a category and a priority, and write a short reply to the customer. Each ticket starts with the customer's plan.",
+    "",
+    "# What Fernbill offers",
+    "",
+    "Plans:",
+    "- Free: 5 invoices a month, 1 user, card payments.",
+    "- Pro, $19 a month or $190 a year: unlimited invoices, up to 3 users, card and bank payments, recurring invoices, and automatic payment reminders.",
+    "- Business, $49 a month or $490 a year: everything in Pro, up to 10 users, QuickBooks and Xero sync, and no \"Powered by Fernbill\" line on invoices.",
+    "",
+    "Features:",
+    "- Clients pay invoices by card (Visa, Mastercard, or American Express) on any plan, or by bank transfer (ACH) on Pro and Business. ACH works only with US bank accounts. Fernbill doesn't support PayPal, SEPA, or crypto.",
+    "- Payouts reach the customer's bank account 2 business days after a client pays.",
+    "- Customers change plans under Settings > Plan.",
+    "- Unpaid invoices can be edited under Invoices > Edit.",
+    "- Invoices can be in English, Spanish, or French. The language is set per client under Clients > Edit client > Invoice language.",
+    "- Currencies: USD, CAD, EUR, GBP, and AUD.",
+    "- Recurring invoices are under Invoices > New > Repeat. Payment reminders are under Settings > Reminders, where they can also be paused.",
+    "- Any plan can add a logo under Settings > Branding.",
+    "- Invoices export as PDF or CSV under Invoices > Export.",
+    "- Deleted invoices can be restored for 30 days under Invoices > Deleted.",
+    "- Two-factor authentication works with an authenticator app. A customer who loses their device can sign in with one of their recovery codes. Otherwise, support resets two-factor authentication after confirming their identity by email, within one business day.",
+    "- The account owner adds and removes users under Settings > Users.",
+    "- The account owner can close the account under Settings > Account > Close account. Its data is deleted 30 days later.",
+    "- Apps for iPhone and Android.",
+    "",
+    "Billing policy:",
+    "- Duplicate or wrong charges are refunded within 5 to 10 business days once support confirms them.",
+    "- Annual plans can be refunded in full within 14 days of purchase. Monthly plans aren't refunded for partial months, and a cancelled plan stays active until the end of the period.",
+    "",
+    "Fernbill never asks for passwords, full card numbers, or one-time codes, by email, chat, or phone, and never asks customers to confirm bank details by email.",
+    "",
+    "# Category",
+    "",
+    "Choose one:",
+    "- billing: the customer's own Fernbill subscription: charges, refunds, cancellations, and plan changes.",
+    "- payments: money moving between the customer and their clients, like client payments and payouts, when Fernbill doesn't show an error.",
+    "- bug: Fernbill shows an error or doesn't work as described above.",
+    "- account: signing in, passwords, two-factor authentication, adding or removing users, and closing the account.",
+    "- how_to: how to use something Fernbill offers, even if it needs another plan, and what a plan includes.",
+    "- feature_request: the customer wants something Fernbill doesn't offer, even when it's about billing, payments, or users.",
+    "- security: phishing, someone else getting into an account, leaked data, or a vulnerability report.",
+    "",
+    "When a ticket fits account, billing, or payments as well as how_to, choose account, billing, or payments. When a ticket raises several issues, choose the category of the issue with the highest priority.",
+    "",
+    "# Priority",
+    "",
+    "Use the first rule that applies:",
+    "1. urgent: every security ticket, and anything that stops all of the customer's clients from paying or stops all of their payouts.",
+    "2. high: a wrong or duplicate Fernbill charge, or the customer can't sign in or can't send invoices at all.",
+    "3. low: how_to and feature_request tickets, and problems that turn out to be Fernbill working as described.",
+    "4. normal: everything else.",
+    "",
+    "Then, if the customer is on the Business plan, raise normal to high. Leave the other priorities as they are.",
+    "",
+    "# Reply",
+    "",
+    "Write at most 80 words of plain text. Respond to this customer's specific issue and say what happens next or what they can do. Use only the facts above: don't make up features, steps, or timelines, and don't promise anything the billing policy doesn't allow. Never ask for a password, a full card number, or a one-time code. For a feature request, say Fernbill doesn't offer it yet and that you've passed it on to the product team. For a security ticket, tell them not to click links or share codes, to change their password if someone may have gotten in, and that the security team will follow up."
+  ],
+  "fields": {
+    "category": { "options": ["billing", "payments", "bug", "account", "how_to", "feature_request", "security"] },
+    "priority": { "options": ["urgent", "high", "normal", "low"] },
+    "reply": { "max_words": 80 }
+  },
+  "rubric": {
+    "addresses_issue": "Responds to this customer's specific situation and covers the points in the grading notes.",
+    "accurate": "Everything it says about Fernbill matches the facts and the billing policy in the instructions. It doesn't make up features, steps, or timelines, or promise anything the policy doesn't allow.",
+    "safe": "Doesn't ask for a password, a full card number, or a one-time code, and doesn't tell the customer to click a link in a suspicious email.",
+    "tone": "Friendly, calm, and professional, without blaming the customer."
+  },
+  "cases": [
+    {
+      "id": "t01",
+      "input": "Plan: Pro\n\nHi, I just noticed two charges of $19.00 from Fernbill on my card statement, both on October 3. I only have one account. Can you look into it? Thanks, Maria",
+      "expected": { "category": "billing", "priority": "high" },
+      "notes": "Says the duplicate charge will be refunded within 5 to 10 business days once support confirms it, and doesn't ask for card details."
+    },
+    {
+      "id": "t02",
+      "input": "Plan: Business\n\nHow do I set up an invoice that goes out automatically on the 1st of every month? We bill the same retainer to a few clients.",
+      "expected": { "category": "how_to", "priority": "low" },
+      "notes": "Explains recurring invoices under Invoices > New > Repeat, which their plan includes."
+    },
+    {
+      "id": "t03",
+      "input": "Plan: Pro\n\nGot an email from billing@fernbill-support.co saying our payouts are on hold until we confirm our bank account through a link. It looks exactly like your emails. Is this real?? I haven't clicked anything yet.",
+      "expected": { "category": "security", "priority": "urgent" },
+      "notes": "Says not to click the link, that Fernbill never asks customers to confirm bank details by email, and that the security team will follow up."
+    },
+    {
+      "id": "t04",
+      "input": "Plan: Free\n\nCan my clients pay my invoices with PayPal? A lot of them have asked.",
+      "expected": { "category": "feature_request", "priority": "low" },
+      "notes": "Says PayPal isn't supported, mentions that clients can pay by card, and says the request has been passed to the product team."
+    },
+    {
+      "id": "t05",
+      "input": "Plan: Pro\n\nURGENT. Since about 9am none of my clients can pay. They click Pay on the invoice and get \"Something went wrong (500)\". Three clients have emailed me already and I have payroll on Friday.",
+      "expected": { "category": "bug", "priority": "urgent" },
+      "notes": "Acknowledges that none of their clients can pay, and says the team is treating it as urgent and will update them. Doesn't blame the clients' cards."
+    },
+    {
+      "id": "t06",
+      "input": "Plan: Pro\n\nOne of my clients is in Toronto and wants to pay by bank transfer, but her invoice only offers card. Can you turn on bank transfers for her?",
+      "expected": { "category": "feature_request", "priority": "low" },
+      "notes": "Explains that bank transfers work only with US bank accounts, so they can't be turned on for a Canadian client, suggests paying by card, and passes the request on."
+    },
+    {
+      "id": "t07",
+      "input": "Plan: Business\n\nWhen I export invoices to CSV, every amount loses its decimal point, so $1,250.00 comes out as 125000. I can fix the cells by hand for now, but it's a pain with 200 invoices a month.",
+      "expected": { "category": "bug", "priority": "high" },
+      "notes": "Acknowledges the broken CSV amounts and says it's been passed to the team, without promising a fix date."
+    },
+    {
+      "id": "t08",
+      "input": "Plan: Pro\n\nHi! Is it possible to send invoices in German? Most of my clients are in Austria.",
+      "expected": { "category": "feature_request", "priority": "low" },
+      "notes": "Says German isn't available, that invoices can be in English, Spanish, or French, and that the request has been passed on."
+    },
+    {
+      "id": "t09",
+      "input": "Plan: Pro\n\nCan I send invoices in Spanish? About half my clients are in Mexico and Spain.",
+      "expected": { "category": "how_to", "priority": "low" },
+      "notes": "Says yes, and points to the setting under Clients > Edit client > Invoice language."
+    },
+    {
+      "id": "t10",
+      "input": "Plan: Free\n\nI lost my phone yesterday and now Fernbill asks for the code from my authenticator app every time I sign in. I need to send an invoice today. Please help!",
+      "expected": { "category": "account", "priority": "high" },
+      "notes": "Suggests signing in with a recovery code, and otherwise says support will reset two-factor authentication after confirming their identity by email, within one business day. Doesn't ask for a code."
+    },
+    {
+      "id": "t11",
+      "input": "Plan: Pro\n\nA client paid invoice #1042 by card on Monday, but the money isn't in my bank account yet. It's Tuesday. Is something wrong?",
+      "expected": { "category": "payments", "priority": "low" },
+      "notes": "Explains that payouts arrive 2 business days after the client pays, so it should arrive Wednesday, and invites them to write back if it doesn't."
+    },
+    {
+      "id": "t12",
+      "input": "Plan: Business\n\nOur payouts have stopped. Clients have paid six invoices since Friday and none of the money has reached our bank. Nothing has changed on our side and there's no error anywhere.",
+      "expected": { "category": "payments", "priority": "urgent" },
+      "notes": "Acknowledges that no payouts have arrived, treats it as urgent, and says the team is looking into their payouts and will update them. Doesn't make up a cause."
+    },
+    {
+      "id": "t13",
+      "input": "Plan: Pro\n\nPlease cancel my subscription. Also, will I get a refund for the rest of this month? I'm on the monthly plan.",
+      "expected": { "category": "billing", "priority": "normal" },
+      "notes": "Confirms the cancellation, and explains that monthly plans aren't refunded for partial months and that the plan stays active until the end of the period."
+    },
+    {
+      "id": "t14",
+      "input": "Plan: Pro\n\nI bought the annual Pro plan 9 days ago and it turns out it's not right for us. Can I get my money back?",
+      "expected": { "category": "billing", "priority": "normal" },
+      "notes": "Says annual plans can be refunded in full within 14 days of purchase, so they qualify, and that the refund will be processed."
+    },
+    {
+      "id": "t15",
+      "input": "Plan: Business\n\nWe have 10 people on our Business account and just hired two more. How do we add them?",
+      "expected": { "category": "feature_request", "priority": "low" },
+      "notes": "Explains that Business includes up to 10 users, so they can't add more right now, and passes the request on. Doesn't suggest a bigger plan, since there isn't one."
+    },
+    {
+      "id": "t16",
+      "input": "Plan: Pro\n\nThere's something wrong with invoice #2231. I set the tax to 13% HST but it shows 15%. The other invoices are fine, and I haven't sent this one yet. Can I just fix it myself?",
+      "expected": { "category": "bug", "priority": "normal" },
+      "notes": "Says they can correct the tax under Invoices > Edit, since the invoice is unpaid, and that the team will look into why it happened."
+    },
+    {
+      "id": "t17",
+      "input": "Plan: Business\n\nSince the last update, the iPhone app crashes whenever I try to attach a photo of a receipt to an invoice. It works fine on the website.",
+      "expected": { "category": "bug", "priority": "high" },
+      "notes": "Suggests using the website for now, and says it's been passed to the team."
+    },
+    {
+      "id": "t18",
+      "input": "Plan: Pro\n\nWe got a \"new sign-in\" email last night for a login from Lagos. None of us are there. We changed the password this morning. What else should we do?",
+      "expected": { "category": "security", "priority": "urgent" },
+      "notes": "Says changing the password was right, suggests turning on two-factor authentication, and says the security team will follow up."
+    },
+    {
+      "id": "t19",
+      "input": "Plan: Pro\n\nTwo things. Can you add Xero sync? And my last invoice from you was $49 instead of $19, even though I'm still on Pro.",
+      "expected": { "category": "billing", "priority": "high" },
+      "notes": "Says the wrong charge will be refunded within 5 to 10 business days once support confirms it, and that Xero sync comes with Business."
+    },
+    {
+      "id": "t20",
+      "input": "Plan: Free\n\nHow do I get rid of the \"Powered by Fernbill\" line at the bottom of my invoices? It looks unprofessional.",
+      "expected": { "category": "how_to", "priority": "low" },
+      "notes": "Explains that removing it comes with the Business plan, and that plans change under Settings > Plan."
+    },
+    {
+      "id": "t21",
+      "input": "Plan: Pro\n\nMy client sent me her bank statement showing she paid invoice #318 by card last week, but Fernbill still shows it as unpaid and I haven't received a payout for it.",
+      "expected": { "category": "payments", "priority": "normal" },
+      "notes": "Says the team will look into that payment and get back to them. Doesn't ask for the client's card details."
+    },
+    {
+      "id": "t22",
+      "input": "Plan: Pro\n\nhi how do i export all my invoices for my accountant? she wants a spreadsheet",
+      "expected": { "category": "how_to", "priority": "low" },
+      "notes": "Explains the CSV export under Invoices > Export."
+    },
+    {
+      "id": "t23",
+      "input": "Plan: Free\n\nCan I set Fernbill to remind clients automatically when an invoice is overdue? I keep forgetting to chase them.",
+      "expected": { "category": "how_to", "priority": "low" },
+      "notes": "Explains that automatic payment reminders come with Pro and Business, not Free."
+    },
+    {
+      "id": "t24",
+      "input": "Plan: Pro\n\nI accidentally deleted an invoice I sent to a client last week!! Is it gone forever?",
+      "expected": { "category": "how_to", "priority": "low" },
+      "notes": "Says deleted invoices can be restored for 30 days under Invoices > Deleted."
+    },
+    {
+      "id": "t25",
+      "input": "Plan: Pro\n\nYour app sent the same payment reminder to all of my clients four times this morning. They're annoyed and two have complained. Please make it stop!",
+      "expected": { "category": "bug", "priority": "normal" },
+      "notes": "Apologizes, says they can pause reminders under Settings > Reminders for now, and says the team is looking into it."
+    },
+    {
+      "id": "t26",
+      "input": "Plan: Business\n\nWe're closing the business at the end of the month. How do we close our Fernbill account and make sure our client data is deleted?",
+      "expected": { "category": "account", "priority": "high" },
+      "notes": "Explains that the account owner closes the account under Settings > Account > Close account, and that the data is deleted 30 days later."
+    },
+    {
+      "id": "t27",
+      "input": "Plan: Free\n\nSomeone called me saying they were from Fernbill support and asked for the 6-digit code from my authenticator app to verify my account. I read it to them. Was that you?",
+      "expected": { "category": "security", "priority": "urgent" },
+      "notes": "Says it wasn't Fernbill, which never asks for codes, tells them to change their password and not to share codes, and says the security team will follow up."
+    },
+    {
+      "id": "t28",
+      "input": "Plan: Free\n\nHi, I'm a security researcher. If you change the number at the end of an invoice link, like /i/48211 to /i/48212, you can see another business's invoice, with their client's name and address. I haven't shared this with anyone.",
+      "expected": { "category": "security", "priority": "urgent" },
+      "notes": "Thanks them for reporting it privately and says the security team will follow up."
+    },
+    {
+      "id": "t29",
+      "input": "Plan: Pro\n\nSeriously? I have clients in Germany who want to pay by SEPA transfer and you only do US bank transfers? Every other invoicing app has this. I'm about to switch.",
+      "expected": { "category": "feature_request", "priority": "low" },
+      "notes": "Says SEPA isn't supported yet and that those clients can pay by card, and passes the request on."
+    },
+    {
+      "id": "t30",
+      "input": "Plan: Pro\n\nCould you add a dark mode to the app? Also, one of our three users left the company last week. How do I remove her so I can add her replacement?",
+      "expected": { "category": "account", "priority": "normal" },
+      "notes": "Explains that the account owner removes users under Settings > Users, and mentions passing on the dark mode request."
+    }
+  ]
+}

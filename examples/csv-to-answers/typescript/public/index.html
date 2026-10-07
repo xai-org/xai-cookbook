@@ -1,0 +1,737 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>CSV to Answers</title>
+<style>
+  /* The look every SpaceXAI Cookbook page shares, after x.ai. */
+  :root {
+    --bg: #fff;
+    --card: #f9f8f6;
+    --secondary: #f2f1ef;
+    --secondary-hover: #e9e8e5;
+    --tint: rgb(10 10 10 / 0.04);
+    --line: rgb(10 10 10 / 0.08);
+    --border: rgb(10 10 10 / 0.15);
+    --fg: #0a0a0a;
+    --muted: rgb(10 10 10 / 0.6);
+    --faint: rgb(10 10 10 / 0.36);
+    --accent: #ff6308;
+    --accent-soft: rgb(255 99 8 / 0.1);
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; font: 14px/22px var(--sans); background: var(--bg); color: var(--fg); -webkit-font-smoothing: antialiased; }
+  button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
+  a { color: inherit; }
+  svg { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  @keyframes blink { 50% { opacity: 0.3; } }
+  @keyframes pulse { to { background-color: var(--secondary-hover); } }
+  @keyframes appear { from { opacity: 0; transform: translateY(4px); } }
+
+  .site { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 12px; height: 60px; padding: 0 20px; background: rgb(255 255 255 / 0.85); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+  .logo { flex: none; margin-right: 4px; color: var(--fg); }
+  .logo svg { display: block; width: 52px; height: 20px; fill: currentColor; stroke: none; }
+  .crumbs { display: flex; align-items: center; gap: 8px; min-width: 0; color: var(--muted); white-space: nowrap; }
+  .crumbs svg { width: 12px; height: 12px; color: var(--faint); }
+  .crumbs h1 { margin: 0; overflow: hidden; text-overflow: ellipsis; font-size: inherit; line-height: inherit; font-weight: 500; color: var(--fg); }
+  .site .pill { flex: none; margin-left: auto; }
+  .models { flex: none; height: 26px; padding: 0 10px; border-radius: 9999px; box-shadow: inset 0 0 0 1px var(--line); font-size: 12px; font-weight: 500; line-height: 26px; color: var(--muted); }
+  .pill { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 40px; padding: 0 18px; border-radius: 9999px; font-size: 14px; font-weight: 500; white-space: nowrap; text-decoration: none; }
+  .pill-sm { height: 32px; padding: 0 14px; font-size: 13px; }
+  .pill-primary { background: var(--fg); color: #fff; }
+  .pill-primary:hover { background: #202329; }
+  .pill-secondary { background: var(--secondary); color: var(--fg); }
+  .pill-secondary:hover { background: var(--secondary-hover); }
+  .pill:disabled { opacity: 0.4; cursor: default; }
+  .pill svg { width: 14px; height: 14px; }
+  .field { min-width: 0; height: 40px; padding: 0 18px; border: 1px solid var(--border); border-radius: 9999px; background: var(--bg); color: var(--fg); font: inherit; outline: none; }
+  .field:focus { border-color: var(--fg); }
+  .field::placeholder { color: var(--faint); }
+  .surface { display: flex; flex-direction: column; gap: 8px; height: calc(100vh - 72px); min-height: 560px; margin: 0 12px 12px; padding: 8px; border-radius: 20px; background: var(--card); }
+  .panel { min-width: 0; padding: 20px 22px; border-radius: 16px; background: var(--bg); }
+  .label { margin: 0; font-size: 13px; font-weight: 500; color: var(--muted); }
+  @media (max-width: 900px) {
+    .models { display: none; }
+  }
+  @media (max-width: 640px) {
+    .site { padding: 0 16px; }
+    .crumbs > span, .crumbs > svg { display: none; }
+    .surface { margin: 0 8px 8px; }
+  }
+
+  /* CSV to Answers */
+  :root {
+    --ink: #0a0a0a;
+    --ink-cell: #151515;
+    --ink-line: rgb(255 255 255 / 0.08);
+    --ink-fg: #f2f1ef;
+    --ink-muted: rgb(242 241 239 / 0.62);
+    --ink-faint: rgb(242 241 239 / 0.36);
+    --bad: #e5484d;
+    --bad-soft: rgb(229 72 77 / 0.1);
+  }
+  @keyframes ink-pulse { to { background-color: rgb(255 255 255 / 0.06); } }
+
+  .workspace { flex: 1; display: grid; grid-template-columns: minmax(0, 1fr) minmax(440px, 42%); gap: 8px; min-height: 0; }
+  .side { display: flex; flex-direction: column; gap: 8px; min-width: 0; min-height: 0; }
+  .toolbar { display: flex; align-items: center; gap: 8px; padding: 8px; border-radius: 16px; background: var(--bg); }
+  .file { position: relative; max-width: 300px; cursor: pointer; }
+  .file input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+  .file span { overflow: hidden; text-overflow: ellipsis; }
+  .file .rows { flex: none; font-weight: 400; color: var(--muted); }
+  #question { flex: 1; }
+  .pill svg.solid { fill: currentColor; stroke: none; }
+  #go { min-width: 96px; }
+  #go.stop { background: var(--secondary); color: var(--fg); }
+  body.dragging .toolbar { box-shadow: inset 0 0 0 1.5px var(--accent); }
+
+  .board { flex: 1; display: flex; flex-direction: column; min-height: 0; overflow: auto; padding: 26px 30px 24px; }
+  .start { display: grid; justify-items: center; gap: 16px; max-width: 620px; margin: auto; padding: 24px 0; text-align: center; }
+  .start h2 { margin: 0; font-size: 40px; line-height: 1.1; font-weight: 450; letter-spacing: -0.02em; }
+  .start p { margin: 0; font-size: 16px; line-height: 26px; color: var(--muted); }
+  .start .small { font-size: 13px; line-height: 20px; color: var(--faint); }
+  .questions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 4px; }
+  .more { display: grid; gap: 10px; margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--line); }
+  .more .questions { justify-content: flex-start; margin: 0; }
+
+  .result { flex: 1; display: flex; flex-direction: column; gap: 20px; min-height: 0; }
+  #asked { margin: 0; font-size: 26px; line-height: 32px; font-weight: 450; letter-spacing: -0.015em; }
+  .status { display: flex; align-items: center; gap: 8px; margin: 8px 0 0; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .status i { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: blink 1s ease-in-out infinite; }
+  .status.done i { display: none; }
+  #answer { margin: 0; font-size: 17px; line-height: 27px; white-space: pre-line; animation: appear 0.3s ease-out; }
+  .lines { display: grid; gap: 10px; padding: 3px 0; }
+  .lines i, .finding.waiting { border-radius: 8px; background: var(--secondary); animation: pulse 1s ease-in-out infinite alternate; }
+  .lines i { height: 15px; }
+  .lines i:nth-child(1) { width: 96%; }
+  .lines i:nth-child(2) { width: 88%; }
+  .lines i:nth-child(3) { width: 54%; }
+  .findings { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+  .finding { min-height: 112px; padding: 14px 16px; border-radius: 14px; background: var(--card); animation: appear 0.3s ease-out; }
+  .finding strong { display: block; overflow-wrap: anywhere; font-size: 28px; line-height: 34px; font-weight: 450; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+  .finding span { display: block; margin-top: 2px; font-weight: 500; }
+  .finding small { display: block; margin-top: 4px; font-size: 12px; line-height: 17px; color: var(--muted); }
+
+  .chart { flex: 1; display: flex; flex-direction: column; min-height: 320px; margin: 0; padding: 18px 20px 12px; border-radius: 16px; background: var(--card); }
+  .chart figcaption { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 16px; min-height: 22px; margin-bottom: 6px; }
+  #chart-title { font-weight: 500; }
+  .legend { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-left: auto; font-size: 12px; color: var(--muted); }
+  .legend i { display: inline-block; width: 12px; height: 3px; margin-right: 6px; border-radius: 2px; vertical-align: middle; }
+  .plot { position: relative; flex: 1; min-height: 240px; }
+  .plot.loading { border-radius: 10px; background: var(--secondary); animation: pulse 1s ease-in-out infinite alternate; }
+  .plot svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+  .plot .grid { stroke: var(--line); stroke-width: 1; }
+  .plot .grid.zero { stroke: var(--border); }
+  .plot .tick { fill: var(--faint); stroke: none; font: 11px var(--sans); font-variant-numeric: tabular-nums; }
+  .plot .marker { stroke: var(--fg); stroke-width: 1; stroke-dasharray: 3 4; opacity: 0.45; }
+  .plot .marker-label { fill: var(--fg); stroke: none; font: 500 11px var(--sans); }
+  .plot .guide { stroke: var(--border); stroke-width: 1; }
+  .tip { position: absolute; top: 4px; z-index: 2; min-width: 150px; padding: 8px 12px; border-radius: 10px; background: var(--fg); color: #fff; font-size: 12px; line-height: 19px; pointer-events: none; font-variant-numeric: tabular-nums; }
+  .tip b { display: block; margin-bottom: 2px; font-weight: 500; }
+  .tip div { display: flex; align-items: center; gap: 6px; }
+  .tip i { width: 8px; height: 8px; border-radius: 50%; box-shadow: 0 0 0 1px rgb(255 255 255 / 0.3); }
+  .tip span { margin-left: auto; padding-left: 12px; }
+  #message { margin: 0; padding: 12px 16px; border-radius: 12px; background: var(--bad-soft); color: var(--bad); }
+
+  .notebook { display: grid; grid-template-rows: auto minmax(0, 1fr); min-width: 0; min-height: 0; overflow: hidden; border-radius: 16px; background: var(--ink); color: var(--ink-fg); }
+  .nb-bar { display: flex; align-items: center; gap: 16px; height: 44px; padding: 0 16px; border-bottom: 1px solid var(--ink-line); }
+  .lights { display: flex; gap: 7px; }
+  .lights i { width: 11px; height: 11px; border-radius: 50%; }
+  .tab { font: 12px var(--mono); }
+  #nb-status { display: inline-flex; align-items: center; gap: 8px; margin-left: auto; font-size: 12px; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+  #nb-status i { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: blink 1s ease-in-out infinite; }
+  .cells { position: relative; display: flex; flex-direction: column; gap: 12px; min-height: 0; overflow-y: auto; padding: 14px; scrollbar-width: thin; scrollbar-color: rgb(255 255 255 / 0.16) transparent; }
+  .cell { flex: none; overflow: hidden; border-radius: 12px; background: var(--ink-cell); box-shadow: inset 0 0 0 1px var(--ink-line); animation: appear 0.3s ease-out; }
+  .cell-head { display: flex; align-items: center; gap: 10px; min-height: 36px; padding: 0 12px; border-bottom: 1px solid var(--ink-line); font-size: 12px; color: var(--ink-muted); }
+  .cell-head .kind { font: 500 11px var(--mono); color: var(--accent); }
+  .cell-head .name { overflow: hidden; color: var(--ink-fg); text-overflow: ellipsis; white-space: nowrap; }
+  .cell-head .state { flex: none; margin-left: auto; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+  .run.running .cell-head { animation: ink-pulse 1s ease-in-out infinite alternate; }
+  .run.running .state { color: var(--ink-fg); }
+  .run.failed .state { color: #ff8a80; }
+  .table { overflow-x: auto; scrollbar-width: thin; scrollbar-color: rgb(255 255 255 / 0.16) transparent; }
+  .table table { border-collapse: collapse; font: 11px/16px var(--mono); white-space: nowrap; }
+  .table th, .table td { padding: 5px 12px; text-align: left; }
+  .table th { font-weight: 500; color: var(--ink-fg); }
+  .table th small { display: block; font-weight: 400; color: var(--ink-faint); }
+  .table td { border-top: 1px solid var(--ink-line); color: var(--ink-muted); }
+  .table td.number { text-align: right; }
+  .data-note { margin: 0; padding: 9px 12px 10px; border-top: 1px solid var(--ink-line); font-size: 12px; line-height: 18px; color: var(--ink-faint); }
+  .data-note code { font: 11px var(--mono); color: var(--ink-muted); }
+  .code { padding: 10px 0; font: 12px/20px var(--mono); tab-size: 4; }
+  .code div { display: grid; grid-template-columns: 32px minmax(0, 1fr); column-gap: 14px; }
+  .code .n { text-align: right; color: var(--ink-faint); user-select: none; }
+  .code .c { padding-right: 16px; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .t-comment { color: #8b949e; }
+  .t-keyword { color: #ff8a4c; }
+  .t-string { color: #a5d6ff; }
+  .t-number { color: #79c0ff; }
+  .t-function { color: #d2a8ff; }
+  .output { border-top: 1px solid var(--ink-line); background: rgb(255 255 255 / 0.025); }
+  .output p { margin: 0; padding: 8px 12px 0; font-size: 11px; font-weight: 500; letter-spacing: 0.02em; color: var(--ink-faint); }
+  .output pre { max-height: 300px; margin: 0; overflow: auto; padding: 4px 12px 12px; font: 11px/17px var(--mono); color: var(--ink-muted); scrollbar-width: thin; scrollbar-color: rgb(255 255 255 / 0.16) transparent; }
+  .output .stderr { color: #ff8a80; }
+  .note { flex: none; margin: 0; padding: 2px 4px; font-size: 13px; line-height: 20px; color: var(--ink-faint); white-space: pre-wrap; overflow-wrap: anywhere; animation: appear 0.3s ease-out; }
+  .note b { margin-right: 6px; font-weight: 500; color: var(--ink-muted); }
+
+  @media (max-width: 1100px) {
+    .surface { height: auto; }
+    .workspace { grid-template-columns: minmax(0, 1fr); }
+    .board { overflow: visible; }
+    .notebook { height: 640px; }
+  }
+</style>
+</head>
+<body>
+<header class="site">
+  <a class="logo" href="https://x.ai" target="_blank" rel="noopener" aria-label="SpaceXAI"><svg viewBox="0 0 759 290.2" aria-hidden="true"><g transform="translate(-674.5,-388.5)"><path d="M1433.19 388.934C1345.69 396.068 1001.73 438.71 763.235 678.467H674.732L684.62 668.612C734.53 620.395 955.373 416.045 1433.19 388.668V388.934Z"/><path d="M1133.66 678.467H1064.29L927.618 578.979C940.213 571.058 952.888 563.515 965.603 556.33L1133.66 678.467Z"/><path d="M1022.8 678.468H953.463L932.43 663.169H814.998C823.265 655.828 831.635 648.702 840.092 641.784H902.996L870.444 618.106C882.079 609.448 893.843 601.155 905.701 593.211L1022.8 678.468Z"/><path d="M770.433 495.02L823.901 533.876C810.594 541.712 798.139 549.468 786.514 557.055L701.158 494.986L770.433 495.02Z"/></g></svg></a>
+  <nav class="crumbs"><span>Cookbook</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg><h1>CSV to Answers</h1></nav>
+  <span class="models">grok-4.7 with code execution</span>
+  <a class="pill pill-secondary pill-sm" href="https://github.com/xai-org/xai-cookbook/tree/main/examples/csv-to-answers" target="_blank" rel="noopener">View code</a>
+</header>
+
+
+<main class="surface">
+  <div class="workspace">
+    <div class="side">
+      <form id="form" class="toolbar">
+        <label class="pill pill-secondary file" title="Choose a CSV, or drop one on the page">
+          <input id="file" type="file" accept=".csv,text/csv">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2.5" y="2.5" width="11" height="11" rx="2"/><path d="M2.5 6.5h11M2.5 10h11M6.5 6.5v7"/></svg>
+          <span id="file-name">subscriptions.csv</span><span class="rows" id="file-rows"></span>
+        </label>
+        <input id="question" class="field" required maxlength="500" value="Which plan's churn got worse after the price change?" aria-label="Question" placeholder="Ask a question about the data">
+        <button id="go" class="pill pill-primary"></button>
+      </form>
+
+      <section class="panel board">
+        <div class="start" id="start">
+          <h2>Ask your spreadsheet a question</h2>
+          <p>Grok writes pandas code, runs it in a sandbox, and answers with the numbers it computed and a chart. Every program it runs shows up in the notebook with what it printed, so you can check the work.</p>
+          <div class="questions" id="questions">
+            <button type="button" class="pill pill-secondary pill-sm">Which plan's churn got worse after the price change?</button>
+            <button type="button" class="pill pill-secondary pill-sm">Where did Plus churn rise the most?</button>
+            <button type="button" class="pill pill-secondary pill-sm">Did the price change grow MRR for Plus and Pro?</button>
+            <button type="button" class="pill pill-secondary pill-sm">How did total MRR change month by month?</button>
+            <button type="button" class="pill pill-secondary pill-sm">Which region grew fastest over the last 12 months?</button>
+            <button type="button" class="pill pill-secondary pill-sm">Which sales channel's customers churn the least?</button>
+            <button type="button" class="pill pill-secondary pill-sm">What share of MRR comes from each plan?</button>
+            <button type="button" class="pill pill-secondary pill-sm">How many new customers did we add each quarter?</button>
+            <button type="button" class="pill pill-secondary pill-sm">Which plan, region, and channel has the highest churn?</button>
+            <button type="button" class="pill pill-secondary pill-sm">If the trend holds, what will MRR be in December 2026?</button>
+          </div>
+          <p class="small" id="about-sample">The sample is a monthly subscription export from January 2025 to September 2026, with three plans, four regions, and three sales channels. Drop your own CSV anywhere on the page. A question takes under a minute and costs about 10 cents.</p>
+        </div>
+
+        <article class="result" id="result" hidden>
+          <header>
+            <h2 id="asked"></h2>
+            <p class="status" id="status"><i></i><span id="status-text"></span></p>
+          </header>
+          <div class="lines" id="answer-waiting"><i></i><i></i><i></i></div>
+          <p id="answer" hidden></p>
+          <div class="findings" id="findings"></div>
+          <figure class="chart" id="chart">
+            <figcaption><span id="chart-title"></span><span class="legend" id="legend"></span></figcaption>
+            <div class="plot loading" id="plot"><svg id="svg" aria-hidden="true"></svg><div class="tip" id="tip" hidden></div></div>
+          </figure>
+          <p id="message" hidden></p>
+          <div class="more" id="more" hidden>
+            <p class="label">Ask another question about the sample</p>
+            <div class="questions" id="more-questions"></div>
+          </div>
+        </article>
+      </section>
+    </div>
+
+    <section class="notebook" aria-label="The code Grok runs">
+      <div class="nb-bar">
+        <span class="lights" aria-hidden="true"><i style="background: #ff5f57"></i><i style="background: #febc2e"></i><i style="background: #28c840"></i></span>
+        <span class="tab">Python sandbox</span>
+        <span id="nb-status">Python 3.12 with pandas, no network</span>
+      </div>
+      <div class="cells" id="cells">
+        <section class="cell" id="data-cell" hidden>
+          <div class="cell-head"><span class="kind">input_file</span><span class="name" id="data-name"></span><span class="state" id="data-meta"></span></div>
+          <div class="table"><table id="preview"></table></div>
+          <p class="data-note" id="data-note"></p>
+        </section>
+      </div>
+    </section>
+  </div>
+</main>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  const MAX_BYTES = 2 * 1024 * 1024;
+  // The series that answers the question gets the accent color, and the rest these, in order.
+  const ACCENT = "#ff6308";
+  const NEUTRALS = ["#0a0a0a", "#a19c95", "#d6d2cc", "#6b6661", "#c2bdb6"];
+  const ICONS = {
+    run: '<svg class="solid" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3v10l8-5z"/></svg>',
+    stop: '<svg class="solid" viewBox="0 0 16 16" aria-hidden="true"><rect x="4" y="4" width="8" height="8" rx="1.5"/></svg>',
+  };
+  const PYTHON = /(#.*$)|("""[\s\S]*?"""|'''[\s\S]*?'''|\b[rfb]{0,2}"(?:\\.|[^"\\\n])*"|\b[rfb]{0,2}'(?:\\.|[^'\\\n])*'|"(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*')|\b(\d+(?:\.\d+)?)\b|\b(def|return|import|from|as|for|in|if|elif|else|while|try|except|finally|with|lambda|and|or|not|is|None|True|False|class|pass|break|continue|raise|del|assert|yield)\b|\b([A-Za-z_]\w*)(?=\()/gm;
+  let csv = null;
+  let running = false;
+  let events = null;
+  let startedAt = 0;
+  let runs = [];
+  let note = null;
+  let draft = null;
+  let frame = 0;
+  let chartShown = null;
+
+  showButton("run");
+  fetch("/subscriptions.csv").then((response) => response.text()).then((text) => useCsv(text, "subscriptions.csv", true));
+
+  // The sample questions are on the start screen, and again under each answer while the sample is loaded.
+  $("more-questions").innerHTML = $("questions").innerHTML;
+  for (const list of [$("questions"), $("more-questions")]) {
+    list.onclick = (event) => {
+      const button = event.target.closest("button");
+      if (!button || running) return;
+      $("question").value = button.textContent;
+      $("form").requestSubmit();
+    };
+  }
+  $("file").onchange = () => choose($("file").files[0]);
+  // A file dropped anywhere else would open in the tab, so the whole page takes the drop.
+  document.ondragover = (event) => {
+    event.preventDefault();
+    document.body.classList.add("dragging");
+  };
+  document.ondragleave = (event) => event.relatedTarget || document.body.classList.remove("dragging");
+  document.ondrop = (event) => {
+    event.preventDefault();
+    document.body.classList.remove("dragging");
+    choose(event.dataTransfer.files[0]);
+  };
+
+  async function choose(file) {
+    if (!file || running) return;
+    if (!/\.(csv|txt)$/i.test(file.name) && file.type !== "text/csv") return alert("Choose a CSV file.");
+    if (file.size > MAX_BYTES) return alert("Choose a CSV of 2 MB or less.");
+    useCsv(await file.text(), file.name, false);
+  }
+
+  // The page reads the CSV itself to show a preview. The server gets it with the first question.
+  function useCsv(text, name, sample) {
+    const rows = parseCsv(text);
+    csv = { text, name, rows: rows.length - 1, columns: rows[0]?.length ?? 0, id: null, sample };
+    $("file-name").textContent = name;
+    $("file-rows").textContent = `· ${csv.rows.toLocaleString("en")} rows`;
+    $("data-name").textContent = name;
+    $("data-meta").textContent = `${csv.rows.toLocaleString("en")} rows × ${csv.columns} columns · ${formatBytes(new Blob([text]).size)}`;
+    $("data-note").innerHTML = `Uploaded to the Files API with the first question and attached to each one as an <code>input_file</code>. Grok's code reads it from its working directory.`;
+    renderPreview(rows);
+    $("data-cell").hidden = false;
+    clearRuns();
+    if (!sample) {
+      $("start").hidden = false;
+      $("result").hidden = true;
+      $("questions").hidden = true;
+      $("about-sample").hidden = true;
+      $("question").value = "";
+      $("question").focus();
+    }
+  }
+
+  function renderPreview(rows) {
+    const [header = [], ...body] = rows;
+    const sample = body.slice(0, 6);
+    const kinds = header.map((_, column) => {
+      const cells = sample.map((row) => row[column] ?? "").filter((cell) => cell !== "");
+      if (cells.length && cells.every((cell) => /^\d{4}-\d{2}(-\d{2})?/.test(cell))) return "date";
+      if (cells.length && cells.every((cell) => !Number.isNaN(Number(cell)))) return "number";
+      return "text";
+    });
+    $("preview").innerHTML =
+      `<tr>${header.map((name, i) => `<th>${escapeHtml(name)}<small>${kinds[i]}</small></th>`).join("")}</tr>` +
+      sample.map((row) => `<tr>${header.map((_, i) => `<td class="${kinds[i]}">${escapeHtml(row[i] ?? "")}</td>`).join("")}</tr>`).join("");
+  }
+
+  $("form").onsubmit = async (event) => {
+    event.preventDefault();
+    if (running) return stop("Stopped.");
+    if (!csv) return;
+    const question = $("question").value.trim();
+    reset(question);
+    setRunning(true);
+    try {
+      if (!csv.id) {
+        setStatus("Sending the CSV to the server");
+        const response = await fetch(`/api/datasets?name=${encodeURIComponent(csv.name)}`, { method: "POST", body: csv.text });
+        if (!response.ok) throw new Error(await response.text());
+        csv.id = (await response.json()).id;
+      }
+    } catch (error) {
+      return fail(`Couldn't send the CSV: ${error.message}`);
+    }
+    if (!running) return;
+    events = new EventSource(`/api/answer?dataset=${csv.id}&question=${encodeURIComponent(question)}`);
+    const on = (name, handler) => events.addEventListener(name, (message) => handler(JSON.parse(message.data)));
+
+    on("step", ({ step, filename, fileId }) => {
+      if (step === "upload") setStatus(`Uploading ${filename} to the Files API`);
+      if (step === "think") {
+        setStatus("Thinking");
+        $("data-note").innerHTML = `Attached as <code>${escapeHtml(fileId)}</code>, an <code>input_file</code>. Grok's code reads it as <code>${escapeHtml(filename)}</code> in its working directory.`;
+      }
+    });
+    on("reasoning", ({ text }) => {
+      if (!note) {
+        note = document.createElement("p");
+        note.className = "note";
+        note.innerHTML = "<b>Thinking</b>";
+        $("cells").append(note);
+      }
+      note.append(text);
+      reveal(note);
+    });
+    on("code", ({ index, code }) => {
+      note = null;
+      const cell = document.createElement("section");
+      cell.className = "cell run running";
+      // One row per line, so long lines wrap under the code instead of under the line numbers.
+      const lines = code.replace(/\n+$/, "").split("\n");
+      cell.innerHTML = `<div class="cell-head"><span class="kind">In [${index + 1}]</span><span class="name">Run ${index + 1}</span><span class="state">Running</span></div>
+        <div class="code">${lines.map((line, i) => `<div><span class="n">${i + 1}</span><span class="c">${highlight(line) || " "}</span></div>`).join("")}</div>`;
+      $("cells").append(cell);
+      runs[index] = { cell, started: Date.now() };
+      setStatus(`Running code · run ${index + 1}`);
+      setNotebookStatus(`Running run ${index + 1}`, true);
+      reveal(cell);
+    });
+    on("output", ({ index, stdout, stderr, exitCode }) => {
+      const run = runs[index];
+      if (!run) return;
+      const seconds = ((Date.now() - run.started) / 1000).toFixed(1);
+      run.cell.classList.remove("running");
+      run.cell.classList.toggle("failed", Boolean(exitCode));
+      run.cell.querySelector(".state").textContent = exitCode ? `Error · ${seconds} s` : `Ran in ${seconds} s`;
+      const printed = escapeHtml(stdout.replace(/\n+$/, "")) + (stderr ? `<span class="stderr">${stdout ? "\n" : ""}${escapeHtml(stderr.replace(/\n+$/, ""))}</span>` : "");
+      run.cell.insertAdjacentHTML("beforeend", `<div class="output"><p>OUTPUT</p><pre>${printed || "Printed nothing"}</pre></div>`);
+      setStatus("Thinking");
+      setNotebookStatus(plural(runs.filter(Boolean).length, "run"));
+      reveal(run.cell);
+    });
+    on("draft", (value) => {
+      draft = value;
+      frame ||= requestAnimationFrame(() => {
+        frame = 0;
+        showAnswer(draft);
+      });
+    });
+    on("done", (answer) => {
+      cancelAnimationFrame(frame);
+      frame = 0;
+      showAnswer(answer);
+      const seconds = Math.round((Date.now() - startedAt) / 1000);
+      const cost = answer.cost === null ? "" : ` · $${answer.cost.toFixed(2)}`;
+      setStatus(`Answered in ${plural(seconds, "second")} · ${plural(answer.runs, "code run")}${cost}`, true);
+      setNotebookStatus(`${plural(answer.runs, "run")} · ${seconds} s${cost}`);
+      finish();
+    });
+    on("failure", ({ message }) => fail(`Couldn't answer the question: ${message}`));
+    events.onerror = () => fail("Lost the connection to the server.");
+  };
+
+  // Shows the answer as far as Grok has written it. The answer comes first, then the findings, then
+  // the chart, whose lines grow as each value arrives.
+  function showAnswer({ answer, findings, chart }) {
+    if (answer) {
+      if ($("answer").hidden) setStatus("Writing the answer");
+      $("answer-waiting").hidden = true;
+      $("answer").hidden = false;
+      $("answer").textContent = answer;
+    }
+    // Tiles are filled in place as the findings stream, so each one fades in only once.
+    (findings ?? []).filter((finding) => finding?.value).forEach((finding, i) => {
+      let tile = $("findings").children[i];
+      if (!tile) tile = $("findings").appendChild(document.createElement("div"));
+      if (!tile.firstChild) {
+        tile.className = "finding";
+        tile.innerHTML = "<strong></strong><span></span><small></small>";
+      }
+      const [value, label, detail] = tile.children;
+      value.textContent = finding.value;
+      label.textContent = finding.label ?? "";
+      detail.textContent = finding.detail ?? "";
+    });
+    if (chart) drawChart(chart);
+  }
+
+  function drawChart(chart) {
+    chartShown = chart;
+    const plot = $("plot");
+    const labels = chart.labels ?? [];
+    const series = (chart.series ?? []).filter((item) => item && Array.isArray(item.values));
+    const values = series.flatMap((item) => item.values.slice(0, labels.length)).filter(Number.isFinite);
+    const main = Math.max(0, series.findIndex((item) => item.name === chart.highlight));
+    const colors = series.map((_, i) => (i === main ? ACCENT : NEUTRALS[(i < main ? i : i - 1) % NEUTRALS.length]));
+    $("chart-title").textContent = chart.title ?? "";
+    $("legend").innerHTML = series.map((item, i) => `<span><i style="background: ${colors[i]}"></i>${escapeHtml(item.name ?? "")}</span>`).join("");
+    plot.classList.toggle("loading", !values.length);
+    plot.geometry = null;
+    if (!values.length) return ($("svg").innerHTML = "");
+
+    const { width, height } = plot.getBoundingClientRect();
+    const pad = { top: 28, right: 12, bottom: 26, left: 50 };
+    const ticks = niceTicks(Math.min(0, ...values), Math.max(...values));
+    const [low, high] = [ticks[0], ticks.at(-1)];
+    const plotWidth = width - pad.left - pad.right;
+    const plotHeight = height - pad.top - pad.bottom;
+    const bar = chart.type === "bar";
+    const band = plotWidth / Math.max(labels.length, 1);
+    const x = (i) => pad.left + (bar ? band * (i + 0.5) : labels.length > 1 ? (plotWidth * i) / (labels.length - 1) : plotWidth / 2);
+    const y = (value) => pad.top + plotHeight - ((value - low) / (high - low || 1)) * plotHeight;
+
+    let svg = "";
+    for (const tick of ticks) {
+      svg += `<line class="grid${tick === 0 ? " zero" : ""}" x1="${pad.left}" x2="${width - pad.right}" y1="${y(tick)}" y2="${y(tick)}"/>`;
+      svg += `<text class="tick" x="${pad.left - 10}" y="${y(tick) + 4}" text-anchor="end">${formatValue(tick, chart.format, true)}</text>`;
+    }
+    const every = Math.ceil(labels.length / Math.max(1, Math.floor(plotWidth / 72)));
+    labels.forEach((label, i) => {
+      if (i % every === 0) svg += `<text class="tick" x="${x(i)}" y="${height - 4}" text-anchor="middle">${escapeHtml(formatLabel(label))}</text>`;
+    });
+    for (const marker of chart.markers ?? []) {
+      const i = labels.indexOf(marker?.at);
+      if (i < 0) continue;
+      const at = bar ? x(i) - band / 2 : x(i);
+      svg += `<line class="marker" x1="${at}" x2="${at}" y1="${pad.top - 10}" y2="${pad.top + plotHeight}"/>`;
+      svg += `<text class="marker-label" x="${at + 6}" y="${pad.top - 14}">${escapeHtml(marker.label ?? "")}</text>`;
+    }
+    // The highlighted series is drawn last, so it sits on top.
+    const order = bar ? [...series.keys()] : [...series.keys()].filter((s) => s !== main).concat(main);
+    order.forEach((s) => {
+      const item = series[s];
+      const color = colors[s];
+      const values = item.values.slice(0, labels.length);
+      if (bar) {
+        const barWidth = Math.min(30, (band * 0.72) / series.length);
+        values.forEach((value, i) => {
+          if (!Number.isFinite(value)) return;
+          const left = x(i) - (barWidth * series.length) / 2 + barWidth * s;
+          const [top, bottom] = [y(Math.max(value, 0)), y(Math.min(value, 0))];
+          svg += `<rect x="${left + 1}" y="${top}" width="${Math.max(barWidth - 2, 1)}" height="${Math.max(bottom - top, 1)}" rx="3" fill="${color}"/>`;
+        });
+      } else {
+        let path = "";
+        values.forEach((value, i) => {
+          if (Number.isFinite(value)) path += `${path && Number.isFinite(values[i - 1]) ? "L" : "M"}${x(i).toFixed(1)} ${y(value).toFixed(1)}`;
+        });
+        svg += `<path d="${path}" stroke="${color}" stroke-width="${s === main ? 2.5 : 1.75}"/>`;
+      }
+    });
+    svg += `<g id="hover"></g>`;
+    $("svg").setAttribute("viewBox", `0 0 ${width} ${height}`);
+    $("svg").innerHTML = svg;
+    plot.geometry = { chart, labels, series, colors, x, y, bar, top: pad.top, bottom: pad.top + plotHeight };
+  }
+
+  // Hovering the chart shows every series' value at the nearest label.
+  $("plot").onmousemove = (event) => {
+    const geometry = $("plot").geometry;
+    if (!geometry) return;
+    const box = $("plot").getBoundingClientRect();
+    const pointer = event.clientX - box.left;
+    let index = 0;
+    geometry.labels.forEach((_, i) => {
+      if (Math.abs(geometry.x(i) - pointer) < Math.abs(geometry.x(index) - pointer)) index = i;
+    });
+    const rows = geometry.series
+      .map((item, s) => ({ name: item.name, value: item.values[index], color: geometry.colors[s] }))
+      .filter((row) => Number.isFinite(row.value));
+    if (!rows.length) return hideTip();
+    const at = geometry.x(index);
+    $("hover").innerHTML =
+      `<line class="guide" x1="${at}" x2="${at}" y1="${geometry.top}" y2="${geometry.bottom}"/>` +
+      (geometry.bar ? "" : rows.map((row) => `<circle cx="${at}" cy="${geometry.y(row.value)}" r="4" fill="${row.color}" stroke="#fff" stroke-width="2"/>`).join(""));
+    $("tip").innerHTML =
+      `<b>${escapeHtml(formatLabel(geometry.labels[index]))}</b>` +
+      rows.map((row) => `<div><i style="background: ${row.color}"></i>${escapeHtml(row.name ?? "")}<span>${formatValue(row.value, geometry.chart.format)}</span></div>`).join("");
+    $("tip").hidden = false;
+    const width = $("tip").offsetWidth;
+    $("tip").style.left = `${at + 16 + width > box.width ? at - 16 - width : at + 16}px`;
+  };
+  $("plot").onmouseleave = hideTip;
+  new ResizeObserver(() => chartShown && drawChart(chartShown)).observe($("plot"));
+
+  function hideTip() {
+    $("tip").hidden = true;
+    if ($("hover")) $("hover").innerHTML = "";
+  }
+
+  function finish() {
+    events?.close();
+    events = null;
+    running = false;
+    setRunning(false);
+    // Nothing more is coming, so placeholders for parts that never arrived go away.
+    $("answer-waiting").hidden = true;
+    $("findings").querySelectorAll(".waiting").forEach((tile) => tile.remove());
+    if ($("plot").classList.contains("loading")) $("chart").hidden = true;
+    for (const run of runs.filter(Boolean)) {
+      if (!run.cell.classList.contains("running")) continue;
+      run.cell.classList.remove("running");
+      run.cell.querySelector(".state").textContent = "Stopped";
+    }
+    $("more").hidden = !csv?.sample;
+  }
+
+  function stop(message) {
+    finish();
+    setStatus(message, true);
+    setNotebookStatus(runs.length ? `${plural(runs.filter(Boolean).length, "run")} · stopped` : "Stopped");
+  }
+
+  function fail(message) {
+    finish();
+    setStatus("Couldn't finish", true);
+    setNotebookStatus(plural(runs.filter(Boolean).length, "run"));
+    $("message").textContent = message;
+    $("message").hidden = false;
+  }
+
+  function reset(question) {
+    clearRuns();
+    startedAt = Date.now();
+    draft = null;
+    chartShown = null;
+    $("start").hidden = true;
+    $("result").hidden = false;
+    $("more").hidden = true;
+    $("asked").textContent = question;
+    $("answer").hidden = true;
+    $("answer").textContent = "";
+    $("answer-waiting").hidden = false;
+    $("findings").innerHTML = '<div class="finding waiting"></div>'.repeat(3);
+    $("chart").hidden = false;
+    $("chart-title").textContent = "";
+    $("legend").innerHTML = "";
+    $("svg").innerHTML = "";
+    $("plot").classList.add("loading");
+    $("plot").geometry = null;
+    hideTip();
+    $("message").hidden = true;
+  }
+
+  function clearRuns() {
+    $("cells").querySelectorAll(".run, .note").forEach((item) => item.remove());
+    runs = [];
+    note = null;
+    setNotebookStatus("Python 3.12 with pandas, no network");
+  }
+
+  // Keeps the newest cell in view as the notebook grows.
+  function reveal(element) {
+    const box = $("cells");
+    const bottom = element.offsetTop + element.offsetHeight + 14 - box.clientHeight;
+    if (bottom > box.scrollTop) box.scrollTo({ top: bottom, behavior: "smooth" });
+  }
+
+  function setStatus(text, done = false) {
+    $("status-text").textContent = text;
+    $("status").classList.toggle("done", done);
+  }
+
+  function setNotebookStatus(text, working = false) {
+    $("nb-status").innerHTML = `${working ? "<i></i>" : ""}${escapeHtml(text)}`;
+  }
+
+  function setRunning(on) {
+    running = on;
+    showButton(on ? "stop" : "run");
+    $("go").classList.toggle("stop", on);
+  }
+
+  // The button shows the action it takes: stop while Grok works, run otherwise.
+  function showButton(action) {
+    $("go").innerHTML = `${ICONS[action]}${action === "run" ? "Ask" : "Stop"}`;
+  }
+
+  function highlight(code) {
+    let html = "";
+    let last = 0;
+    for (const match of code.matchAll(PYTHON)) {
+      const kind = match[1] ? "comment" : match[2] ? "string" : match[3] ? "number" : match[4] ? "keyword" : "function";
+      html += `${escapeHtml(code.slice(last, match.index))}<span class="t-${kind}">${escapeHtml(match[0])}</span>`;
+      last = match.index + match[0].length;
+    }
+    return html + escapeHtml(code.slice(last));
+  }
+
+  function parseCsv(text) {
+    const rows = [];
+    let row = [];
+    let cell = "";
+    let quoted = false;
+    for (let i = 0; i < text.length; i++) {
+      const char = text[i];
+      if (quoted) {
+        if (char !== '"') cell += char;
+        else if (text[i + 1] === '"') cell += text[++i];
+        else quoted = false;
+      } else if (char === '"') quoted = true;
+      else if (char === ",") {
+        row.push(cell);
+        cell = "";
+      } else if (char === "\n" || char === "\r") {
+        if (char === "\r" && text[i + 1] === "\n") i++;
+        rows.push([...row, cell]);
+        row = [];
+        cell = "";
+      } else cell += char;
+    }
+    if (cell || row.length) rows.push([...row, cell]);
+    return rows.filter((items) => items.some((item) => item !== ""));
+  }
+
+  function niceTicks(low, high) {
+    if (high <= low) high = low + 1;
+    const rough = (high - low) / 4;
+    const power = 10 ** Math.floor(Math.log10(rough));
+    const step = [1, 2, 2.5, 5, 10].map((multiple) => multiple * power).find((size) => size >= rough);
+    const ticks = [];
+    for (let k = Math.floor(low / step); k <= Math.ceil(high / step); k++) ticks.push(Number((k * step).toPrecision(12)));
+    return ticks;
+  }
+
+  function formatValue(value, format, short = false) {
+    const size = Math.abs(value);
+    const number = short && size >= 1e6 ? `${Number((value / 1e6).toFixed(1))}M` : short && size >= 1e3 ? `${Number((value / 1e3).toFixed(1))}k` : value.toLocaleString("en", { maximumFractionDigits: 2 });
+    if (format === "percent") return `${number}%`;
+    if (format === "usd") return value < 0 ? `−$${number.slice(1)}` : `$${number}`;
+    return number;
+  }
+
+  // Months like 2026-04 read as Apr 26. Other labels are shortened if they're long.
+  function formatLabel(label) {
+    const text = String(label ?? "");
+    const month = /^(\d{4})-(\d{2})$/.exec(text);
+    if (month) return new Date(Date.UTC(Number(month[1]), Number(month[2]) - 1)).toLocaleDateString("en", { month: "short", year: "2-digit", timeZone: "UTC" });
+    return text.length > 16 ? `${text.slice(0, 15)}…` : text;
+  }
+
+  function formatBytes(bytes) {
+    return bytes < 1024 * 1024 ? `${Math.round(bytes / 1024)} KB` : `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+  }
+
+  function plural(count, word) {
+    return `${count} ${word}${count === 1 ? "" : "s"}`;
+  }
+
+  function escapeHtml(text) {
+    return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+[
+  { "question": "Can I return a sale item after 30 days?", "filter": "version=\"2026\"", "expect": { "file": "returns-policy-2026.md", "text": "within 14 days of delivery" } },
+  { "question": "Can I return a sale item after 30 days?", "filter": "version=\"2025\"", "expect": { "file": "returns-policy-2025.md", "text": "within 45 days of delivery" } },
+  { "question": "Is return shipping free?", "filter": "version=\"2026\"", "expect": { "file": "returns-policy-2026.md", "text": "$6.95 return shipping fee" } },
+  { "question": "Is return shipping free?", "filter": "version=\"2025\"", "expect": { "file": "returns-policy-2025.md", "text": "prepaid return label" } },
+  { "question": "How long does a refund take once my return arrives?", "filter": "version=\"2026\"", "expect": { "file": "returns-policy-2026.md", "text": "within 5 business days" } },
+  { "question": "Can I return a gift card?", "filter": "version=\"2026\"", "expect": { "file": "returns-policy-2026.md", "text": "Gift cards, personalized items" } },
+  { "question": "How much does overnight shipping cost?", "filter": "version=\"2026\"", "expect": { "file": "shipping-policy.md", "text": "$29.95" } },
+  { "question": "Do you ship to Canada?", "filter": "version=\"2026\"", "expect": { "file": "shipping-policy.md", "text": "and to Canada" } },
+  { "question": "When is standard shipping free?", "filter": "", "expect": { "file": "shipping-policy.md", "text": "free on orders over $75" } },
+  { "question": "Does the lifetime guarantee cover normal wear and tear?", "filter": "team=\"Support\"", "expect": { "file": "warranty-policy.md", "text": "doesn't cover normal wear and tear" } },
+  { "question": "How long does a warranty repair take?", "filter": "team=\"Support\"", "expect": { "file": "warranty-policy.md", "text": "Repairs take 2 to 3 weeks" } },
+  { "question": "How many days a week can I work from home?", "filter": "team=\"People\"", "expect": { "file": "remote-work-policy.md", "text": "up to 3 days a week" } },
+  { "question": "Is there a stipend for my home office?", "filter": "version=\"2026\"", "expect": { "file": "remote-work-policy.md", "text": "stipend of $500" } },
+  { "question": "Can I work from another country for a month?", "filter": "version=\"2026\"", "expect": { "file": "remote-work-policy.md", "text": "up to 4 weeks a year" } },
+  { "question": "What's the hotel limit in San Francisco?", "filter": "team=\"Finance\"", "expect": { "file": "travel-and-expenses.pdf", "text": "the limit is $325 a night" } },
+  { "question": "How soon after a trip do I have to submit expenses?", "filter": "team=\"Finance\"", "expect": { "file": "travel-and-expenses.pdf", "text": "within 30 days after the trip ends" } },
+  { "question": "Do I need a receipt for a $20 taxi ride?", "filter": "version=\"2026\"", "expect": { "file": "travel-and-expenses.pdf", "text": "Expenses of $25 or less don't need a receipt" } },
+  { "question": "Do we offer a student discount?", "filter": "version=\"2026\"", "expect": null },
+  { "question": "What's our parental leave policy?", "filter": "", "expect": null },
+  { "question": "Can I return a sale item after 30 days?", "filter": "team=\"Finance\"", "expect": null }
+]

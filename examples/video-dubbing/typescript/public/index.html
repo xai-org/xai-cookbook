@@ -1,0 +1,769 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Video Dubbing</title>
+<style>
+  /* The look every SpaceXAI Cookbook page shares, after x.ai. */
+  :root {
+    --bg: #fff;
+    --card: #f9f8f6;
+    --secondary: #f2f1ef;
+    --secondary-hover: #e9e8e5;
+    --tint: rgb(10 10 10 / 0.04);
+    --line: rgb(10 10 10 / 0.08);
+    --border: rgb(10 10 10 / 0.15);
+    --fg: #0a0a0a;
+    --muted: rgb(10 10 10 / 0.6);
+    --faint: rgb(10 10 10 / 0.36);
+    --accent: #ff6308;
+    --accent-soft: rgb(255 99 8 / 0.1);
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; font: 14px/22px var(--sans); background: var(--bg); color: var(--fg); -webkit-font-smoothing: antialiased; }
+  button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
+  a { color: inherit; }
+  svg { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  @keyframes blink { 50% { opacity: 0.3; } }
+  @keyframes pulse { to { background-color: var(--secondary-hover); } }
+  @keyframes appear { from { opacity: 0; transform: translateY(4px); } }
+
+  .site { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 12px; height: 60px; padding: 0 20px; background: rgb(255 255 255 / 0.85); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+  .logo { flex: none; margin-right: 4px; color: var(--fg); }
+  .logo svg { display: block; width: 52px; height: 20px; fill: currentColor; stroke: none; }
+  .crumbs { display: flex; align-items: center; gap: 8px; min-width: 0; color: var(--muted); white-space: nowrap; }
+  .crumbs svg { width: 12px; height: 12px; color: var(--faint); }
+  .crumbs h1 { margin: 0; overflow: hidden; text-overflow: ellipsis; font-size: inherit; line-height: inherit; font-weight: 500; color: var(--fg); }
+  .site .pill { flex: none; margin-left: auto; }
+  .models { flex: none; height: 26px; padding: 0 10px; border-radius: 9999px; box-shadow: inset 0 0 0 1px var(--line); font-size: 12px; font-weight: 500; line-height: 26px; color: var(--muted); }
+  .pill { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 40px; padding: 0 18px; border-radius: 9999px; font-size: 14px; font-weight: 500; white-space: nowrap; text-decoration: none; }
+  .pill-sm { height: 32px; padding: 0 14px; font-size: 13px; }
+  .pill-primary { background: var(--fg); color: #fff; }
+  .pill-primary:hover { background: #202329; }
+  .pill-secondary { background: var(--secondary); color: var(--fg); }
+  .pill-secondary:hover { background: var(--secondary-hover); }
+  .pill:disabled { opacity: 0.4; cursor: default; }
+  .pill svg { width: 14px; height: 14px; }
+  .field { min-width: 0; height: 40px; padding: 0 18px; border: 1px solid var(--border); border-radius: 9999px; background: var(--bg); color: var(--fg); font: inherit; outline: none; }
+  .field:focus { border-color: var(--fg); }
+  .field::placeholder { color: var(--faint); }
+  .surface { display: flex; flex-direction: column; gap: 8px; height: calc(100vh - 72px); min-height: 560px; margin: 0 12px 12px; padding: 8px; border-radius: 20px; background: var(--card); }
+  .panel { min-width: 0; padding: 20px 22px; border-radius: 16px; background: var(--bg); }
+  .label { margin: 0; font-size: 13px; font-weight: 500; color: var(--muted); }
+  @media (max-width: 900px) {
+    .models { display: none; }
+  }
+  @media (max-width: 640px) {
+    .site { padding: 0 16px; }
+    .crumbs > span, .crumbs > svg { display: none; }
+    .surface { margin: 0 8px 8px; }
+  }
+
+  /* Video Dubbing */
+  .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px; border-radius: 16px; background: var(--bg); }
+  .toolbar .spacer { flex: 1; }
+  #choose { position: relative; cursor: pointer; }
+  #choose input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+  .chosen { display: inline-flex; align-items: center; gap: 6px; min-width: 0; max-width: 260px; padding: 0 6px; color: var(--muted); }
+  .chosen svg { flex: none; width: 14px; height: 14px; }
+  .chosen span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .language { display: inline-flex; align-items: center; gap: 10px; color: var(--muted); }
+  .language select { height: 40px; padding: 0 38px 0 16px; border: 1px solid var(--border); border-radius: 9999px; background: var(--bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 6l4 4 4-4' fill='none' stroke='%230a0a0a' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 14px center / 12px; color: var(--fg); font: inherit; font-weight: 500; -webkit-appearance: none; appearance: none; outline: none; cursor: pointer; }
+  .language select:focus { border-color: var(--fg); }
+  .language select:disabled { opacity: 0.5; cursor: default; }
+  #summary { padding: 0 8px; color: var(--faint); font-size: 13px; font-variant-numeric: tabular-nums; }
+  #summary.bad { color: #e5484d; }
+  #go.stop { background: var(--secondary); color: var(--fg); }
+
+  .intro { flex: 1; display: grid; place-content: center; justify-items: center; gap: 16px; padding: 40px 28px; text-align: center; }
+  .intro h2 { margin: 0; font-size: 40px; line-height: 1.1; font-weight: 450; letter-spacing: -0.02em; }
+  .intro > p { max-width: 640px; margin: 0; font-size: 16px; line-height: 26px; color: var(--muted); }
+  .intro-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 14px; margin-top: 6px; }
+  .intro-actions span { color: var(--faint); }
+  .how { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; max-width: 1000px; margin: 28px 0 0; padding: 0; list-style: none; counter-reset: how; text-align: left; }
+  .how li { padding: 16px 18px; border-radius: 14px; background: var(--card); counter-increment: how; }
+  .how b { display: block; margin-bottom: 4px; font-weight: 500; }
+  .how b::before { content: counter(how); display: inline-grid; place-items: center; width: 20px; height: 20px; margin-right: 8px; border-radius: 50%; background: var(--fg); color: #fff; font-size: 11px; font-weight: 600; vertical-align: 1px; }
+  .how span { font-size: 13px; line-height: 20px; color: var(--muted); }
+
+  .studio { flex: 1; display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 8px; min-height: 0; }
+  .stage { display: grid; grid-template-columns: minmax(0, 1fr) 280px; align-items: start; gap: 20px; padding: 14px; }
+  .viewer { display: grid; gap: 12px; min-width: 0; }
+  .monitors { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .monitor { min-width: 0; margin: 0; }
+  .screen { position: relative; aspect-ratio: 16 / 9; width: 100%; max-height: 36vh; overflow: hidden; border-radius: 12px; background: #0a0a0a; cursor: pointer; }
+  .screen video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+  .monitor figcaption { display: flex; align-items: center; gap: 8px; height: 30px; margin-top: 6px; padding: 0 2px; color: var(--muted); }
+  .tag { padding: 0 9px; border-radius: 9999px; background: var(--secondary); font-size: 12px; font-weight: 500; line-height: 22px; color: var(--fg); }
+  .tag.dub { background: var(--fg); color: #fff; }
+  .hearing { display: none; align-items: center; gap: 6px; margin-left: auto; color: var(--accent); font-size: 12px; font-weight: 500; }
+  .hearing svg { width: 14px; height: 14px; }
+  .monitor.heard .hearing { display: inline-flex; }
+  .overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 20px 28px; background: rgb(10 10 10 / 0.66); color: #f2f1ef; text-align: center; cursor: default; }
+  .overlay-title { margin: 0; font-size: 18px; line-height: 26px; font-weight: 500; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; }
+  .overlay-detail { margin: 0; font-size: 13px; color: rgb(242 241 239 / 0.62); }
+  .overlay .meter { width: min(240px, 70%); height: 3px; margin-top: 12px; overflow: hidden; border-radius: 2px; background: rgb(255 255 255 / 0.16); }
+  .overlay .meter i { display: block; width: 0; height: 100%; border-radius: inherit; background: #f2f1ef; transition: width 0.4s; }
+  .thinking { display: flex; flex-direction: column; justify-content: flex-end; width: 100%; max-width: 440px; height: 54px; margin-top: 12px; overflow: hidden; font: 11px/18px var(--mono); color: rgb(242 241 239 / 0.5); text-align: left; white-space: pre-wrap; -webkit-mask-image: linear-gradient(to bottom, transparent, #000 60%); mask-image: linear-gradient(to bottom, transparent, #000 60%); }
+  .thinking:empty { display: none; }
+
+  .transport { display: flex; align-items: center; gap: 12px; min-width: 0; }
+  #play { flex: none; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: var(--fg); color: #fff; }
+  #play svg { width: 12px; height: 12px; fill: currentColor; stroke: none; }
+  #timecode { flex: none; font: 12px var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+  .timeline { position: relative; flex: 1; min-width: 0; height: 28px; cursor: pointer; }
+  .timeline::before { content: ""; position: absolute; left: 0; right: 0; top: 13px; height: 2px; border-radius: 1px; background: var(--line); }
+  .segment { position: absolute; top: 8px; height: 12px; border-radius: 3px; }
+  #playhead { position: absolute; top: 2px; bottom: 2px; left: 0; width: 2px; margin-left: -1px; border-radius: 1px; background: var(--accent); pointer-events: none; }
+  .listen { flex: none; display: flex; gap: 2px; padding: 3px; border-radius: 9999px; background: var(--secondary); }
+  .listen button { height: 28px; padding: 0 12px; border-radius: 9999px; font-size: 13px; font-weight: 500; color: var(--muted); }
+  .listen button.active { background: var(--bg); color: var(--fg); box-shadow: 0 1px 2px rgb(10 10 10 / 0.08); }
+  .listen button:disabled { opacity: 0.4; cursor: default; }
+
+  .status { display: flex; flex-direction: column; gap: 14px; min-width: 0; padding: 4px 4px 0; }
+  .steps { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+  .steps li { display: grid; grid-template-columns: 8px auto minmax(0, 1fr); align-items: center; gap: 10px; color: var(--faint); }
+  .steps i { width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid currentColor; }
+  .steps .active { color: var(--fg); }
+  .steps .active i { border-color: var(--accent); background: var(--accent); animation: blink 1s ease-in-out infinite; }
+  .steps .done { color: var(--muted); }
+  .steps .done i { border-color: var(--fg); background: var(--fg); }
+  .steps em { min-width: 0; overflow: hidden; font-style: normal; font-size: 12px; color: var(--faint); text-align: right; white-space: nowrap; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+  .voices { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; padding-top: 14px; border-top: 1px solid var(--line); animation: appear 0.3s ease-out; }
+  .voices .label { margin-right: auto; }
+  .voice { display: inline-flex; align-items: center; gap: 7px; }
+  .avatar { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; font-size: 11px; font-style: normal; font-weight: 600; }
+  .s0 { background: var(--fg); color: #fff; }
+  .s1 { background: var(--secondary-hover); color: var(--fg); }
+  .s2 { background: #a8a29e; color: #fff; }
+  .s3 { background: #d6d3d1; color: var(--fg); }
+  .segment.s0 { background: rgb(10 10 10 / 0.72); }
+  .segment.s1 { background: rgb(10 10 10 / 0.26); }
+  .segment.s2 { background: rgb(10 10 10 / 0.5); }
+  .segment.s3 { background: rgb(10 10 10 / 0.14); }
+  .result { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 14px; margin: 0; padding-top: 14px; border-top: 1px solid var(--line); font-size: 13px; animation: appear 0.3s ease-out; }
+  .result dt { color: var(--faint); }
+  .result dd { margin: 0; font-variant-numeric: tabular-nums; }
+  #saved { font: 12px/20px var(--mono); overflow-wrap: anywhere; }
+  #download { align-self: flex-start; }
+  #message { margin: 0; padding: 10px 12px; border-radius: 12px; background: rgb(229 72 77 / 0.1); color: #e5484d; font-size: 13px; line-height: 20px; }
+
+  .transcript { display: flex; flex-direction: column; min-height: 0; padding: 0; overflow: hidden; }
+  .transcript-head, .line { display: grid; grid-template-columns: 76px minmax(0, 1fr) minmax(0, 1fr) 230px; gap: 22px; }
+  .transcript-head { align-items: center; padding: 14px 32px 10px; border-bottom: 1px solid var(--line); font-size: 12px; font-weight: 500; color: var(--faint); }
+  .legend { display: flex; align-items: center; gap: 6px; }
+  .legend i { width: 14px; height: 6px; margin-left: 6px; border-radius: 3px; }
+  .legend i:first-child { margin-left: 0; }
+  .legend .src { background: var(--faint); }
+  .legend .dst { background: var(--fg); }
+  .legend .mark { width: 1.5px; height: 12px; border-radius: 1px; background: var(--fg); }
+  #lines {
+    flex: 1; min-height: 0; margin: 0; padding: 8px 10px 16px; overflow-y: auto; list-style: none;
+    -webkit-mask-image: linear-gradient(to bottom, transparent, #000 12px, #000 calc(100% - 24px), transparent);
+    mask-image: linear-gradient(to bottom, transparent, #000 12px, #000 calc(100% - 24px), transparent);
+  }
+  .line { padding: 10px 22px; border-radius: 12px; cursor: pointer; animation: appear 0.3s ease-out; scroll-margin: 6px; }
+  .line:hover { background: var(--card); }
+  .line.active { background: var(--secondary); }
+  .line.skeleton-row { cursor: default; }
+  .line.skeleton-row:hover { background: none; }
+  .who { display: flex; align-items: center; gap: 8px; height: 22px; }
+  .time { font: 11px var(--mono); color: var(--faint); font-variant-numeric: tabular-nums; }
+  .line p { margin: 0; }
+  .src-text { color: var(--muted); }
+  .dst-text { font-size: 15px; line-height: 22px; }
+  .line.active .w { color: var(--faint); transition: color 0.12s; }
+  .line.active .w.said { color: var(--fg); }
+  .was { margin-top: 3px; font-size: 12px; line-height: 18px; color: var(--faint); text-decoration: line-through; }
+  .bone { display: block; width: 72%; height: 10px; margin-top: 6px; border-radius: 5px; background: var(--secondary); animation: pulse 1s ease-in-out infinite alternate; }
+  .bone.short { width: 46%; }
+  .typing::after { content: ""; display: inline-block; width: 2px; height: 15px; margin-left: 2px; vertical-align: -2px; background: var(--fg); animation: blink 1s ease-in-out infinite; }
+  .timing { display: grid; gap: 6px; padding-top: 5px; }
+  .bars { position: relative; display: grid; gap: 4px; }
+  .track { position: relative; height: 6px; overflow: hidden; border-radius: 3px; background: var(--secondary); }
+  .track i { position: absolute; top: 0; bottom: 0; left: 0; width: 0; border-radius: 3px; transition: width 0.5s ease, left 0.5s ease; }
+  .track.src i { background: var(--faint); }
+  .track.dst .fit { background: var(--fg); }
+  .track.dst .over { border-radius: 0 3px 3px 0; background: var(--accent); }
+  .line.working .track.dst { animation: pulse 0.9s ease-in-out infinite alternate; }
+  .mark { position: absolute; top: -3px; bottom: -3px; width: 1.5px; margin-left: -0.75px; border-radius: 1px; background: var(--fg); }
+  .note { font-size: 12px; line-height: 16px; color: var(--faint); font-variant-numeric: tabular-nums; }
+  .note.over { color: var(--accent); }
+  .note b { font-weight: 500; color: var(--fg); }
+
+  @media (max-width: 1100px) {
+    .surface { height: auto; }
+    .stage { grid-template-columns: minmax(0, 1fr); }
+    .screen { max-height: none; }
+    .how { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    #lines { max-height: 70vh; }
+  }
+  @media (max-width: 760px) {
+    .monitors { grid-template-columns: minmax(0, 1fr); }
+    .transcript-head { display: none; }
+    .line { grid-template-columns: minmax(0, 1fr); gap: 6px; }
+    .how { grid-template-columns: minmax(0, 1fr); }
+  }
+</style>
+</head>
+<body>
+<header class="site">
+  <a class="logo" href="https://x.ai" target="_blank" rel="noopener" aria-label="SpaceXAI"><svg viewBox="0 0 759 290.2" aria-hidden="true"><g transform="translate(-674.5,-388.5)"><path d="M1433.19 388.934C1345.69 396.068 1001.73 438.71 763.235 678.467H674.732L684.62 668.612C734.53 620.395 955.373 416.045 1433.19 388.668V388.934Z"/><path d="M1133.66 678.467H1064.29L927.618 578.979C940.213 571.058 952.888 563.515 965.603 556.33L1133.66 678.467Z"/><path d="M1022.8 678.468H953.463L932.43 663.169H814.998C823.265 655.828 831.635 648.702 840.092 641.784H902.996L870.444 618.106C882.079 609.448 893.843 601.155 905.701 593.211L1022.8 678.468Z"/><path d="M770.433 495.02L823.901 533.876C810.594 541.712 798.139 549.468 786.514 557.055L701.158 494.986L770.433 495.02Z"/></g></svg></a>
+  <nav class="crumbs"><span>Cookbook</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg><h1>Video Dubbing</h1></nav>
+  <span class="models">Grok speech to text, grok-4.7, and text to speech</span>
+  <a class="pill pill-secondary pill-sm" href="https://github.com/xai-org/xai-cookbook/tree/main/examples/video-dubbing" target="_blank" rel="noopener">View code</a>
+</header>
+
+
+<main class="surface">
+  <form id="form" class="toolbar">
+    <label class="pill pill-secondary" id="choose"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 10.5v-8M4.5 6 8 2.5 11.5 6M2.5 13.5h11"/></svg>Choose a video<input id="file" type="file" accept="video/mp4,video/quicktime,.mp4,.mov" aria-label="Video"></label>
+    <button type="button" class="pill pill-secondary" data-sample><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="3" width="12" height="10" rx="2"/><path d="M6.75 6.25v3.5L9.75 8z"/></svg>Sample clip</button>
+    <span class="chosen" id="chosen" hidden><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="3" width="12" height="10" rx="2"/><path d="M2 6h12M2 10h12M5 3v3M11 3v3M5 10v3M11 10v3"/></svg><span id="chosen-name"></span></span>
+    <span class="spacer"></span>
+    <label class="language">Dub into
+      <select id="language" aria-label="Language to dub into">
+        <option value="es-MX" selected>Spanish (Mexico)</option>
+        <option value="es-ES">Spanish (Spain)</option>
+        <option value="fr">French</option>
+        <option value="de">German</option>
+        <option value="it">Italian</option>
+        <option value="pt-BR">Portuguese (Brazil)</option>
+        <option value="ja">Japanese</option>
+        <option value="ko">Korean</option>
+        <option value="zh">Chinese</option>
+        <option value="hi">Hindi</option>
+        <option value="ar-SA">Arabic (Saudi Arabia)</option>
+        <option value="ru">Russian</option>
+        <option value="tr">Turkish</option>
+        <option value="id">Indonesian</option>
+        <option value="vi">Vietnamese</option>
+        <option value="en">English</option>
+      </select>
+    </label>
+    <span id="summary">About 2 cents and 20 seconds for the sample</span>
+    <button id="go" class="pill pill-primary" hidden>Dub again</button>
+  </form>
+
+  <section class="panel intro" id="intro">
+    <h2>Hear a video in another language</h2>
+    <p>Grok transcribes the speech with the timing of every word, translates each line to fit the time the original took, and records it in a voice for each speaker. Lines that run long are shortened and recorded again, and the dub is mixed over the original background.</p>
+    <div class="intro-actions">
+      <button type="button" class="pill pill-primary" data-sample>Dub the sample clip</button>
+      <span>or choose an MP4 or MOV, or drop one here</span>
+    </div>
+    <ol class="how">
+      <li><b>Transcribe</b><span>Speech to text writes down each word, when it starts and ends, and who said it.</span></li>
+      <li><b>Translate</b><span>Grok translates the lines, with a length budget for each from the time the original took.</span></li>
+      <li><b>Record and fit</b><span>Each line is recorded and measured. If it runs long, Grok shortens it and it's recorded again.</span></li>
+      <li><b>Mix</b><span>ffmpeg turns the original sound down and lays each line where the original was spoken.</span></li>
+    </ol>
+  </section>
+
+  <div class="studio" id="studio" hidden>
+    <section class="panel stage">
+      <div class="viewer">
+        <div class="monitors">
+          <figure class="monitor" id="original-monitor">
+            <div class="screen"><video id="original" playsinline preload="auto"></video></div>
+            <figcaption><span class="tag">Original</span><span id="original-language"></span><span class="hearing"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 6v4H5l3.5 3V3L5 6z"/><path d="M11 5.75a3.25 3.25 0 0 1 0 4.5M12.75 4a5.75 5.75 0 0 1 0 8"/></svg>Hearing</span></figcaption>
+          </figure>
+          <figure class="monitor" id="dub-monitor">
+            <div class="screen">
+              <video id="dub" playsinline preload="auto" muted></video>
+              <div class="overlay" id="overlay">
+                <p class="overlay-title" id="overlay-title"></p>
+                <p class="overlay-detail" id="overlay-detail"></p>
+                <div class="meter" id="meter" hidden><i id="meter-bar"></i></div>
+                <div class="thinking" id="reasoning"></div>
+              </div>
+            </div>
+            <figcaption><span class="tag dub">Dub</span><span id="dub-language"></span><span class="hearing"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 6v4H5l3.5 3V3L5 6z"/><path d="M11 5.75a3.25 3.25 0 0 1 0 4.5M12.75 4a5.75 5.75 0 0 1 0 8"/></svg>Hearing</span></figcaption>
+          </figure>
+        </div>
+        <div class="transport">
+          <button type="button" id="play" aria-label="Play"></button>
+          <span id="timecode">0:00 / 0:00</span>
+          <div class="timeline" id="timeline"><div id="segments"></div><span id="playhead"></span></div>
+          <div class="listen" role="group" aria-label="Hear">
+            <button type="button" data-hear="original">Original</button>
+            <button type="button" data-hear="dub" disabled>Dub</button>
+          </div>
+        </div>
+      </div>
+      <aside class="status">
+        <ol class="steps" id="steps">
+          <li data-step="transcribe"><i></i>Transcribe<em></em></li>
+          <li data-step="translate"><i></i>Translate<em></em></li>
+          <li data-step="record"><i></i>Record and fit<em></em></li>
+          <li data-step="mix"><i></i>Mix<em></em></li>
+        </ol>
+        <div class="voices" id="voices" hidden></div>
+        <dl class="result" id="result" hidden>
+          <dt>Took</dt><dd id="took"></dd>
+          <dt>Cost</dt><dd id="cost"></dd>
+          <dt>Fitted</dt><dd id="fitted"></dd>
+          <dt>Saved in</dt><dd id="saved"></dd>
+        </dl>
+        <a id="download" class="pill pill-secondary pill-sm" download hidden><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.5v8M4.5 7 8 10.5 11.5 7M2.5 13.5h11"/></svg>Download MP4</a>
+        <p id="message" hidden></p>
+      </aside>
+    </section>
+
+    <section class="panel transcript">
+      <div class="transcript-head">
+        <span>Line</span><span id="head-original">Original</span><span id="head-dub">Dub</span>
+        <span class="legend"><i class="src"></i>Original<i class="dst"></i>Dub<i class="mark"></i>Slot</span>
+      </div>
+      <ol id="lines"></ol>
+    </section>
+  </div>
+</main>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  const ICONS = {
+    play: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 2.5v11l9-5.5z"/></svg>',
+    pause: '<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3.5" y="2.5" width="3" height="11" rx="1"/><rect x="9.5" y="2.5" width="3" height="11" rx="1"/></svg>',
+  };
+  // A timing bar is this many times as long as its slot, so a line that runs long shows by how much.
+  const TRACK = 1.4;
+  const original = $("original");
+  const dub = $("dub");
+  let video = null;
+  let events = null;
+  let running = false;
+  let steps = {};
+  let lines = [];
+  let duration = 0;
+  let target = "";
+  let dubbed = null;
+  let active = null;
+  let startedAt = 0;
+  let timer = 0;
+  let frame = 0;
+
+  showPlayButton("play");
+  hear("original");
+
+  document.querySelectorAll("[data-sample]").forEach((button) => (button.onclick = () => choose({ name: "sample-clip.mp4", url: "/sample-clip.mp4" })));
+  $("file").onchange = () => {
+    const file = $("file").files[0];
+    $("file").value = "";
+    if (file) chooseFile(file);
+  };
+  // A file dropped anywhere else would open in the tab, so the whole page takes the drop.
+  document.ondragover = (event) => event.preventDefault();
+  document.ondrop = (event) => {
+    event.preventDefault();
+    const file = event.dataTransfer.files[0];
+    if (file) chooseFile(file);
+  };
+  $("form").onsubmit = (event) => {
+    event.preventDefault();
+    if (running) stop("Stopped.");
+    else if (video) start();
+  };
+
+  function chooseFile(file) {
+    if (!/\.(mp4|mov)$/i.test(file.name)) return note("Choose an MP4 or MOV video.");
+    if (file.size > 200 * 1024 * 1024) return note("Choose a video of 200 MB or less.");
+    choose({ name: file.name, url: URL.createObjectURL(file), file });
+  }
+
+  function choose(next) {
+    if (running) return;
+    if (video?.file) URL.revokeObjectURL(video.url);
+    video = next;
+    start();
+  }
+
+  async function start() {
+    reset();
+    let id = "sample";
+    if (video.file) {
+      overlay("Uploading the video", "");
+      try {
+        const upload = await fetch(`/api/videos?name=${encodeURIComponent(video.name)}`, { method: "POST", body: video.file });
+        if (!upload.ok) throw new Error(await upload.text());
+        ({ id } = await upload.json());
+      } catch (error) {
+        return fail(error.message);
+      }
+      if (!running) return;
+    }
+
+    events = new EventSource(`/api/dub?video=${id}&language=${encodeURIComponent($("language").value)}`);
+    const on = (name, handler) => events.addEventListener(name, (message) => handler(JSON.parse(message.data)));
+    on("step", ({ step, status }) => {
+      steps[step] = status;
+      $("steps").querySelector(`[data-step="${step}"]`).className = status;
+      updateProgress();
+    });
+    on("transcript", showTranscript);
+    on("reasoning", ({ text }) => ($("reasoning").textContent += text));
+    on("translation", ({ id, text, done }) => {
+      const line = lines[id - 1];
+      Object.assign(line, { draft: text, translated: done });
+      renderLine(line);
+      if (original.paused) line.el.scrollIntoView({ block: "nearest" });
+      updateProgress();
+    });
+    on("take", ({ id, ...take }) => {
+      const line = lines[id - 1];
+      line.takes.push(take);
+      renderLine(line);
+      updateProgress();
+    });
+    on("done", finish);
+    on("failure", ({ message }) => fail(message));
+    // Without this, the browser would reconnect and start another dub.
+    events.onerror = () => fail("Lost the connection to the server.");
+  }
+
+  function showTranscript({ name, target: dubName, duration: seconds, lines: list, voices }) {
+    duration = seconds;
+    target = dubName;
+    $("original-language").textContent = name;
+    $("head-original").textContent = name;
+    $("dub-language").textContent = dubName;
+    $("head-dub").textContent = dubName;
+    $("voices").innerHTML = `<p class="label">Voices</p>${voices.map((voice, speaker) => `<span class="voice" title="Speaker ${speaker + 1}"><i class="avatar s${speaker % 4}">${speaker + 1}</i>${capitalize(voice)}</span>`).join("")}`;
+    $("voices").hidden = false;
+    lines = list.map((line) => ({ ...line, draft: "", translated: false, takes: [] }));
+    $("lines").replaceChildren(...lines.map(lineRow));
+    $("segments").replaceChildren(
+      ...lines.map((line) => {
+        const segment = document.createElement("i");
+        segment.className = `segment s${line.speaker % 4}`;
+        segment.style.left = percent(line.start / duration);
+        segment.style.width = percent((line.end - line.start) / duration);
+        return segment;
+      }),
+    );
+  }
+
+  // Each line is a row with the original, the dub, and a timing bar: the original speech on top, and the
+  // dub below it, both measured against the line's slot, which ends at the mark.
+  function lineRow(line) {
+    const row = document.createElement("li");
+    row.className = "line";
+    row.innerHTML = `
+      <div class="who"><i class="avatar s${line.speaker % 4}">${line.speaker + 1}</i><span class="time">${clock(line.start, true)}</span></div>
+      <p class="src-text"></p>
+      <div><p class="dst-text" dir="auto"></p><p class="was" dir="auto" hidden></p></div>
+      <div class="timing">
+        <div class="bars"><div class="track src"><i></i></div><div class="track dst"><i class="fit"></i><i class="over"></i></div><span class="mark"></span></div>
+        <span class="note"></span>
+      </div>`;
+    row.querySelector(".src-text").append(...words(line.words));
+    row.querySelector(".track.src i").style.width = percent((line.end - line.start) / (line.slot * TRACK));
+    row.querySelector(".mark").style.left = percent(1 / TRACK);
+    row.querySelector(".over").style.left = percent(1 / TRACK);
+    row.onclick = () => seek(Math.max(0, line.start - 0.2), true);
+    line.el = row;
+    renderLine(line);
+    return row;
+  }
+
+  function renderLine(line) {
+    const take = line.takes.at(-1);
+    const row = line.el;
+    const text = row.querySelector(".dst-text");
+    if (take) {
+      if (text.dataset.take !== String(line.takes.length)) {
+        text.dataset.take = line.takes.length;
+        text.replaceChildren(...words(take.words));
+      }
+    } else if (line.draft) {
+      text.textContent = line.draft;
+    } else {
+      text.innerHTML = `<span class="bone${line.id % 2 ? "" : " short"}"></span>`;
+    }
+    text.classList.toggle("typing", !take && Boolean(line.draft) && !line.translated);
+
+    // The version before the one that fits, struck through.
+    const versions = [...new Set(line.takes.map((each) => each.text))];
+    const was = row.querySelector(".was");
+    was.hidden = versions.length < 2;
+    was.textContent = versions.at(-2) ?? "";
+
+    const state = !line.translated ? "waiting" : take ? take.next : "recording";
+    row.classList.toggle("working", running && ["recording", "shorten", "speed up"].includes(state));
+    const length = take?.length ?? 0;
+    row.querySelector(".fit").style.width = percent(Math.min(length, line.slot) / (line.slot * TRACK));
+    row.querySelector(".over").style.width = percent(Math.max(0, length - line.slot) / (line.slot * TRACK));
+
+    const note = row.querySelector(".note");
+    const measured = take ? `<b>${take.length.toFixed(1)}</b> of ${line.slot.toFixed(1)} s` : "";
+    note.classList.toggle("over", state === "shorten" || state === "speed up");
+    if (state === "waiting") note.textContent = `${line.slot.toFixed(1)} s slot`;
+    else if (state === "recording") note.textContent = running ? "Recording" : "";
+    else if (state === "shorten") note.innerHTML = `${measured} · ${running ? "shortening" : "ran long"}`;
+    else if (state === "speed up") note.innerHTML = `${measured} · ${running ? "recording faster" : "ran long"}`;
+    else {
+      const shortened = line.takes.some((each) => each.next === "shorten");
+      note.innerHTML = [measured, shortened ? "shortened" : "", take.speed > 1 ? `${take.speed}× speed` : ""].filter(Boolean).join(" · ");
+    }
+  }
+
+  function updateProgress() {
+    const total = lines.length;
+    const translated = lines.filter((line) => line.translated).length;
+    const recorded = lines.filter((line) => line.takes.at(-1)?.next === "done").length;
+    const shortening = lines.filter((line) => line.takes.at(-1)?.next === "shorten").length;
+    setDetail("transcribe", total ? plural(total, "line") : "");
+    setDetail("translate", steps.translate === "active" && total ? `${translated} of ${total}` : "");
+    setDetail("record", steps.record ? `${recorded} of ${total}` : "");
+
+    if (!running) return;
+    $("reasoning").hidden = steps.translate !== "active" || translated > 0;
+    $("meter").hidden = !steps.record;
+    $("meter-bar").style.width = percent(total ? recorded / total : 0);
+    if (steps.mix === "active") overlay("Mixing", "Laying each line over the original sound");
+    else if (steps.record) {
+      overlay(`Recorded ${recorded} of ${total} lines`, shortening ? `${plural(shortening, "line")} ran long, so Grok is shortening ${shortening === 1 ? "it" : "them"}` : "Each recording is measured against its slot");
+    } else if (steps.translate) overlay(`Translating into ${target}`, "Grok writes each line to fit the time the original took");
+    else overlay("Transcribing", "Finding each word, when it's said, and who says it");
+  }
+
+  function finish({ video: url, folder, seconds, cost }) {
+    events.close();
+    events = null;
+    setRunning(false);
+    dubbed = url;
+    dub.src = url;
+    dub.currentTime = original.currentTime;
+    if (!original.paused) dub.play().catch(() => {});
+    $("overlay").hidden = true;
+    document.querySelector('[data-hear="dub"]').disabled = false;
+    hear("dub");
+    const total = cost.transcription + cost.translation + cost.speech;
+    $("took").textContent = `${Math.round(seconds)} seconds`;
+    $("cost").textContent = `$${total.toFixed(3)}`;
+    $("cost").title = `Grok $${cost.translation.toFixed(3)}, speech $${cost.speech.toFixed(3)}, transcription $${cost.transcription.toFixed(4)}`;
+    const shortened = lines.filter((line) => line.takes.some((take) => take.next === "shorten")).length;
+    const faster = lines.filter((line) => line.takes.at(-1).speed > 1).length;
+    $("fitted").textContent = shortened || faster ? [shortened ? `${shortened} shortened` : "", faster ? `${faster} recorded faster` : ""].filter(Boolean).join(", ") : "Every line on the first take";
+    $("saved").textContent = `${folder}/`;
+    $("result").hidden = false;
+    $("download").href = url;
+    $("download").download = `${folder.split("/").pop()}.mp4`;
+    $("download").hidden = false;
+    $("summary").textContent = `$${total.toFixed(3)} · ${Math.round(seconds)} s`;
+    lines.forEach(renderLine);
+  }
+
+  function fail(message) {
+    stop();
+    $("message").textContent = `Couldn't finish the dub: ${message}`;
+    $("message").hidden = false;
+    overlay("Couldn't finish the dub", "");
+  }
+
+  function stop(message) {
+    events?.close();
+    events = null;
+    setRunning(false);
+    $("steps").querySelectorAll(".active").forEach((step) => {
+      step.className = "";
+      step.querySelector("em").textContent = "stopped";
+    });
+    $("meter").hidden = true;
+    $("reasoning").hidden = true;
+    lines.forEach(renderLine);
+    if (message) overlay(message, "Start again with the button above");
+  }
+
+  function setRunning(on) {
+    running = on;
+    clearInterval(timer);
+    $("go").hidden = false;
+    $("go").textContent = on ? "Stop" : "Dub again";
+    $("go").classList.toggle("stop", on);
+    $("language").disabled = on;
+    if (on) {
+      startedAt = Date.now();
+      timer = setInterval(() => ($("summary").textContent = `Dubbing · ${clock((Date.now() - startedAt) / 1000)}`), 1000);
+    }
+  }
+
+  function reset() {
+    setRunning(true);
+    steps = {};
+    lines = [];
+    duration = 0;
+    dubbed = null;
+    active = null;
+    $("intro").hidden = true;
+    $("studio").hidden = false;
+    $("chosen").hidden = false;
+    $("chosen-name").textContent = video.name;
+    $("summary").textContent = "Dubbing · 0:00";
+    $("summary").classList.remove("bad");
+    original.pause();
+    original.src = video.url;
+    // Until the dub is mixed, its monitor shows the original's first frame under the progress.
+    dub.src = video.url;
+    document.querySelector('[data-hear="dub"]').disabled = true;
+    hear("original");
+    $("overlay").hidden = false;
+    $("reasoning").textContent = "";
+    $("steps").querySelectorAll("li").forEach((step) => {
+      step.className = "";
+      step.querySelector("em").textContent = "";
+    });
+    $("voices").hidden = true;
+    $("result").hidden = true;
+    $("download").hidden = true;
+    $("message").hidden = true;
+    $("segments").replaceChildren();
+    $("head-original").textContent = "Original";
+    $("head-dub").textContent = "Dub";
+    $("original-language").textContent = "";
+    $("dub-language").textContent = $("language").selectedOptions[0].textContent;
+    target = $("language").selectedOptions[0].textContent;
+    $("lines").innerHTML = Array.from({ length: 4 }, (_, index) => `<li class="line skeleton-row"><div class="who"><i class="avatar s${index % 2}">${(index % 2) + 1}</i></div><div><span class="bone${index % 2 ? " short" : ""}"></span></div><div><span class="bone${index % 2 ? "" : " short"}"></span></div><div class="timing"><div class="bars"><div class="track"></div><div class="track"></div></div></div></li>`).join("");
+    updateProgress();
+    render();
+  }
+
+  // The original keeps the time. The dub plays alongside it, muted unless it's the one being heard.
+  $("play").onclick = () => (original.paused ? original.play() : original.pause());
+  original.onplay = () => {
+    showPlayButton("pause");
+    if (dubbed) {
+      dub.currentTime = original.currentTime;
+      dub.play().catch(() => {});
+    }
+    tick();
+  };
+  original.onpause = () => {
+    showPlayButton("play");
+    dub.pause();
+    render();
+  };
+  original.onloadedmetadata = original.onseeked = render;
+  addEventListener("keydown", (event) => {
+    if (event.code !== "Space" || event.target.closest("input, button, select, a") || $("studio").hidden) return;
+    event.preventDefault();
+    $("play").click();
+  });
+  document.querySelectorAll("[data-hear]").forEach((button) => (button.onclick = () => hear(button.dataset.hear)));
+  $("original-monitor").querySelector(".screen").onclick = () => hear("original");
+  $("dub-monitor").querySelector(".screen").onclick = () => dubbed && hear("dub");
+  $("timeline").onclick = (event) => {
+    const { left, width } = $("timeline").getBoundingClientRect();
+    const length = original.duration || duration;
+    if (length) seek(Math.min(Math.max((event.clientX - left) / width, 0), 0.999) * length, false);
+  };
+
+  function hear(which) {
+    original.muted = which !== "original";
+    dub.muted = which !== "dub";
+    document.querySelectorAll("[data-hear]").forEach((button) => button.classList.toggle("active", button.dataset.hear === which));
+    $("original-monitor").classList.toggle("heard", which === "original");
+    $("dub-monitor").classList.toggle("heard", which === "dub");
+  }
+
+  function seek(time, play) {
+    original.currentTime = time;
+    if (dubbed) dub.currentTime = time;
+    render();
+    if (play && original.paused) original.play();
+  }
+
+  function tick() {
+    cancelAnimationFrame(frame);
+    render();
+    if (!original.paused) frame = requestAnimationFrame(tick);
+  }
+
+  function render() {
+    const time = original.currentTime;
+    const length = original.duration || duration;
+    if (dubbed && !original.paused && Math.abs(dub.currentTime - time) > 0.2) dub.currentTime = time;
+    $("timecode").textContent = `${clock(time)} / ${clock(length || 0)}`;
+    $("playhead").style.left = percent(length ? time / length : 0);
+    highlight(time);
+  }
+
+  // The line being spoken is highlighted, with each word lit as it's said: the original's from the
+  // transcription's word timings, and the dub's from the speech's character timings.
+  function highlight(time) {
+    const index = lines.findLastIndex((line) => line.start - 0.05 <= time);
+    const line = lines[index];
+    const current = line && time <= line.start + line.slot + 0.3 ? line : null;
+    if (current !== active) {
+      active?.el.classList.remove("active");
+      active = current;
+      if (active) {
+        active.el.classList.add("active");
+        active.el.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      }
+    }
+    if (!active) return;
+    active.el.querySelectorAll(".src-text .w").forEach((word, i) => word.classList.toggle("said", active.words[i].start <= time));
+    const take = active.takes.at(-1);
+    if (!take) return;
+    const offset = Math.max(0, active.start - take.start);
+    active.el.querySelectorAll(".dst-text .w").forEach((word, i) => word.classList.toggle("said", offset + take.words[i].start <= time));
+  }
+
+  function overlay(title, detail) {
+    $("overlay-title").textContent = title;
+    $("overlay-detail").textContent = detail;
+  }
+
+  function setDetail(step, text) {
+    $("steps").querySelector(`[data-step="${step}"] em`).textContent = text;
+  }
+
+  // Transcribed words come without spaces, and the dub's words keep the space that follows them.
+  function words(list) {
+    return list.flatMap((word, index) => {
+      const span = document.createElement("span");
+      span.className = "w";
+      span.textContent = word.text.trimEnd();
+      const spaced = "end" in word || /\s$/.test(word.text);
+      return spaced && index < list.length - 1 ? [span, " "] : [span];
+    });
+  }
+
+  function note(text) {
+    $("summary").textContent = text;
+    $("summary").classList.add("bad");
+  }
+
+  // The button shows the action it takes: pause while playing, play otherwise.
+  function showPlayButton(action) {
+    $("play").innerHTML = ICONS[action];
+    $("play").setAttribute("aria-label", action === "play" ? "Play" : "Pause");
+  }
+
+  function clock(seconds, tenths) {
+    const minutes = Math.floor(seconds / 60);
+    const rest = seconds - minutes * 60;
+    return `${minutes}:${tenths ? rest.toFixed(1).padStart(4, "0") : String(Math.floor(rest)).padStart(2, "0")}`;
+  }
+
+  function percent(fraction) {
+    return `${Math.max(0, fraction) * 100}%`;
+  }
+
+  function plural(count, word) {
+    return `${count} ${word}${count === 1 ? "" : "s"}`;
+  }
+
+  function capitalize(word) {
+    return word[0].toUpperCase() + word.slice(1);
+  }
+</script>
+</body>
+</html>

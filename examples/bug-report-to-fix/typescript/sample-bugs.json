@@ -1,0 +1,14 @@
+[
+  {
+    "title": "Three $19.99 notebooks came to $59.94",
+    "body": "A customer bought three notebooks at $19.99 each, and the order subtotal said $59.94. It should be $59.97. An order of $12.50 mugs the same day came out right, so it seems to depend on the price."
+  },
+  {
+    "title": "No free shipping on an order of exactly $50",
+    "body": "The banner says orders of $50 or more ship free. A customer with exactly $50.00 in the cart, two $25 tote bags, was still charged $4.99 for shipping."
+  },
+  {
+    "title": "SAVE10 takes 10% off shipping too",
+    "body": "On a $40.00 order with $4.99 shipping, the SAVE10 coupon gave a $4.50 discount. Coupons are only supposed to apply to the items, so it should be $4.00, for a total of $40.99."
+  }
+]
