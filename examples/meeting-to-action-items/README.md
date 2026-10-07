@@ -1,6 +1,7 @@
 ---
 title: Meeting to Action Items
-description: Caption a call live with a label for each speaker, keep a running list of decisions and action items, and ask questions whose answers link to the moment in the transcript.
+seo_title: "AI Meeting Notes: Live Transcripts and Action Items with the Grok API"
+description: Caption a call live by speaker, keep a running list of decisions and action items, and ask questions whose answers link to the moment in the transcript.
 type: app
 level: advanced
 languages: [typescript]
@@ -12,6 +13,8 @@ date: 2026-10-05
 ---
 
 # Meeting to Action Items
+
+This app builds an AI meeting assistant with the Grok API that takes notes for you during a call. It's a working base for a note taker, with streaming speech to text, notes as structured output, and answers you can trace back to the transcript.
 
 Leave it open during a call. It captions each speaker as they talk, keeps a running list of decisions and action items with owners and due dates, and answers questions about what was said, with links to the moment someone said it. It runs as a small web app that listens to your microphone or plays a sample meeting, or in your terminal on an audio file.
 

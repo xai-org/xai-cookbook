@@ -1,5 +1,6 @@
 ---
 title: Live Interpreter
+seo_title: "Real-Time Voice Translation: Live Interpreter with the Grok API"
 description: Speak one language and hear Grok say it in another a moment later, from a page that connects straight to the realtime voice API with a short-lived token.
 type: recipe
 level: beginner
@@ -12,6 +13,8 @@ date: 2026-10-05
 ---
 
 # Live Interpreter
+
+This recipe builds a live voice interpreter with the Grok API that translates speech between two languages as you talk. It also shows how to connect a browser straight to the realtime voice API without putting your API key in the page.
 
 Speak English and hear it in Spanish about a second after you pause, or pick another pair of languages. The page talks to Grok's realtime voice API directly, with a token from your server that lasts a minute, and shows captions of both sides as the conversation goes.
 

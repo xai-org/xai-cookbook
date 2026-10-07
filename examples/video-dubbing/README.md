@@ -1,5 +1,6 @@
 ---
 title: Video Dubbing
+seo_title: "AI Video Dubbing: Dub a Video into Another Language with the Grok API"
 description: Dub a video into another language, with each line timed to the original speech, shortened by Grok when it runs long, and mixed over the original background.
 type: app
 level: advanced
@@ -12,6 +13,8 @@ date: 2026-10-05
 ---
 
 # Video Dubbing
+
+This app builds an AI video dubbing tool with the Grok API that translates the speech in a video into another language. It brings together speech to text, translation as structured output, and text to speech, mixed back into the video with ffmpeg.
 
 Give it a video, and it comes back dubbed into another language. Each line of the dub starts where the original line started and fits in the time the original took, in a different voice for each speaker, over the original background. A small web app plays the original and the dub side by side, with both languages in the transcript and a timing bar for every line.
 

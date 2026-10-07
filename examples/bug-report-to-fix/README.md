@@ -1,6 +1,7 @@
 ---
 title: Bug Report to Fix
-description: Describe a bug in a small repo, and watch Grok read the code, reproduce the bug with a failing test, fix it, and rerun the tests, with every command checked before it runs.
+seo_title: "AI Coding Agent: Turn a Bug Report into a Fix with the Grok API"
+description: Describe a bug in a small repo, and watch Grok reproduce it with a failing test, fix it, and rerun the tests, checking every command before it runs.
 type: app
 level: advanced
 languages: [typescript]
@@ -12,6 +13,8 @@ date: 2026-10-05
 ---
 
 # Bug Report to Fix
+
+This app builds an AI coding agent with the Grok API that turns a bug report into a tested fix. It's a starting point for letting a model change real code safely.
 
 Describe a bug in tiny-checkout, a small sample repo, and Grok fixes it the way a developer would: it reads the repo's instructions, finds the code behind the symptom, adds a test that fails, edits the code, and reruns the tests until they pass. Every command Grok writes runs in a fresh copy of the repo. Commands on an allowlist run right away, and anything else waits for you to click Approve or Deny. A small web app streams the commands and their output into a terminal while the diff fills in beside it.
 

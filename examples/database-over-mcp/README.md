@@ -1,5 +1,6 @@
 ---
 title: Database over MCP
+seo_title: "Chat with Your Database: SQLite MCP Server with the Grok API"
 description: Serve a SQLite database as a small MCP server that only reads, and watch Grok list its tables, read their schemas, and run SQL through it to answer a question.
 type: recipe
 level: intermediate
@@ -12,6 +13,8 @@ date: 2026-10-05
 ---
 
 # Database over MCP
+
+This recipe connects the Grok API to a SQLite database through a small MCP server you run yourself, so Grok can answer questions from your own data. It's a template for giving an agent read-only access to any database, with the limits enforced by the server rather than trusted to the model.
 
 Ask a question about a small coffee store's sales, and Grok answers it from a SQLite database on your machine. A short MCP server, written with nothing but Node, serves the database, and a tunnel gives it a public URL so SpaceXAI can reach it. Grok lists the tables, reads their schemas, and runs SQL, and the page shows each query and its rows before the answer. The server only reads: it opens the file read-only and turns away anything but a single SELECT, whatever the model sends.
 

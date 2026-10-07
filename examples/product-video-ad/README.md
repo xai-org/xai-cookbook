@@ -1,6 +1,7 @@
 ---
 title: Product Photo to Video Ad
-description: Turn one product photo into a vertical video ad with a voiceover, and watch Grok write the brief, place the product in three scenes, pick the best one, and animate it in a small web app.
+seo_title: "AI Video Ad Generator: Product Photo to Video with Grok Imagine"
+description: Turn one product photo into a vertical video ad with a voiceover, as Grok writes the brief, places the product in three scenes, picks one, and animates it.
 type: app
 level: intermediate
 languages: [typescript]
@@ -12,6 +13,8 @@ date: 2026-10-01
 ---
 
 # Product Photo to Video Ad
+
+This app builds an AI video ad generator with the Grok API and Grok Imagine that turns a product photo into a vertical video ad. It's a template for a multi-step creative pipeline, with Grok picking the best of three scenes before anything is animated.
 
 Start from a single product photo and end with an eight-second vertical ad, with Grok acting as the creative director along the way. A small web app shows each step as it happens: the brief, the three scenes, Grok's pick, and the finished ad.
 

@@ -1,5 +1,6 @@
 ---
 title: Phone Voice Agent
+seo_title: "AI Phone Agent: Answer Calls with Twilio and the Grok API"
 description: A voice agent you can call on the phone, using Twilio.
 type: app
 level: intermediate
@@ -12,19 +13,17 @@ authors: [Damien Murphy]
 date: 2025-12-15
 ---
 
-# Grok Voice Agent API - Telephony Agent Examples
+# Phone Voice Agent
 
-> **IMPORTANT DISCLAIMER**  
-> **These are example implementations for learning and development purposes only.**  
-> **NOT PRODUCTION-READY WITHOUT ADDITIONAL HARDENING.**  
+This example builds a voice agent you can call on the phone, with Twilio and the Grok API's realtime voice. It's a starting point for phone lines that talk with callers in real time, like support or bookings.
 
-Voice agents accessible via phone calls using Twilio integration.
+> **Note:** These are example implementations for learning and development, and they aren't production-ready without additional hardening.
 
 ## Overview
 
 These examples demonstrate how to build voice agents that can be accessed via phone calls. Perfect for IVR systems, call centers, and voice-based customer service.
 
-## Available Examples
+## Available examples
 
 ### [XAI Native](xai/)
 
@@ -41,9 +40,9 @@ Native XAI implementation with Twilio Media Streams.
 - WebSockets
 - Express server
 
-## Quick Start
+## Quick start
 
-### XAI Native (Recommended)
+### XAI Native (recommended)
 
 ```bash
 cd xai
@@ -65,7 +64,7 @@ ngrok http 3000
 
 ## Architecture
 
-### Call Flow
+### Call flow
 
 ```
 ┌─────────┐    1. SIP    ┌─────────────┐   2. WebSocket   ┌──────────────┐
@@ -81,7 +80,7 @@ ngrok http 3000
                                                           └──────────────┘
 ```
 
-### Data Flow
+### Data flow
 
 1. **Phone → Twilio**: Caller dials your Twilio number
 2. **Twilio → Server**: Twilio streams μ-law PCM audio via WebSocket
@@ -92,7 +91,7 @@ ngrok http 3000
 
 ## Prerequisites
 
-### Required Accounts
+### Required accounts
 
 1. **XAI Account**
    - Get API key: [console.x.ai](https://console.x.ai/)
@@ -103,15 +102,15 @@ ngrok http 3000
    - Phone number with voice capabilities
    - Media Streams enabled
 
-### Technical Requirements
+### Technical requirements
 
 - **Node.js**: 18+ 
 - **Public Endpoint**: ngrok or deployed server
 - **Port**: 3000 (configurable)
 
-## Setup Guide
+## Setup guide
 
-### 1. Get Twilio Credentials
+### 1. Get Twilio credentials
 
 ```bash
 # From Twilio Console
@@ -120,7 +119,7 @@ TWILIO_AUTH_TOKEN=your_auth_token
 TWILIO_PHONE_NUMBER=+1234567890
 ```
 
-### 2. Configure Environment
+### 2. Configure the environment
 
 ```bash
 cd xai
@@ -131,7 +130,7 @@ XAI_API_KEY=your_xai_api_key_here
 HOSTNAME=your-ngrok-domain.ngrok.app
 ```
 
-### 3. Expose to Internet
+### 3. Expose to the internet
 
 **Using ngrok:**
 ```bash
@@ -148,7 +147,7 @@ ngrok http 3000
 # Copy the HTTPS URL (e.g., https://abc123.ngrok.io)
 ```
 
-### 4. Configure Twilio Webhook
+### 4. Configure the Twilio webhook
 
 1. Go to [Twilio Console](https://console.twilio.com/)
 2. Navigate to Phone Numbers → Manage → Active Numbers
@@ -159,7 +158,7 @@ ngrok http 3000
    - **Method**: POST
 5. Save
 
-### 5. Test the Call
+### 5. Test the call
 
 ```bash
 # Call your Twilio number
@@ -168,7 +167,7 @@ ngrok http 3000
 
 ## Features
 
-### XAI Native Features
+### XAI Native features
 
 - Real-time voice processing
 - Low latency responses
@@ -177,9 +176,9 @@ ngrok http 3000
 - Error handling
 - Graceful disconnection
 
-## Configuration Options
+## Configuration options
 
-### Environment Variables
+### Environment variables
 
 ```bash
 # Required
@@ -193,7 +192,7 @@ PORT=3000
 
 **Note:** Twilio credentials are configured in the [Twilio Console](https://console.twilio.com/), not as environment variables.
 
-### Voice Configuration
+### Voice configuration
 
 ```typescript
 // In your code
@@ -211,9 +210,9 @@ const sessionConfig = {
 };
 ```
 
-## Audio Processing
+## Audio processing
 
-### Audio Format (No Conversion Needed!)
+### Audio format (no conversion needed!)
 
 **End-to-End Format:**
 - Format: μ-law PCM (audio/pcmu)
@@ -228,7 +227,7 @@ const sessionConfig = {
 - μ-law audio passes through without conversion
 - Direct passthrough improves latency and audio quality
 
-### Audio Pipeline
+### Audio pipeline
 
 ```javascript
 // Incoming audio from Twilio (μ-law @ 8kHz)
@@ -246,16 +245,16 @@ await twilioWebSocket.send(xaiResponse)
 
 **Key Improvement:** XAI API supports native μ-law (PCMU) and A-law (PCMA) formats, eliminating the need for PCM16 conversion and improving audio quality and latency.
 
-## Monitoring & Debugging
+## Monitoring & debugging
 
-### Enable Logging
+### Enable logging
 
 ```bash
 # Set log level
 LOG_LEVEL=debug npm run dev
 ```
 
-### Check WebSocket Connection
+### Check the WebSocket connection
 
 ```typescript
 // Connection events
@@ -266,7 +265,7 @@ ws.on('error', (err) => console.error('WebSocket error:', err));
 
 ## Testing
 
-### Local Testing
+### Local testing
 
 ```bash
 # Start server
@@ -278,7 +277,7 @@ ngrok http 3000
 # Call your Twilio number
 ```
 
-### Test Call Script
+### Test call script
 
 ```bash
 # Make a test call via Twilio API
@@ -297,7 +296,7 @@ curl -X POST https://api.twilio.com/2010-04-01/Accounts/$TWILIO_ACCOUNT_SID/Call
 
 ## Examples
 
-### Use Cases
+### Use cases
 
 **IVR System:**
 - Menu navigation

@@ -1,6 +1,7 @@
 ---
 title: 𝕏 Sentiment Tracker
-description: Score the sentiment about any topic from live 𝕏 posts with Grok's X Search tool, and see it on a dashboard with a score for every post and the sentiment day by day.
+seo_title: "Social Media Sentiment Tracker: Posts on 𝕏 with the Grok API"
+description: Score the sentiment about any topic from live 𝕏 posts with Grok's X Search tool, on a dashboard with a score for every post and the sentiment day by day.
 type: app
 level: intermediate
 languages: [typescript]
@@ -12,6 +13,8 @@ date: 2026-10-01
 ---
 
 # 𝕏 Sentiment Tracker
+
+This app builds a sentiment tracker with the Grok API that scores what people on 𝕏 say about any topic, post by post and day by day. It's a starting point for brand monitoring or tracking the reaction to a launch.
 
 Give it a topic, like a company, a product, or an event, and it searches 𝕏 for popular posts about it from the last 10 days, filters out the noise, and scores the sentiment. It runs as a small web app or in your terminal, and shows the searches, the posts it keeps, and Grok's reasoning as they happen. It follows the same approach as the [𝕏 sentiment notebook](../x-sentiment-analysis/).
 

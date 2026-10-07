@@ -1,6 +1,7 @@
 ---
 title: Company to Call Brief
-description: Prep for a sales call with a one-page brief, as Grok searches the web and 𝕏 on SpaceXAI's servers and looks up the account through CRM functions that run in your app.
+seo_title: "AI Sales Call Prep: Research an Account with the Grok API"
+description: Prep for a sales call with a one-page brief, as Grok searches the web and 𝕏 and looks up the account through CRM functions that run in your app.
 type: app
 level: intermediate
 languages: [typescript]
@@ -12,6 +13,8 @@ date: 2026-10-05
 ---
 
 # Company to Call Brief
+
+This app builds an AI sales assistant with the Grok API that researches a company and writes a one-page brief before your call. It shows how to mix Grok's built-in web and 𝕏 search with your own functions, like a CRM lookup, in one request.
 
 Say "prep me for my call with Stripe," and Grok gets you ready. It searches the web and 𝕏 for what's new at the company, looks up your history with the account in a CRM through functions that run in your app, and writes a one-page brief with its sources. It runs as a small web app or in your terminal, and shows each step as it happens, marked by where it ran: on SpaceXAI's servers or in your app.
 

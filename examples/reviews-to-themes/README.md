@@ -1,6 +1,7 @@
 ---
 title: Reviews to Themes
-description: Turn a thousand app reviews into ranked themes with counts, trends, and quotes by labeling every review in one Batch API job, and watch it happen in a small web app.
+seo_title: "AI Review Analysis: Find Themes in Customer Feedback with the Grok API"
+description: Turn a thousand app reviews into ranked themes with counts, trends, and quotes by labeling every review in one Batch API job.
 type: app
 level: intermediate
 languages: [typescript]
@@ -12,6 +13,8 @@ date: 2026-10-05
 ---
 
 # Reviews to Themes
+
+This app builds a customer feedback analyzer with the Grok API that finds the themes in a pile of reviews or support tickets. It shows how to work through more text than fits in one request, with a map-reduce over the Batch API.
 
 Give it a CSV of app reviews or support tickets, and it finds the themes in them: what people complain about, ask for, and like. For each theme you get how many reviews mention it, whether that's going up or down, and quotes that link back to the rows behind it. Grok reads a sample to find candidate themes, labels every review against them with the Batch API, then merges and names the themes. It runs as a small web app or in your terminal.
 

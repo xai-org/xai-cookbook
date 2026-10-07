@@ -1,6 +1,7 @@
 ---
 title: 𝕏 Post to Fact-Check
-description: Paste a link to a post on 𝕏, and Grok reads it with its images and video, checks each claim on the web and on 𝕏 at the same time, and writes a note where every sentence cites a source.
+seo_title: "AI Fact-Checker: Check Posts on 𝕏 with the Grok API"
+description: Paste a link to a post on 𝕏, and Grok checks each claim on the web and on 𝕏 at the same time and writes a note where every sentence cites a source.
 type: app
 level: intermediate
 languages: [typescript]
@@ -12,6 +13,8 @@ date: 2026-10-05
 ---
 
 # 𝕏 Post to Fact-Check
+
+This app builds an AI fact-checker with the Grok API that checks the claims in a post on 𝕏 against the web and 𝕏. It's a pattern for research that has to cite its sources, with each claim checked in parallel.
 
 Paste a link to a post on 𝕏. Grok reads it, images and video included, and splits it into claims. Then it checks every claim on the web and on 𝕏 in its own request, all at the same time, and writes a note like a Community Note, where every sentence links to sources the searches actually returned. It runs as a small web app or in your terminal, and shows each search and the pages it finds as they come in.
 

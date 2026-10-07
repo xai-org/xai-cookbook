@@ -1,5 +1,6 @@
 ---
 title: Reasoning Effort Evals
+seo_title: "LLM Evals: Find the Right Reasoning Effort with the Grok API"
 description: Run a prompt's test cases at every reasoning effort, grade the answers with code checks and a judge, and find the cheapest effort that's still good enough.
 type: app
 level: intermediate
@@ -12,6 +13,8 @@ date: 2026-10-05
 ---
 
 # Reasoning Effort Evals
+
+This app builds an eval harness with the Grok API that compares every reasoning effort on your own test cases. It's a quick way to stop paying for reasoning a task doesn't need.
 
 Give it a prompt and a set of test cases with expected answers. It runs every case through `grok-4.7` at low, medium, high, and xhigh reasoning effort, grades each answer, and plots accuracy against cost. Then it names the cheapest effort within 5 points of the best one. It runs as a small web app or in your terminal, and comes with a sample task: 30 support tickets for a made-up invoicing app, where Grok picks a category and a priority and writes a reply.
 

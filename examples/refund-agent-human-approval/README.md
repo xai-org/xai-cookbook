@@ -1,6 +1,7 @@
 ---
 title: Refund Agent with Human Approval
-description: Build a support agent that stops before issuing a refund, waits for a person to approve it, and resumes the same run from a stored response, even after a server restart.
+seo_title: "Human-in-the-Loop AI Agent: Approve Refunds with the Grok API"
+description: Build a support agent that stops before a refund, waits for a person to approve it, and resumes the same run from a stored response, even after a restart.
 type: guide
 level: advanced
 languages: [typescript]
@@ -12,6 +13,8 @@ date: 2026-10-05
 ---
 
 # Refund Agent with Human Approval
+
+This guide builds a customer support agent with the Grok API that asks a person before it issues a refund. It's the pattern for any agent that takes real actions: stop, save the state, and resume the same run later, exactly once.
 
 A customer emails about a refund. The agent looks up the order and the refund policy, works out what the policy allows, and proposes a refund. A refund can't be undone, so the agent stops there and the refund waits in a queue for a person to approve it. Once someone does, the agent picks up the same run where it stopped, issues the refund once, and emails the customer, even if the server restarted in between. An audit log records who approved what.
 

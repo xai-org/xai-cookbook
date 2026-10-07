@@ -1,6 +1,7 @@
 ---
 title: Prompt Injection Defenses
-description: Watch ten poisoned pages try to make an agent leak private data, see each of four defenses miss an attack another one catches, and turn on all four to stop every one.
+seo_title: "Prompt Injection Defense: Protect AI Agents with the Grok API"
+description: Watch poisoned pages try to make an agent leak private data, see each of four defenses miss an attack another catches, and stop all ten with all four on.
 type: guide
 level: intermediate
 languages: [typescript]
@@ -12,6 +13,8 @@ date: 2026-10-05
 ---
 
 # Prompt Injection Defenses
+
+This guide shows how to defend an AI agent built on the Grok API against prompt injection, the hidden instructions a web page can use to take over an agent. It covers the habits any agent that reads the web needs: treat pages as data, limit tools, check arguments, and ask a person.
 
 A mail assistant reads two pages and emails you a summary. One page is poisoned. With the defenses off, the assistant follows the hidden step and emails a fake account id to an address that isn't in your contacts. The send never leaves the machine. It shows up in red in the log. There are ten attacks and four defenses, and each defense on its own misses at least one attack that another defense catches. Turn on all four, and nothing gets through.
 

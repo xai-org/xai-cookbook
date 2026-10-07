@@ -1,5 +1,6 @@
 ---
 title: Topics to Morning Briefing
+seo_title: "AI News Briefing: Daily Audio from 𝕏 and the Web with the Grok API"
 description: Turn a few topics into a two-minute spoken briefing from 𝕏 and the web, with Grok skipping the stories it already told you about and a cost cap on every run.
 type: app
 level: intermediate
@@ -12,6 +13,8 @@ date: 2026-10-05
 ---
 
 # Topics to Morning Briefing
+
+This app builds a personal AI news briefing with the Grok API, a short spoken digest of what's new on the topics you follow. It's a pattern for any scheduled research job: search a fixed window, remember what's been covered, and cap what each run can spend.
 
 Pick a few topics, and each morning it searches 𝕏 and the web for what happened since your last briefing, skips the stories it already told you about, and reads you the rest in about two minutes, with the posts and articles behind each story. It runs as a small web app that plays the briefing like a podcast episode while Grok researches the next topic, or in your terminal on a schedule.
 

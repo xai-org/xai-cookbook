@@ -1,5 +1,6 @@
 ---
 title: CSV to Answers
+seo_title: "AI Data Analyst: Ask Questions about a CSV with the Grok API"
 description: Drop in a CSV and ask questions about it. Grok writes and runs pandas in a sandbox, shows the code it ran, and answers with computed numbers and a chart.
 type: app
 level: intermediate
@@ -12,6 +13,8 @@ date: 2026-10-05
 ---
 
 # CSV to Answers
+
+This app builds an AI data analyst with the Grok API that answers questions about a CSV by writing and running pandas code. The answers come from code that ran rather than from the model's estimate, which matters when the numbers do.
 
 Drop in a spreadsheet and ask a question, like "which plan's churn got worse after the price change?" Grok writes pandas code, runs it in a sandbox with the code execution tool, and answers with the numbers it computed and a chart. Every program it runs shows up next to the answer with what it printed, so you can check the work. It runs as a small web app or in your terminal.
 

@@ -1,5 +1,6 @@
 ---
 title: Web Voice Agent
+seo_title: "Web Voice Assistant: Browser Voice Agent with the Grok API"
 description: A React client with swappable Python and Node.js backends that talk to the Voice Agent API over WebSocket.
 type: app
 level: intermediate
@@ -13,13 +14,11 @@ authors: [Damien Murphy]
 date: 2025-12-15
 ---
 
-# Web Examples
+# Web Voice Agent
 
-> **IMPORTANT DISCLAIMER**
-> **These are example implementations for learning and development purposes only.**
-> **NOT PRODUCTION-READY WITHOUT ADDITIONAL HARDENING.**
+This example builds a voice agent that runs in the browser, with a React client and swappable Python and Node.js backends that talk to the Grok API's realtime voice. The frontend stays the same when you change the server behind it.
 
-Web-based voice interaction examples for XAI's realtime voice API. These examples demonstrate a clean separation between frontend and backend, allowing you to swap backends without changing frontend code.
+> **Note:** These are example implementations for learning and development, and they aren't production-ready without additional hardening.
 
 ## Architecture
 
@@ -51,15 +50,15 @@ XAI Realtime Voice API
 
 All backends expose the **same REST and WebSocket API**, making them interchangeable from the frontend's perspective. All run on port 8000 by default.
 
-#### XAI Backends
+#### XAI backends
 **Location**: `xai/`
 
 - **Python**: `xai/backend-python/` - FastAPI + websockets
 - **Node.js**: `xai/backend-nodejs/` - Express + ws
 
-## Quick Start
+## Quick start
 
-### 1. Choose and Start a Backend
+### 1. Choose and start a backend
 
 All backends use port 8000, so you can only run one at a time.
 
@@ -75,20 +74,20 @@ cd xai/backend-nodejs
 ./start.sh
 ```
 
-### 2. Start the Frontend
+### 2. Start the frontend
 
 ```bash
 cd client
 ./start.sh
 ```
 
-### 3. Open Browser
+### 3. Open the browser
 
 Navigate to `http://localhost:5173`
 
 ## Features
 
-### Common to All Backends
+### Common to all backends
 - REST API for session management
 - WebSocket proxy to voice API
 - Server-side VAD (Voice Activity Detection)
@@ -96,7 +95,7 @@ Navigate to `http://localhost:5173`
 - PCM16 audio format with native sample rate support
 - Health check endpoint
 
-### Frontend Features
+### Frontend features
 - Web Audio API for microphone and speaker
 - Real-time audio visualization
 - Debug console (excludes audio messages)
@@ -104,11 +103,11 @@ Navigate to `http://localhost:5173`
 - Clean black/white UI
 - TypeScript support
 
-## Shared API Contract
+## Shared API contract
 
 All backends implement the same API:
 
-### REST Endpoints
+### REST endpoints
 ```
 GET  /                      - Service info
 GET  /health                - Health check
@@ -117,12 +116,12 @@ GET  /sessions              - List sessions
 DELETE /sessions/:id        - Delete session
 ```
 
-### WebSocket Endpoint
+### WebSocket endpoint
 ```
 WS /ws/:session_id          - Audio streaming
 ```
 
-### WebSocket Messages
+### WebSocket messages
 
 **Client → Server:**
 ```json
@@ -137,7 +136,7 @@ WS /ws/:session_id          - Audio streaming
 
 ## Configuration
 
-### Backend Environment Variables
+### Backend environment variables
 ```bash
 # API key
 XAI_API_KEY=your_key
@@ -151,13 +150,13 @@ VOICE=ara
 INSTRUCTIONS="You are a helpful voice assistant. You are speaking to a user in real-time over audio. Keep your responses conversational and concise since they will be spoken aloud."
 ```
 
-### Frontend Environment Variables
+### Frontend environment variables
 ```bash
 # Backend URL (same for all backends)
 VITE_API_BASE_URL=http://localhost:8000
 ```
 
-## Testing Different Backends
+## Testing different backends
 
 Since the frontend is backend-agnostic, you can test different backends easily:
 
@@ -166,7 +165,7 @@ Since the frontend is backend-agnostic, you can test different backends easily:
 3. Refresh the browser (frontend doesn't need restart)
 4. Click START to connect to the new backend
 
-## Audio Format
+## Audio format
 
 All examples use:
 - **Sample Rate**: Native browser sample rate (typically 48kHz, 44.1kHz, or 24kHz) - auto-detected
@@ -179,15 +178,15 @@ All examples use:
 
 ## Prerequisites
 
-### All Examples
+### All examples
 - XAI API key
 - Modern web browser with Web Audio API support
 
-### Python Backends
+### Python backends
 - Python 3.8+
 - pip and venv
 
-### Node.js Backends
+### Node.js backends
 - Node.js 18+
 - npm
 

@@ -1,5 +1,6 @@
 ---
 title: Mobile Voice Apps
+seo_title: "Mobile Voice Assistant: iOS and Android Apps with the Grok API"
 description: Native iOS and Android apps for real-time voice conversations with Grok, plus text-to-speech on iOS.
 type: app
 level: intermediate
@@ -10,6 +11,8 @@ date: 2026-03-23
 ---
 
 # Mobile Voice Apps
+
+These two native apps, one for iOS and one for Android, hold real-time voice conversations with Grok through the Grok API. They're a starting point for adding a voice assistant to a mobile app.
 
 Two native apps built on the [Voice Agent API](https://docs.x.ai/developers/model-capabilities/audio/voice). Each folder's README covers setup.
 

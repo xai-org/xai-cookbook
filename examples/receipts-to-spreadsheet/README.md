@@ -1,6 +1,7 @@
 ---
 title: Receipts to Spreadsheet
-description: Turn receipt photos and PDF invoices into a spreadsheet that adds up, with Grok reading each one twice and flagging the cells where the reads disagree, in a small web app.
+seo_title: "AI Receipt Scanner: Receipts to a Spreadsheet with the Grok API"
+description: Turn receipt photos and PDF invoices into a spreadsheet that adds up, with Grok reading each one twice and flagging the cells where the reads disagree.
 type: app
 level: intermediate
 languages: [typescript]
@@ -12,6 +13,8 @@ date: 2026-10-05
 ---
 
 # Receipts to Spreadsheet
+
+This app builds an AI receipt scanner with the Grok API that extracts receipts and invoices into a spreadsheet. It shows how to validate structured output beyond what a schema can check, and how to flag the cells worth a second look.
 
 Drop in receipt photos and PDF invoices, and get a spreadsheet where every row checks out: the line items add up to the subtotal, the subtotal, tax, and tip add up to the total, dates parse, and currencies are real codes. Grok reads each receipt twice, and the cells where the two reads disagree turn yellow for you to check.
 

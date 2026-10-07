@@ -1,5 +1,6 @@
 ---
 title: Podcast from a Link
+seo_title: "AI Podcast Generator: Turn Any Article into a Podcast with the Grok API"
 description: Turn an article or a PDF into a two-host podcast episode, and watch it being written and recorded live in a small web app.
 type: app
 level: beginner
@@ -12,6 +13,8 @@ date: 2026-10-01
 ---
 
 # Podcast from a Link
+
+This app builds an AI podcast generator with the Grok API that turns any article or PDF into a two-host episode. It shows how structured output and text to speech work together, and it's a good base for turning any reading into listening.
 
 Give it a link to an article or a PDF, and it writes and records a conversation about it between two hosts. Each line is voiced as soon as Grok writes it, so the episode starts playing within seconds, before the script is finished.
 

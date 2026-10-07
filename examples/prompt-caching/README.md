@@ -1,5 +1,6 @@
 ---
 title: Prompt Caching
+seo_title: "Prompt Caching: Cut the Cost of Long Chats with the Grok API"
 description: Play one 30-message chat three ways to see what the prompt cache saves, how the time at the top of the system prompt breaks it, and what compaction costs.
 type: guide
 level: intermediate
@@ -12,6 +13,8 @@ date: 2026-10-05
 ---
 
 # Prompt Caching
+
+This guide shows how prompt caching cuts the cost of long chats with the Grok API, and what quietly breaks it. Putting the current time at the top of the system prompt made the same chat cost 2.2 to 2.9 times as much in our runs.
 
 Every turn of a chat sends the whole chat again, so each turn costs more than the last. When a prompt starts the same way as the last one, Grok reads that part from the prompt cache at a quarter of the price. This example plays the same 30 messages in three chats at once and charts what every turn cost. All three tell Grok the current time. The first puts it at the top of the latest message. The second puts it at the top of the system prompt, as many apps do, and that one line keeps the rest of the prompt from coming from the cache. The third is like the first, but compacts the chat as it grows.
 

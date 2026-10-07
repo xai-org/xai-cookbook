@@ -1,5 +1,6 @@
 ---
 title: WebRTC Voice Agent
+seo_title: "WebRTC Voice Agent: Low-Latency Voice AI with the Grok API"
 description: A low-latency browser voice agent that uses WebRTC between the browser and a server, which connects to xAI over WebSocket.
 type: app
 level: advanced
@@ -12,13 +13,11 @@ authors: [Damien Murphy]
 date: 2025-12-15
 ---
 
-# XAI Voice WebRTC Agent Example
+# WebRTC Voice Agent
 
-> **IMPORTANT DISCLAIMER**  
-> **These are example implementations for learning and development purposes only.**  
-> **NOT PRODUCTION-READY WITHOUT ADDITIONAL HARDENING.**  
+This example builds a low-latency voice agent in the browser, with WebRTC between the browser and your server and a WebSocket from the server to the Grok API. It's a starting point when voice latency in the browser matters most.
 
-Real-time voice agent using WebRTC for browser communication and WebSocket for XAI API integration.
+> **Note:** These are example implementations for learning and development, and they aren't production-ready without additional hardening.
 
 ## Overview
 
@@ -45,7 +44,7 @@ The server acts as a relay:
 - **Server → XAI**: WebSocket with PCM16 audio format
 - **No audio conversion needed**: PCM16 used throughout
 
-## Quick Start
+## Quick start
 
 ### Prerequisites
 
@@ -53,7 +52,7 @@ The server acts as a relay:
 - XAI API key
 - Chrome or Edge browser (WebRTC support)
 
-### 1. Start the Server
+### 1. Start the server
 
 ```bash
 cd server
@@ -64,7 +63,7 @@ echo "XAI_API_KEY=your_key_here" > .env
 
 The server will start on port 8000 (configurable via `.env`).
 
-### 2. Start the Client
+### 2. Start the client
 
 ```bash
 cd client
@@ -73,7 +72,7 @@ cd client
 
 The client will start on port 5173.
 
-### 3. Open Browser
+### 3. Open the browser
 
 Navigate to `http://localhost:5173` and click START to begin voice conversation.
 
@@ -107,21 +106,21 @@ See [client/README.md](client/README.md) for details.
 
 ## Features
 
-### WebRTC Features
+### WebRTC features
 - Client-server WebRTC connection
 - DataChannel for audio and control messages
 - STUN/TURN support for NAT traversal (configurable)
 - Connection quality monitoring
 - PCM16 audio format (no codec conversion needed)
 
-### Voice Agent Features
+### Voice agent features
 - Real-time voice interaction
 - Server-side Voice Activity Detection (VAD)
 - Conversation transcripts
 - Interruption handling
 - Debug console for monitoring
 
-### UI Features
+### UI features
 - WebRTC badge in header
 - Connection quality indicator
 - Stats panel (bitrate, jitter, packet loss, RTT)
@@ -130,7 +129,7 @@ See [client/README.md](client/README.md) for details.
 
 ## Configuration
 
-### Server Configuration
+### Server configuration
 
 Edit `server/.env`:
 
@@ -145,11 +144,11 @@ INSTRUCTIONS="You are a helpful voice assistant. You are speaking to a user in r
 API_URL=wss://api.x.ai/v1/realtime
 ```
 
-### Client Configuration
+### Client configuration
 
 The client automatically connects to `http://localhost:8000` (or `VITE_API_BASE_URL` if set).
 
-### TURN Server Configuration
+### TURN server configuration
 
 Both client and server include an `ENABLE_TURN` flag to optionally enable TURN servers for restrictive network environments:
 
@@ -168,7 +167,7 @@ Both client and server include an `ENABLE_TURN` flag to optionally enable TURN s
 
 **Recommended**: Chrome or Edge for best compatibility.
 
-## Comparison with WebSocket Version
+## Comparison with the WebSocket version
 
 | Feature | WebSocket Version | WebRTC Version |
 |---------|------------------|----------------|
@@ -184,7 +183,7 @@ Both client and server include an `ENABLE_TURN` flag to optionally enable TURN s
 
 Both client and server use TypeScript for type safety and better developer experience.
 
-### Server Development
+### Server development
 
 ```bash
 cd server
@@ -192,7 +191,7 @@ npm run dev  # Run with ts-node (no build step)
 npm run watch  # Watch mode for TypeScript
 ```
 
-### Client Development
+### Client development
 
 ```bash
 cd client

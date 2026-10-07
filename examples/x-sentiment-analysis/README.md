@@ -1,5 +1,6 @@
 ---
 title: Real-Time Sentiment Analysis on 𝕏
+seo_title: "Real-Time Sentiment Analysis on 𝕏 with the Grok API"
 description: Pull the latest posts from 𝕏 with Grok's X Search tool, filter out the noise with a quick pass, and score sentiment with a deeper one.
 type: guide
 level: advanced

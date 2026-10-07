@@ -1,5 +1,6 @@
 ---
 title: Photo to Talking Character
+seo_title: "AI Talking Photo: Make a Picture Talk with Grok Imagine"
 description: Make a drawing, a mascot, or a pet photo talk in a voice you pick, and have a second character answer, with Grok Imagine reference-to-video.
 type: recipe
 level: beginner
@@ -12,6 +13,8 @@ date: 2026-10-05
 ---
 
 # Photo to Talking Character
+
+This recipe turns a picture of a character into a talking video with Grok Imagine. It shows how to refer to several pictures and voices in one video prompt, so two characters can talk to each other in the same video.
 
 Give it a picture of a character, like a drawing, a mascot, or a pet, pick one of the built-in voices, and write a line. Grok Imagine makes a short video of the character saying the line in that voice. Add a second character, and it answers in its own voice in the same video. A small web app shows the request as you write it and plays the video when it's ready.
 

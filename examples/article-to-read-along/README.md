@@ -1,5 +1,6 @@
 ---
 title: Article to Read-Along
+seo_title: "Read Aloud with Word Highlighting: Text to Speech with the Grok API"
 description: Turn any article into audio that highlights each word as it's spoken, using the per-character timestamps from text to speech, and click a word to jump there.
 type: recipe
 level: beginner
@@ -11,6 +12,8 @@ date: 2026-10-05
 ---
 
 # Article to Read-Along
+
+This recipe builds a read-along player with the Grok API that turns articles into audio with word-by-word highlighting. Word timings like these are what you need for captions, karaoke-style highlighting, or jumping to any spot in the audio.
 
 Paste a link or the text of an article, and it reads the article aloud while each word lights up as it's spoken. Click any word to jump there. The article is split into paragraphs, and the first one starts playing while the rest are still being recorded.
 

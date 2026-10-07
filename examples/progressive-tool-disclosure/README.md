@@ -1,6 +1,7 @@
 ---
 title: Progressive Tool Disclosure
-description: Give Grok the tools of the eight services a made-up company's workspace is connected to, 203 in all, show it only their names, and let it load the few each question needs with tool search.
+seo_title: "Tool Search for AI Agents: Load Tools on Demand with the Grok API"
+description: Give Grok 203 tools from a made-up company's eight work apps, show it only their names, and let it load the few each question needs with tool search.
 type: recipe
 level: intermediate
 languages: [typescript]
@@ -12,6 +13,8 @@ date: 2026-10-05
 ---
 
 # Progressive Tool Disclosure
+
+This recipe shows how to give an agent built on the Grok API hundreds of tools without sending every definition with every request. In our runs, that cut the tokens each request sent by six to nine times.
 
 Every tool you give Grok goes out with every request: its name, its description, and the JSON Schema of its arguments. Connect an agent to a few MCP servers and that's hundreds of tools, and most questions need two or three of them. With progressive tool disclosure, Grok sees only the tools' names at first and loads the full definitions of the few a question needs with tool search.
 

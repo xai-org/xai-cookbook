@@ -1,5 +1,6 @@
 ---
 title: Docs to Cited Answers
+seo_title: "RAG with Citations: Answer from Your Documents with the Grok API"
 description: Ask questions about a folder of documents and get answers that cite the passages they came from, with a metadata filter that decides which documents count.
 type: app
 level: intermediate
@@ -12,6 +13,8 @@ date: 2026-10-05
 ---
 
 # Docs to Cited Answers
+
+This app builds a document Q&A assistant with the Grok API that answers questions from your own files, with citations. It's the pattern to reach for when answers have to be checkable, like support articles, policies, or an internal handbook.
 
 Upload a folder of documents to a collection and ask questions about them. A search finds the passages that match, and Grok answers only from those passages, citing each one and quoting the sentence it relied on, so you can check every answer. A metadata filter decides which documents count, and a question the documents don't answer gets "I couldn't find that in your documents." It runs as a small web app or in your terminal, and comes with a short handbook for a made-up outdoor store and a 20-question eval.
 

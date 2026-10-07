@@ -1,5 +1,6 @@
 ---
 title: Storyboard to Short Film
+seo_title: "AI Short Film Generator: Premise to Video with Grok Imagine"
 description: Turn a one-line premise into a four-shot short film with Grok Imagine keyframes, image-to-video, and narration, and watch it being made in a small web app.
 type: app
 level: intermediate
@@ -12,6 +13,8 @@ date: 2026-10-01
 ---
 
 # Storyboard to Short Film
+
+This app builds an AI short film generator with the Grok API and Grok Imagine that turns a one-line premise into a narrated four-shot film. It shows how to plan shots as structured output, keep a character consistent across keyframes, and animate them with image-to-video.
 
 Give it a premise, and it plans four shots, draws a keyframe for each, animates them into eight-second clips, and narrates the story. A small web app shows each step as it happens, from Grok's reasoning to the finished film.
 

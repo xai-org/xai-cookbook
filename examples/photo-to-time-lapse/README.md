@@ -1,6 +1,7 @@
 ---
 title: Photo to Time-Lapse
-description: Turn one photo into a time-lapse, like a street through the four seasons, by editing it once for each stage and pinning every edit at its moment in one Grok Imagine video.
+seo_title: "AI Time-Lapse Generator: Turn a Photo into a Video with Grok Imagine"
+description: Turn one photo into a time-lapse, like a street through the four seasons, by editing it for each stage and pinning every edit in one Grok Imagine video.
 type: app
 level: intermediate
 languages: [typescript]
@@ -12,6 +13,8 @@ date: 2026-10-05
 ---
 
 # Photo to Time-Lapse
+
+This app builds an AI time-lapse generator with Grok Imagine that turns one photo into a video of it changing over time. It shows how to keep a scene consistent by editing one photo for each stage, and how to pin images at set moments in a video.
 
 Start from a single photo and end with a ten-second time-lapse of it changing, like a street going through the four seasons or a sketch turning into a painting. Grok looks at the photo and plans the stages, each stage is an edit of the photo, and one video passes through every edit at the moment it's pinned to. A small web app shows each step as it happens and lights up each pin as the video plays past it.
 
