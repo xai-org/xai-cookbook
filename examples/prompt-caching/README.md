@@ -8,6 +8,7 @@ languages: [typescript]
 capabilities: [chat, streaming, prompt-caching, compaction, reasoning]
 models: [grok-4.7]
 env: [XAI_API_KEY]
+icon: coins
 authors: [Eric Zakariasson]
 date: 2026-10-05
 ---

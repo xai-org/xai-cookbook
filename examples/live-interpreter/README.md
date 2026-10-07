@@ -8,6 +8,7 @@ languages: [typescript]
 capabilities: [voice, text-to-speech]
 models: [grok-voice-think-fast-2.0]
 env: [XAI_API_KEY]
+icon: translate
 authors: [Eric Zakariasson]
 date: 2026-10-05
 ---

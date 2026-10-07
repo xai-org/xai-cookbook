@@ -8,6 +8,7 @@ languages: [typescript]
 capabilities: [image-understanding, structured-output, streaming, image-generation, video-generation]
 models: [grok-4.7, grok-imagine-image-2.0, grok-imagine-video-1.5]
 env: [XAI_API_KEY]
+icon: clock
 authors: [Eric Zakariasson]
 date: 2026-10-05
 ---

@@ -8,6 +8,7 @@ languages: [typescript]
 capabilities: [x-data, structured-output, reasoning, streaming]
 models: [grok-4.7]
 env: [XAI_API_KEY]
+icon: line-chart
 authors: [Eric Zakariasson]
 date: 2026-10-01
 ---

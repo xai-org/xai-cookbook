@@ -125,15 +125,23 @@ def render_readme(catalog: str) -> str:
 
 def render_registry(examples: list[dict]) -> str:
     entries = []
-    for example in sorted((e for e in examples if "notebook" in e), key=sort_key):
+    for example in sorted(examples, key=sort_key):
         base = f"examples/{example['slug']}"
-        entry = {"title": example["title"], "path": f"{base}/{example['notebook']}"}
+        entry = {"title": example["title"]}
+        if "seo_title" in example:
+            entry["seo_title"] = example["seo_title"]
+        entry["path"] = f"{base}/{example.get('notebook', 'README.md')}"
         if "cover" in example:
             entry["image"] = f"{base}/{example['cover']}"
+        if "icon" in example:
+            entry["icon"] = example["icon"]
         entry["description"] = example["description"]
         entry["date"] = dt.date.fromisoformat(example["date"])
         entry["authors"] = example["authors"]
         entry["tags"] = example["capabilities"]
+        entry["type"] = example["type"]
+        entry["level"] = example["level"]
+        entry["languages"] = example["languages"]
         entries.append(entry)
     return REGISTRY_HEADER + yaml.safe_dump(entries, sort_keys=False, allow_unicode=True, width=1000)
 

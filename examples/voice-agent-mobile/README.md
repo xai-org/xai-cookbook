@@ -6,6 +6,7 @@ type: app
 level: intermediate
 languages: [swift, kotlin]
 capabilities: [voice, text-to-speech]
+icon: smartphone
 authors: [Ege Cavusoglu, Vladimir Tagakov]
 date: 2026-03-23
 ---

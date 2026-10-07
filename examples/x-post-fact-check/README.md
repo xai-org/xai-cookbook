@@ -8,6 +8,7 @@ languages: [typescript]
 capabilities: [x-data, web-search, structured-output, streaming, image-understanding, multi-agent]
 models: [grok-4.7, grok-4.20-multi-agent]
 env: [XAI_API_KEY]
+icon: checkmark-circle
 authors: [Eric Zakariasson]
 date: 2026-10-05
 ---

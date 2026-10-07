@@ -8,6 +8,7 @@ languages: [typescript]
 capabilities: [video-generation, text-to-speech]
 models: [grok-imagine-video-1.5]
 env: [XAI_API_KEY]
+icon: photo-person
 authors: [Eric Zakariasson]
 date: 2026-10-05
 ---

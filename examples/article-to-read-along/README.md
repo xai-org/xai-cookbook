@@ -7,6 +7,7 @@ level: beginner
 languages: [typescript]
 capabilities: [text-to-speech]
 env: [XAI_API_KEY]
+icon: text-highlight
 authors: [Eric Zakariasson]
 date: 2026-10-05
 ---

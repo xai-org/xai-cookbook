@@ -8,6 +8,7 @@ languages: [typescript]
 capabilities: [batch, files, structured-output, streaming, reasoning]
 models: [grok-4.7, grok-4.3, grok-4.20-0309-non-reasoning, grok-4.20-0309-reasoning]
 env: [XAI_API_KEY]
+icon: star
 authors: [Eric Zakariasson]
 date: 2026-10-05
 ---

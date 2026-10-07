@@ -9,6 +9,7 @@ code:
   typescript: .
 capabilities: [voice]
 env: [XAI_API_KEY]
+icon: network
 authors: [Damien Murphy]
 date: 2025-12-15
 ---

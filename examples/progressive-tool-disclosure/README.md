@@ -8,6 +8,7 @@ languages: [typescript]
 capabilities: [function-calling, tool-search, streaming]
 models: [grok-4.7]
 env: [XAI_API_KEY]
+icon: toolbox
 authors: [Eric Zakariasson]
 date: 2026-10-05
 ---
