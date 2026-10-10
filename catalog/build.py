@@ -53,7 +53,11 @@ def read_front_matter(readme: Path) -> dict:
     match = FRONT_MATTER.match(readme.read_text(encoding="utf-8"))
     if not match:
         raise ValueError("must start with a front matter block between --- lines")
-    meta = yaml.safe_load(match.group(1)) or {}
+    meta = yaml.safe_load(match.group(1))
+    if meta is None:
+        meta = {}
+    if not isinstance(meta, dict):
+        raise ValueError("front matter must be a YAML mapping")
     if isinstance(meta.get("date"), dt.date):
         meta["date"] = meta["date"].isoformat()
     return meta
