@@ -225,14 +225,21 @@ function takePrompt({ line, mood, pointAt, acting }: Part, { room, delivery }: C
     .join("\n");
 }
 
-// The video's URL is temporary, so it's downloaded right away.
-async function download(result: VideoResponse, file: string, signal?: AbortSignal): Promise<Buffer<ArrayBuffer>> {
+// The video's URL is temporary, so it's downloaded right away. The take is made and paid for by now, so a dropped
+// connection, which fetch throws as a TypeError, is tried again, up to twice.
+async function download(result: VideoResponse, file: string, signal?: AbortSignal, tries = 3): Promise<Buffer<ArrayBuffer>> {
   if (!result.video?.url) throw new Error("A take didn't pass moderation, so there's nothing to download.");
-  const response = await fetch(result.video.url, { signal });
-  if (!response.ok) throw new Error(`Couldn't download a take: ${response.status}`);
-  const video = Buffer.from(await response.arrayBuffer());
-  await writeFile(file, video);
-  return video;
+  try {
+    const response = await fetch(result.video.url, { signal });
+    if (!response.ok) throw new Error(`Couldn't download a take: ${response.status}`);
+    const video = Buffer.from(await response.arrayBuffer());
+    await writeFile(file, video);
+    return video;
+  } catch (error) {
+    if (!(error instanceof TypeError) || signal?.aborted || tries === 1) throw error;
+    await sleep(2000, undefined, { signal });
+    return download(result, file, signal, tries - 1);
+  }
 }
 
 async function filmTake(prompt: string, { portrait, voice }: Cast, seconds: number, onProgress: (percent: number) => void, signal?: AbortSignal): Promise<VideoResponse> {

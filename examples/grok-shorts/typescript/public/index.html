@@ -965,7 +965,7 @@
       },
       portrait: ({ url }) => ($("phone").style.backgroundImage = `url("${url}")`),
       media: (shown) => showMedia(parts, filmed, shown),
-      notice: ({ message }) => notify(parts, message),
+      notice: ({ message }) => notify(message),
       take: ({ index, status, percent, video: url, heard, filmed: count, reused }) => {
         const clip = shots[index];
         if (!clip) return;
@@ -993,7 +993,7 @@
         refreshEstimate();
         const seconds = cut.parts.at(-1).end.toFixed(1);
         const said = preview ? `👀 Previewed this version: ${seconds} seconds. Film it for the real takes.` : `🎬 Filmed this version: ${seconds} seconds`;
-        parts[0]?.closest(".message").append(Object.assign(document.createElement("p"), { className: "filmed", textContent: said }));
+        latestReply()?.append(Object.assign(document.createElement("p"), { className: "filmed", textContent: said }));
         announce(`Saved to ${cut.folder}/${preview ? "cuts/" : ""}`);
         video.play().catch(() => {});
         scrollDown();
@@ -1023,8 +1023,8 @@
   async function preview(parts, written) {
     await stream("/api/visuals", { session }, {
       media: (shown) => showMedia(parts, written, shown),
-      notice: ({ message }) => notify(parts, message),
-      failure: ({ message }) => notify(parts, message),
+      notice: ({ message }) => notify(message),
+      failure: ({ message }) => notify(message),
     });
   }
 
@@ -1038,9 +1038,15 @@
     item.querySelector(".line").before(shown);
   }
 
+  // The reply in the chat with the latest script. Its segments are on the timeline and in the panel next to the video,
+  // so the reply is found by the script's card in it.
+  function latestReply() {
+    return document.querySelector(".version-card.latest")?.closest(".message");
+  }
+
   // A note under the reply, like a screenshot that couldn't be taken. The preview and the cut can both report the same one.
-  function notify(parts, message) {
-    const reply = parts[0]?.closest(".message");
+  function notify(message) {
+    const reply = latestReply();
     const text = `⚠️ ${message}`;
     if (!reply || [...reply.querySelectorAll(".notice")].some((notice) => notice.textContent === text)) return;
     reply.append(Object.assign(document.createElement("p"), { className: "notice", textContent: text }));

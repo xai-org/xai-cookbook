@@ -3,6 +3,7 @@ import { existsSync } from "node:fs";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
+import { setTimeout as sleep } from "node:timers/promises";
 import { promisify } from "node:util";
 import { createCanvas, loadImage } from "@napi-rs/canvas";
 import { SpaceXAI } from "@xai-official/sdk";
@@ -188,8 +189,15 @@ async function cropToContent(file: string): Promise<number> {
   return height;
 }
 
-async function download(url: string, file: string, signal?: AbortSignal): Promise<void> {
-  const response = await fetch(url, { signal });
-  if (!response.ok) throw new Error(`Couldn't download ${url}: ${response.status}`);
-  await writeFile(file, Buffer.from(await response.arrayBuffer()));
+// A dropped connection, which fetch throws as a TypeError, is tried again, up to twice.
+async function download(url: string, file: string, signal?: AbortSignal, tries = 3): Promise<void> {
+  try {
+    const response = await fetch(url, { signal });
+    if (!response.ok) throw new Error(`Couldn't download ${url}: ${response.status}`);
+    await writeFile(file, Buffer.from(await response.arrayBuffer()));
+  } catch (error) {
+    if (!(error instanceof TypeError) || signal?.aborted || tries === 1) throw error;
+    await sleep(2000, undefined, { signal });
+    return download(url, file, signal, tries - 1);
+  }
 }
