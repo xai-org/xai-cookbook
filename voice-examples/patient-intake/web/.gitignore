@@ -1,0 +1,18 @@
+node_modules/
+.next/
+next-env.d.ts
+*.tsbuildinfo
+.vercel
+.DS_Store
+
+.env*
+!.env.example
+
+# The cookbook's root .gitignore ignores lib/ for Python builds; this app ships a
+# lib/ of its own (fonts, colors, class helpers) that must stay tracked.
+!lib/
+
+# `next dev`/`next build` regenerate these agent-tool instruction files; they are a
+# side effect of running the app, not part of the example.
+AGENTS.md
+CLAUDE.md

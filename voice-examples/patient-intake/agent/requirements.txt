@@ -1,0 +1,7 @@
+livekit-agents>=1.6.1
+livekit-plugins-ai-coustics>=0.2,<0.4
+python-dotenv>=1.0.0
+
+# yarl 1.24.1 was published with only a cp310 wheel and no sdist, so it cannot
+# install on Python 3.11+. Drop this pin once upstream uploads the rest.
+yarl<1.24
