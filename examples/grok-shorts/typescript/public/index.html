@@ -1,0 +1,2916 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Grok Shorts</title>
+<style>
+  /* The look every SpaceXSI Cookbook page shares, after x.ai. */
+  :root {
+    --bg: #fff;
+    --card: #f9f8f6;
+    --secondary: #f2f1ef;
+    --secondary-hover: #e9e8e5;
+    --tint: rgb(10 10 10 / 0.04);
+    --line: rgb(10 10 10 / 0.08);
+    --border: rgb(10 10 10 / 0.15);
+    --fg: #0a0a0a;
+    --muted: rgb(10 10 10 / 0.6);
+    --faint: rgb(10 10 10 / 0.36);
+    --accent: #ff6308;
+    --accent-soft: rgb(255 99 8 / 0.1);
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; font: 14px/22px var(--sans); background: var(--bg); color: var(--fg); -webkit-font-smoothing: antialiased; }
+  button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
+  a { color: inherit; }
+  svg { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  @keyframes pulse { to { background-color: var(--secondary-hover); } }
+  @keyframes fade { from { opacity: 0; } }
+
+  .site { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 12px; height: 52px; padding: 0 20px; background: rgb(255 255 255 / 0.85); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+  .logo { flex: none; margin-right: 4px; color: var(--fg); }
+  .logo svg { display: block; width: 52px; height: 20px; fill: currentColor; stroke: none; }
+  .crumbs { display: flex; align-items: center; gap: 8px; min-width: 0; color: var(--muted); white-space: nowrap; }
+  .crumbs svg { width: 12px; height: 12px; color: var(--faint); }
+  .crumbs h1 { margin: 0; overflow: hidden; text-overflow: ellipsis; font-size: inherit; line-height: inherit; font-weight: 500; color: var(--fg); }
+  .site .pill { flex: none; margin-left: auto; }
+  .tabs + .pill { margin-left: 0; }
+  /* The menu is the same on every page, as tabs like the ones on x.ai/changelog, with the page you're on lit up. */
+  .tabs { flex: none; display: inline-flex; max-width: 100%; margin-left: auto; padding: 4px; overflow-x: auto; border: 1px solid rgb(10 10 10 / 0.1); border-radius: 9999px; scrollbar-width: none; }
+  .tabs a { display: inline-flex; flex: none; align-items: center; height: 32px; padding: 0 18px; border-radius: 9999px; color: var(--muted); font-size: 14px; font-weight: 500; line-height: 20px; white-space: nowrap; text-decoration: none; transition: color 0.2s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+  .tabs a:hover { color: var(--fg); }
+  .tabs a[aria-current="page"] { background: var(--fg); color: #fff; }
+  .pill { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 40px; padding: 0 18px; border-radius: 9999px; font-size: 14px; font-weight: 500; white-space: nowrap; text-decoration: none; }
+  .pill-sm { height: 32px; padding: 0 14px; font-size: 13px; }
+  .pill-primary { background: var(--fg); color: #fff; }
+  .pill-primary:hover { background: #202329; }
+  .pill-secondary { background: var(--secondary); color: var(--fg); }
+  .pill-secondary:hover { background: var(--secondary-hover); }
+  .pill:disabled { opacity: 0.4; cursor: default; }
+  .pill svg { width: 14px; height: 14px; }
+  .field { min-width: 0; height: 40px; padding: 0 18px; border: 1px solid var(--border); border-radius: 9999px; background: var(--bg); color: var(--fg); font: inherit; outline: none; }
+  .field:focus { border-color: var(--fg); }
+  .field::placeholder { color: var(--faint); }
+  .surface { display: flex; flex-direction: column; gap: 8px; height: calc(100vh - 64px); min-height: 560px; margin: 0 12px 12px; padding: 8px; border-radius: 20px; background: var(--card); }
+  .panel { min-width: 0; padding: 20px 22px; border-radius: 16px; background: var(--bg); }
+  .label { margin: 0; font-size: 13px; font-weight: 500; color: var(--muted); }
+  @media (max-width: 1100px) {
+    .crumbs > span, .crumbs > svg, .crumbs > a { display: none; }
+  }
+  @media (max-width: 860px) {
+    .site { overflow-x: auto; }
+  }
+  @media (max-width: 640px) {
+    .site { padding: 0 16px; }
+    .surface { margin: 0 8px 8px; }
+  }
+
+  /* Grok Shorts */
+  :root {
+    --added: #1a7f37;
+    --removed: #cf222e;
+  }
+  /* What to do with the video sits right above it: where it's saved, then making a new one, copying its transcript,
+     downloading and sharing it, and previewing and filming it. */
+  /* Over the video only: the panel next to it runs from the top, with its tabs level with this bar. The video's title
+     and versions on the left, and what's done with it on the right. */
+  .stage-bar { grid-column: 1; grid-row: 1; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; min-height: 36px; }
+  .video-head { display: flex; flex: 1 1 auto; align-items: center; gap: 10px; min-width: 0; }
+  .video-title { min-width: 0; margin: 0 0 0 4px; overflow: hidden; font-size: 15px; font-weight: 600; line-height: 22px; letter-spacing: -0.01em; white-space: nowrap; text-overflow: ellipsis; }
+  .video-title:empty { display: none; }
+  .actions-divider { width: 1px; height: 20px; margin: 0 4px; background: var(--line); }
+  #download[hidden] + .actions-divider { display: none; }
+  /* What just happened, said for a few seconds over the bottom of the canvas. */
+  .toast { position: absolute; bottom: 16px; left: 50%; z-index: 5; max-width: min(520px, calc(100% - 32px)); padding: 9px 16px; border-radius: 14px; background: rgb(10 10 10 / 0.88); box-shadow: 0 8px 24px rgb(0 0 0 / 0.18); color: #fff; font-size: 13px; line-height: 19px; text-align: center; transform: translateX(-50%); cursor: pointer; animation: fade 0.2s ease-out; }
+  .stage-bar .actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; margin-left: auto; }
+
+  .workspace { flex: 1; display: grid; grid-template-columns: 420px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); gap: 8px; min-height: 0; }
+  .chat { display: flex; flex-direction: column; min-height: 0; padding: 0; overflow: hidden; }
+  /* The chat folds away to a narrow strip, for more room to edit. */
+  .chat-head { flex: none; display: flex; align-items: center; gap: 2px; padding: 10px 10px 0 20px; }
+  .chat-title { margin-right: auto; font-size: 13px; font-weight: 600; color: var(--muted); }
+  .chat-toggle { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 8px; color: var(--muted); }
+  .chat-toggle:hover { background: var(--card); color: var(--fg); }
+  .chat-toggle svg { width: 16px; height: 16px; transition: transform 0.2s; }
+  .workspace.chat-folded { grid-template-columns: 48px minmax(0, 1fr); }
+  .chat-folded .chat > :not(.chat-head), .chat-folded .chat-title, .chat-folded #restart { display: none; }
+  .chat-folded .chat-head { justify-content: center; padding: 10px 0; }
+  .chat-folded #chat-toggle svg { transform: rotate(180deg); }
+  .thread { flex: 1; display: flex; flex-direction: column; gap: 18px; min-height: 0; overflow: auto; padding: 20px 22px; }
+  /* Before the first message, the chat says what to do, in the middle of where the conversation will go. */
+  /* Placed down from the top by the window's height rather than centered in the thread, which gets shorter as the
+     message box grows, so it stays put while you type. 50vh - 309px is where centering puts it above a one-line box. */
+  .welcome { margin: max(0px, calc(50vh - 309px)) 0 auto; color: var(--muted); text-align: center; }
+  .welcome p { margin: 0 auto; font-size: 14px; line-height: 21px; text-wrap: balance; }
+  .welcome-title { margin: 0 0 6px; font-size: 22px; line-height: 28px; font-weight: 600; letter-spacing: -0.02em; color: var(--fg); }
+  .message { animation: fade 0.3s ease-out; }
+  .message.user { align-self: flex-end; max-width: 85%; padding: 8px 14px; border-radius: 18px 18px 4px 18px; background: var(--secondary); white-space: pre-wrap; overflow-wrap: anywhere; }
+  .message.user .text { max-height: 220px; overflow: hidden; }
+  .message.user.long .text { -webkit-mask-image: linear-gradient(to bottom, #000 65%, transparent); mask-image: linear-gradient(to bottom, #000 65%, transparent); }
+  .message.user.open .text { max-height: none; -webkit-mask-image: none; mask-image: none; }
+  .message.user .more { display: block; margin: 4px 0 0 auto; font-size: 12px; font-weight: 500; color: var(--muted); }
+  .message.user .more:hover { color: var(--fg); }
+  .message.grok { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  .about { padding: 10px 12px; border-radius: 12px; background: var(--card); }
+  .about .repo { margin: 0; font: 12px/18px var(--mono); color: var(--faint); }
+  .about .title { margin: 2px 0 0; font-size: 16px; line-height: 22px; font-weight: 500; letter-spacing: -0.01em; }
+  .about .title a { text-decoration: none; }
+  .about .title a:hover { text-decoration: underline; }
+  .about .meta { margin: 4px 0 0; font-size: 13px; line-height: 19px; color: var(--muted); }
+  .added { color: var(--added); }
+  .removed { color: var(--removed); }
+  .thinking summary { display: flex; align-items: center; gap: 6px; color: var(--muted); list-style: none; cursor: pointer; }
+  .thinking summary::-webkit-details-marker { display: none; }
+  .thinking summary svg { width: 12px; height: 12px; transition: transform 0.2s; }
+  .thinking[open] summary svg { transform: rotate(90deg); }
+  .thinking:has(.reasoning:empty) { display: none; }
+  .reasoning { max-height: 160px; margin-top: 8px; overflow: auto; white-space: pre-wrap; font: 11px/18px var(--mono); color: var(--faint); }
+  .persona { margin: 0; font-size: 13px; line-height: 19px; color: var(--muted); }
+  .note { margin: 0; }
+  .note.failed { color: var(--removed); }
+  .filmed { margin: 0; font-size: 12px; color: var(--muted); }
+  .parts { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; margin: 0 -10px; padding: 0; list-style: none; }
+  .parts li { padding: 10px; border-radius: 12px; animation: fade 0.3s ease-out; transition: background-color 0.2s; }
+  .parts li.timed { cursor: pointer; }
+  .parts li.timed:hover { background: var(--card); }
+  .parts li.current { background: var(--secondary); }
+  .parts .top { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+  .parts .sticker { display: inline-flex; align-items: center; gap: 4px; padding: 1px 10px; border-radius: 9999px; background: var(--secondary); color: var(--fg); font-size: 12px; font-weight: 500; white-space: nowrap; }
+  .parts .mood { margin-left: auto; font-size: 12px; color: var(--faint); white-space: nowrap; }
+  .parts .where { margin: 4px 0 0; overflow: hidden; font: 11px/18px var(--mono); color: var(--faint); white-space: nowrap; text-overflow: ellipsis; }
+  .parts .where.prompt { display: -webkit-box; font: italic 12px/18px var(--sans); white-space: normal; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  /* A segment's visual, framed like an attachment, so a white screenshot doesn't run into the chat around it. */
+  .parts .preview { display: block; width: 100%; height: auto; max-height: 360px; margin-top: 8px; border: 1px solid var(--border); border-radius: 12px; background: var(--card); object-fit: contain; box-shadow: 0 1px 3px rgb(0 0 0 / 0.06); animation: fade 0.4s ease-out; }
+  .parts .preview.page { height: revert; aspect-ratio: 4 / 3; object-fit: cover; object-position: top; }
+  .parts .where a { color: inherit; text-decoration: none; }
+  .parts .where a:hover { text-decoration: underline; }
+  .parts .layout, .theme .layout { height: 24px; padding: 0 22px 0 8px; border: 1px solid var(--border); border-radius: 9999px; appearance: none; background: var(--bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%230a0a0a' stroke-width='1.6' stroke-linecap='round'%3E%3Cpath d='M4.5 6.5 8 10l3.5-3.5'/%3E%3C/svg%3E") no-repeat right 6px center / 10px; color: var(--muted); font: 500 11px var(--sans); cursor: pointer; }
+  .parts .layout.edited, .theme .layout.edited { border-color: var(--accent); color: var(--fg); }
+  .parts span.layout { display: inline-flex; align-items: center; padding: 0 8px; background: none; cursor: default; }
+  .style-menu { border: 1px solid var(--line); border-radius: 14px; }
+  .style-menu summary { display: flex; align-items: center; gap: 8px; height: 38px; padding: 0 12px; list-style: none; font-size: 13px; font-weight: 500; cursor: pointer; }
+  .style-menu summary::-webkit-details-marker { display: none; }
+  .style-menu summary svg { flex: none; width: 15px; height: 15px; color: var(--muted); }
+  .style-menu .style-now { min-width: 0; overflow: hidden; color: var(--faint); font-weight: 400; white-space: nowrap; text-overflow: ellipsis; }
+  .style-menu .chevron { margin-left: auto; transition: transform 0.2s; }
+  .style-menu[open] .chevron { transform: rotate(180deg); }
+  .style-menu .style-panel { display: grid; gap: 10px; padding: 2px 12px 12px; }
+  .theme { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; }
+  .about-theme { display: flex; align-items: center; gap: 4px; min-width: 0; font-size: 12px; color: var(--faint); }
+  .personality .handle { width: 130px; height: 24px; padding: 0 10px; border: 1px solid var(--border); border-radius: 9999px; background: var(--bg); color: var(--fg); font: 12px var(--sans); outline: none; }
+  .personality .handle:focus { border-color: var(--fg); }
+  .personality .pill-sm { height: 24px; padding: 0 10px; font-size: 12px; }
+  .sound input[type="range"] { width: 96px; accent-color: var(--fg); }
+  .sound .effects, .on-screen .effects { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); cursor: pointer; }
+  .sound .effects input, .on-screen .effects input { margin: 0; accent-color: var(--fg); }
+  .research { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; font-size: 12px; line-height: 18px; color: var(--faint); }
+  .notice { margin: 0; font-size: 12px; line-height: 18px; color: var(--removed); }
+  .questions { display: grid; gap: 12px; margin: 0; padding: 12px 14px; border-radius: 12px; background: var(--accent-soft); }
+  .questions .question { margin: 0 0 6px; font-weight: 500; }
+  .questions .choices { display: flex; flex-wrap: wrap; gap: 6px; }
+  .questions .choice { min-height: 28px; padding: 4px 12px; border-radius: 9999px; background: var(--bg); box-shadow: inset 0 0 0 1px var(--border); font-size: 13px; line-height: 20px; text-align: left; }
+  .questions .choice:hover { box-shadow: inset 0 0 0 1px var(--fg); }
+  .questions .choice.picked { background: var(--fg); color: #fff; box-shadow: none; }
+  .questions .hint { margin: 0; font-size: 12px; color: var(--muted); }
+  .parts .line { margin: 4px 0 0; font-size: 14px; line-height: 21px; }
+  .parts .acting { margin: 4px 0 0; font-size: 12px; line-height: 18px; font-style: italic; color: var(--faint); }
+  .parts .line[contenteditable] { margin-left: -6px; margin-right: -6px; padding: 2px 6px; border-radius: 8px; outline: none; cursor: text; transition: background-color 0.15s; }
+  .parts .line[contenteditable]:hover { background: var(--card); }
+  .parts .line[contenteditable]:focus { background: var(--bg); box-shadow: inset 0 0 0 1px var(--fg); }
+  .parts .estimate { font-size: 12px; color: var(--faint); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .parts .estimate.unfilmed { color: var(--fg); font-weight: 500; }
+  .parts .tools { display: none; gap: 2px; }
+  .parts li:hover .tools, .parts li:focus-within .tools { display: inline-flex; }
+  .parts .tools button { width: 22px; height: 22px; border-radius: 6px; color: var(--muted); font-size: 13px; line-height: 22px; }
+  .parts .tools button:hover { background: var(--secondary); color: var(--fg); }
+  .uploads { width: min(640px, calc(100vw - 32px)); max-height: min(640px, calc(100vh - 64px)); padding: 0; border: 0; border-radius: 20px; background: var(--bg); color: var(--fg); }
+  .uploads::backdrop { background: rgb(10 10 10 / 0.4); }
+  .uploads form { display: flex; flex-direction: column; gap: 14px; padding: 20px 22px; }
+  .uploads .head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .uploads h2 { margin: 0; font-size: 16px; line-height: 24px; font-weight: 600; }
+  .upload-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 10px; max-height: 420px; overflow: auto; }
+  .upload { display: grid; gap: 6px; padding: 6px; border-radius: 14px; text-align: left; }
+  .upload:hover { background: var(--tint); }
+  .upload img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 10px; background: var(--secondary); }
+  .upload span { overflow: hidden; font-size: 12px; line-height: 16px; white-space: nowrap; text-overflow: ellipsis; color: var(--muted); }
+  .uploads .empty { margin: 0; color: var(--faint); }
+  .uploads .foot { display: flex; justify-content: space-between; gap: 8px; }
+  .hooklab { display: grid; gap: 8px; margin-top: 10px; padding: 12px; border-radius: 12px; background: var(--card); }
+  .hooklab .head { margin: 0; font-size: 12px; line-height: 18px; color: var(--muted); }
+  .hooklab .head strong { color: var(--fg); font-weight: 500; }
+  .hooklab ol { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+  .hooklab li { display: grid; gap: 4px; padding: 10px 12px; border-radius: 10px; background: var(--bg); box-shadow: inset 0 0 0 1px var(--line); }
+  .hooklab li.used { box-shadow: inset 0 0 0 2px var(--fg); }
+  .hooklab .option { margin: 0; font-size: 14px; line-height: 20px; font-weight: 500; }
+  .hooklab .why { margin: 0; font-size: 12px; line-height: 17px; color: var(--faint); }
+  .hooklab .score { color: var(--fg); font-weight: 500; font-variant-numeric: tabular-nums; }
+  .hooklab .buttons { display: flex; gap: 6px; margin-top: 4px; }
+  .hooklab.working { min-height: 64px; animation: pulse 1s ease-in-out infinite alternate; }
+  .takes-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 8px; }
+  .take-pick { position: relative; width: 30px; aspect-ratio: 9 / 16; overflow: hidden; padding: 0; border-radius: 6px; background: var(--secondary); box-shadow: 0 0 0 1px var(--line); }
+  .take-pick.chosen { box-shadow: 0 0 0 2px var(--fg); }
+  .take-pick video { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .take-pick span { position: absolute; left: 4px; bottom: 3px; font: 700 10px/1 var(--sans); color: #fff; text-shadow: 0 1px 2px rgb(0 0 0 / 0.8); }
+  .retake { height: 26px; padding: 0 10px; border-radius: 9999px; background: var(--secondary); color: var(--muted); font-size: 12px; font-weight: 500; }
+  .retake:hover { background: var(--secondary-hover); color: var(--fg); }
+  .retake-form { display: flex; flex: 1 1 100%; gap: 6px; }
+  .retake-form input { flex: 1; min-width: 0; height: 32px; padding: 0 12px; border: 1px solid var(--border); border-radius: 9999px; font: 13px var(--sans); outline: none; }
+  .retake-form input:focus { border-color: var(--fg); }
+  .parts .hook .line { font-size: 16px; line-height: 23px; font-weight: 600; letter-spacing: -0.01em; }
+  /* The message box is one rounded card, like ChatGPT's and grok.com's: what you write on top, and under it the presenter,
+     Batch, and a round send button that lights up once there's something to send. */
+  .composer { flex: none; padding: 8px 12px 12px; }
+  .composer .box { border: 1px solid var(--border); border-radius: 26px; background: var(--bg); box-shadow: 0 1px 2px rgb(0 0 0 / 0.04), 0 8px 24px rgb(0 0 0 / 0.05); transition: border-color 0.2s, box-shadow 0.2s; }
+  .composer .box:focus-within { border-color: rgb(10 10 10 / 0.28); box-shadow: 0 1px 2px rgb(0 0 0 / 0.06), 0 10px 30px rgb(0 0 0 / 0.08); }
+  .composer textarea { display: block; width: 100%; min-height: 50px; max-height: 220px; padding: 14px 18px 4px; border: 0; background: transparent; color: var(--fg); font: 15px/22px var(--sans); resize: none; outline: none; }
+  .composer textarea::placeholder { color: var(--faint); }
+  .composer .tools { display: flex; align-items: center; gap: 6px; padding: 4px 8px 8px 10px; }
+  .chip { flex: none; height: 34px; padding: 0 13px; border: 1px solid var(--line); border-radius: 9999px; background-color: var(--bg); color: var(--muted); font: 500 13px var(--sans); }
+  .chip:hover { background-color: var(--card); color: var(--fg); }
+  /* Who presents the video, picked like a model in ChatGPT or Grok: their face, name, and personality on a chip, and a
+     card of everyone to pick from opening above it. */
+  .picker { position: relative; min-width: 0; }
+  .presenter-chip { display: inline-flex; align-items: center; gap: 7px; max-width: min(250px, 100%); padding: 0 10px 0 4px; }
+  .presenter-chip:has(img[hidden]) { padding-left: 12px; }
+  .presenter-chip img { flex: none; width: 26px; height: 26px; border-radius: 50%; object-fit: cover; object-position: center 35%; }
+  .presenter-chip .who { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .presenter-chip b { font-weight: 600; color: var(--fg); }
+  .presenter-chip .chevron { flex: none; width: 13px; height: 13px; transition: transform 0.2s; }
+  .presenter-chip[aria-expanded="true"] { background-color: var(--card); }
+  .presenter-chip[aria-expanded="true"] .chevron { transform: rotate(180deg); }
+  .picker-menu { position: absolute; left: 0; bottom: calc(100% + 8px); z-index: 30; width: 330px; max-height: min(420px, 60vh); overflow: auto; padding: 6px; border: 1px solid var(--line); border-radius: 18px; background: var(--bg); box-shadow: 0 16px 48px rgb(0 0 0 / 0.14), 0 2px 8px rgb(0 0 0 / 0.06); animation: fade 0.15s ease-out; }
+  .picker-menu .option { display: grid; grid-template-columns: 38px minmax(0, 1fr) 16px; align-items: center; gap: 10px; width: 100%; padding: 8px; border-radius: 12px; text-align: left; outline: none; }
+  .picker-menu .option:hover, .picker-menu .option:focus-visible { background: var(--card); }
+  .picker-menu .option img, .picker-menu .option .face { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; object-position: center 35%; background: var(--secondary); }
+  .picker-menu .option .face { display: grid; place-items: center; color: var(--muted); font-weight: 600; }
+  .picker-menu .name { display: block; overflow: hidden; font-size: 14px; line-height: 20px; color: var(--fg); white-space: nowrap; text-overflow: ellipsis; }
+  .picker-menu .name b { font-weight: 600; }
+  .picker-menu .name span { color: var(--muted); }
+  .picker-menu .blurb { display: block; overflow: hidden; font-size: 12px; line-height: 17px; color: var(--faint); white-space: nowrap; text-overflow: ellipsis; }
+  .picker-menu .check { width: 16px; height: 16px; stroke-width: 2; visibility: hidden; }
+  .picker-menu .option[aria-selected="true"] .check { visibility: visible; }
+  .picker-menu .new { display: flex; align-items: center; gap: 8px; margin: 4px 0 0; padding: 10px 10px 6px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; font-weight: 500; text-decoration: none; }
+  .picker-menu .new:hover { color: var(--fg); }
+  .picker-menu .new svg { width: 14px; height: 14px; }
+  /* The video's versions, newest first, in a menu like the presenter's that opens down from the top of the stage. */
+  .history-chip { display: inline-flex; align-items: center; gap: 6px; }
+  .history-chip svg { flex: none; width: 14px; height: 14px; }
+  .history-chip .chevron { width: 12px; height: 12px; transition: transform 0.2s; }
+  .history-chip[aria-expanded="true"] .chevron { transform: rotate(180deg); }
+  .history-menu { top: calc(100% + 8px); right: 0; bottom: auto; left: auto; width: 280px; }
+  .history-menu .option { grid-template-columns: minmax(0, 1fr) 16px; }
+  /* What changed since the current version, next to the buttons that make a new one. */
+  .changes-chip { display: inline-flex; align-items: center; gap: 6px; }
+  .changes-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+  .changes-chip .chevron { width: 12px; height: 12px; transition: transform 0.2s; }
+  .changes-chip[aria-expanded="true"] .chevron { transform: rotate(180deg); }
+  .changes-menu { top: calc(100% + 8px); right: 0; bottom: auto; left: auto; width: 340px; padding: 12px; }
+  .changes-head { margin: 0 4px 6px; font-size: 12px; font-weight: 600; color: var(--faint); }
+  .changes-list { display: grid; gap: 2px; max-height: 300px; margin: 0; padding: 0; overflow: auto; list-style: none; }
+  .changes-list li { display: flex; align-items: center; gap: 8px; padding: 7px 4px; border-radius: 8px; font-size: 13px; line-height: 18px; }
+  .changes-list li > span:first-child { flex: 1; min-width: 0; }
+  .change-tag { flex: none; padding: 1px 8px; border-radius: 9999px; background: rgb(255 99 8 / 0.14); color: #b54708; font-size: 11px; font-weight: 600; line-height: 17px; }
+  .changes-note { margin: 8px 4px 10px; font-size: 12px; line-height: 17px; color: var(--faint); }
+  .changes-actions { display: flex; justify-content: flex-end; gap: 6px; padding-top: 10px; border-top: 1px solid var(--line); }
+  /* A select shown as a button, and a menu like the presenter's with a line about each option. */
+  .dropdown { position: relative; min-width: 0; }
+  .dropdown-chip { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; height: 30px; padding: 0 10px 0 12px; border: 1px solid var(--border); border-radius: 9999px; background: var(--bg); color: var(--fg); font-size: 12px; white-space: nowrap; transition: background-color 0.15s, border-color 0.15s; }
+  .dropdown-chip:hover, .dropdown-chip[aria-expanded="true"] { background: var(--card); }
+  .dropdown-chip.edited { border-color: var(--accent); }
+  .dropdown-label { color: var(--faint); }
+  .dropdown-label:empty { display: none; }
+  .dropdown-chip b { min-width: 0; overflow: hidden; font-weight: 500; text-overflow: ellipsis; }
+  .dropdown-chip .chevron { flex: none; width: 12px; height: 12px; color: var(--muted); transition: transform 0.2s; }
+  .dropdown-chip[aria-expanded="true"] .chevron { transform: rotate(180deg); }
+  .parts .dropdown-chip { height: 24px; padding: 0 8px 0 10px; font-size: 11px; }
+  .swatches { display: inline-flex; flex: none; justify-content: center; gap: 3px; }
+  .swatches:empty { display: none; }
+  .swatches i { width: 10px; height: 10px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.15); }
+  .dropdown-menu { position: fixed; inset: auto; width: 270px; margin: 0; color: var(--fg); }
+  .dropdown-menu .option { grid-template-columns: minmax(0, 1fr) 16px; }
+  .dropdown-menu .option:has(.swatches:not(:empty)) { grid-template-columns: 38px minmax(0, 1fr) 16px; }
+  .dropdown-menu .blurb { display: -webkit-box; white-space: normal; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  .dropdown-menu .group { margin: 8px 8px 2px; font-size: 11px; font-weight: 600; color: var(--faint); }
+  .dropdown-menu .group:first-child { margin-top: 4px; }
+  .dropdown-menu .new { width: 100%; }
+  .chip[aria-pressed="true"] { border-color: var(--fg); background: var(--fg); color: #fff; }
+  .composer .send { display: grid; place-items: center; flex: none; width: 36px; height: 36px; margin-left: auto; border-radius: 50%; background: var(--fg); color: #fff; transition: background-color 0.2s, color 0.2s; }
+  .composer .send svg { width: 18px; height: 18px; stroke-width: 2; }
+  .composer .send:disabled { background: var(--secondary); color: var(--faint); cursor: default; }
+  .starters { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 18px; }
+  .starters button { min-height: 34px; padding: 6px 14px; border: 1px solid var(--line); border-radius: 9999px; color: var(--muted); font-size: 13px; line-height: 18px; font-weight: 500; animation: fade 0.25s ease-out; }
+  .starters button:hover { background: var(--card); color: var(--fg); }
+  .more-ideas { display: inline-flex; align-items: center; gap: 6px; margin-top: 12px; padding: 5px 12px; border-radius: 9999px; color: var(--muted); font-size: 13px; font-weight: 500; }
+  .more-ideas:hover { background: var(--card); color: var(--fg); }
+  .more-ideas svg { width: 14px; height: 14px; }
+  .batch-items { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+  .batch-item { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; border-radius: 12px; background: var(--card); animation: fade 0.3s ease-out; }
+  .batch-item .title { margin: 0; font-size: 14px; line-height: 20px; font-weight: 500; }
+  .batch-item .meta { margin: 2px 0 0; font-size: 12px; line-height: 17px; color: var(--faint); }
+  .batch-item.writing .meta, .batch-item.previewing .meta, .batch-item.waiting .meta { animation: pulse-text 0.9s ease-in-out infinite alternate; }
+  .batch-item .buttons { display: flex; flex: none; gap: 6px; }
+  @keyframes pulse-text { to { opacity: 0.4; } }
+
+  .stage { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); gap: 12px 16px; min-height: 0; padding: 12px; }
+  .stage:has(> .side:not([hidden])) { grid-template-columns: minmax(0, 1fr) 340px; }
+  /* Next to the video, like an editor's inspector: the details of the segment picked on the timeline, under the video's
+     style, and a tab of comments on the cut. */
+  .side { grid-column: 2; grid-row: 1 / -1; display: flex; flex-direction: column; gap: 12px; min-width: 0; min-height: 0; }
+  .side-tabs { flex: none; display: flex; gap: 2px; padding: 3px; border-radius: 9999px; background: var(--secondary); }
+  .side-tab { display: inline-flex; flex: 1; align-items: center; justify-content: center; gap: 6px; height: 30px; border-radius: 9999px; color: var(--muted); font-size: 13px; font-weight: 500; }
+  .side-tab[aria-selected="true"] { background: var(--bg); color: var(--fg); box-shadow: 0 1px 2px rgb(0 0 0 / 0.08); }
+  .tab-count { min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: #ff2d55; color: #fff; font: 700 10px/18px var(--sans); font-variant-numeric: tabular-nums; }
+  .details { display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; gap: 12px; min-height: 0; overflow: hidden auto; }
+  .details .parts { margin: 0; }
+  .details .parts > li { padding: 4px 0 12px; animation: none; }
+  .details .parts > li:not(.selected) { display: none; }
+  .details .parts .tools { display: inline-flex; }
+  .details .parts .line { font-size: 15px; line-height: 23px; }
+  .notes-empty { margin: 0; font-size: 13px; line-height: 19px; color: var(--faint); }
+  /* The library's images and videos, like an editor's media bin, to drag onto a clip or show on the picked segment. */
+  .media { display: grid; align-content: start; gap: 10px; min-height: 0; overflow: auto; }
+  .media-hint { margin: 0; font-size: 12px; line-height: 17px; color: var(--faint); }
+  .media-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+  .media-item { display: grid; gap: 6px; padding: 6px; border-radius: 12px; text-align: left; cursor: grab; }
+  .media-item:hover { background: var(--card); }
+  .media-item img { width: 100%; aspect-ratio: 4 / 3; border-radius: 8px; object-fit: cover; object-position: top; background: var(--secondary); box-shadow: 0 0 0 1px var(--line); }
+  .media-item span { overflow: hidden; font-size: 12px; line-height: 16px; color: var(--muted); white-space: nowrap; text-overflow: ellipsis; }
+  .media-upload { justify-self: start; cursor: pointer; }
+  /* What goes with the video when it's posted, the cover people see first, and the video to post. */
+  .publish { display: grid; align-content: start; gap: 12px; min-height: 0; overflow: auto; }
+  .platforms { display: flex; gap: 4px; padding: 3px; border-radius: 12px; background: var(--secondary); }
+  .platforms button { flex: 1; height: 28px; border-radius: 9px; color: var(--muted); font-size: 12px; font-weight: 500; white-space: nowrap; }
+  .platforms button[aria-pressed="true"] { background: var(--bg); color: var(--fg); box-shadow: 0 1px 2px rgb(0 0 0 / 0.08); }
+  .publish-field { display: grid; gap: 4px; margin: 0; font-size: 12px; font-weight: 600; color: var(--muted); }
+  .publish-field input, .publish-field textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg); color: var(--fg); font: 400 13px/19px var(--sans); resize: vertical; outline: none; }
+  .publish-field input:focus, .publish-field textarea:focus { border-color: var(--fg); }
+  .publish-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+  .cover { display: grid; place-items: center; min-height: 72px; padding: 8px; border: 1px dashed var(--border); border-radius: 12px; }
+  .cover img { width: 120px; aspect-ratio: 9 / 16; border-radius: 10px; object-fit: cover; box-shadow: 0 1px 3px rgb(0 0 0 / 0.12); }
+  .cover-hint { margin: 0; font-size: 12px; line-height: 17px; color: var(--faint); text-align: center; }
+  .publish-download { justify-self: start; }
+  .version-card { display: grid; gap: 8px; padding: 12px !important; border: 1px solid var(--line); border-radius: 14px !important; }
+  .version-card .version-title { margin: 0; font-size: 13px; font-weight: 600; }
+  .version-card .version-hint { margin: 0; font-size: 12px; line-height: 17px; color: var(--faint); }
+  .version-card .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .version-card .chips button { padding: 2px 10px; border-radius: 9999px; background: var(--secondary); color: var(--fg); font-size: 12px; font-weight: 500; }
+  .version-card .chips button:hover { background: var(--secondary-hover); }
+  .version-card:not(.latest) .chips button { pointer-events: none; color: var(--muted); }
+  .phone-area { display: flex; flex-direction: column; gap: 14px; min-height: 0; }
+  /* The phone sits on a dotted canvas, like a design tool's, so the video is what stands out. */
+  .phone-fit { position: relative; flex: 1; display: grid; place-items: center; min-height: 0; padding: 14px; border-radius: 14px; background: var(--card) radial-gradient(rgb(10 10 10 / 0.08) 1px, transparent 1.5px) 0 0 / 18px 18px; container-type: size; }
+  /* Where each app's top bar, buttons, and caption cover the video. */
+  .safe { position: absolute; inset: 0; z-index: 3; pointer-events: none; --top: 7%; --bottom: 18%; --rail: 13%; --rail-top: 42%; }
+  .safe[data-platform="tiktok"] { --top: 8%; --bottom: 21%; --rail: 15%; --rail-top: 36%; }
+  .safe[data-platform="reels"] { --top: 7%; --bottom: 19%; --rail: 13%; --rail-top: 46%; }
+  .safe > div { position: absolute; display: flex; align-items: flex-end; padding: 6px; border: 1px dashed rgb(255 45 85 / 0.85); background: repeating-linear-gradient(135deg, rgb(255 45 85 / 0.24) 0 6px, rgb(255 45 85 / 0.1) 6px 12px); }
+  .safe span { padding: 1px 7px; border-radius: 9999px; background: rgb(0 0 0 / 0.65); color: #fff; font: 600 10px/15px var(--sans); white-space: nowrap; }
+  .safe-top { inset: 0 0 auto; height: var(--top); }
+  .safe-bottom { inset: auto 0 0; height: var(--bottom); }
+  .safe-rail { right: 0; top: var(--rail-top); bottom: var(--bottom); width: var(--rail); align-items: flex-start !important; justify-content: center; }
+  .safe-rail span { writing-mode: vertical-rl; padding: 7px 1px; }
+  .phone { position: relative; display: grid; place-items: center; width: min(100cqw, 100cqh * 9 / 16); aspect-ratio: 9 / 16; overflow: hidden; border-radius: 28px; background: #110f1a center / cover no-repeat; color: #f2f1ef; box-shadow: 0 0 0 6px #0a0a0a; }
+  .phone::before { content: ""; position: absolute; inset: 0; background: rgb(10 8 16 / 0.55); }
+  .phone video { position: absolute; inset: 0; z-index: 2; width: 100%; height: 100%; object-fit: cover; animation: fade 0.4s ease-out; }
+  .phone-note { position: relative; z-index: 1; display: grid; align-self: end; justify-items: center; gap: 8px; max-width: 300px; margin: 0 0 16%; padding: 0 22px; text-align: center; color: rgb(242 241 239 / 0.75); }
+  .phone-title { margin: 0; font-size: 22px; line-height: 28px; font-weight: 800; letter-spacing: -0.01em; color: #fff; text-transform: uppercase; }
+  .phone-percent { font: 500 40px/44px var(--sans); color: #fff; font-variant-numeric: tabular-nums; }
+  .pins { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
+  .pins.armed { pointer-events: auto; cursor: crosshair; box-shadow: inset 0 0 0 3px #ff2d55; border-radius: 28px; }
+  .pin { position: absolute; width: 26px; height: 26px; margin: -13px 0 0 -13px; border-radius: 50%; background: #ff2d55; box-shadow: 0 0 0 3px #fff, 0 2px 10px rgb(0 0 0 / 0.4); color: #fff; font: 700 12px/26px var(--sans); text-align: center; pointer-events: auto; animation: fade 0.2s ease-out; }
+  .pin.new { background: #fff; color: #ff2d55; box-shadow: 0 0 0 3px #ff2d55, 0 2px 10px rgb(0 0 0 / 0.4); }
+  .note-editor { position: absolute; z-index: 4; left: 12px; right: 12px; display: grid; gap: 8px; padding: 10px; border-radius: 16px; background: var(--bg); color: var(--fg); box-shadow: 0 10px 30px rgb(0 0 0 / 0.4); }
+  .note-editor textarea { min-height: 60px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 12px; font: inherit; resize: none; outline: none; }
+  .note-editor textarea:focus { border-color: var(--fg); }
+  .note-actions { display: flex; justify-content: flex-end; gap: 6px; }
+  .scrub { flex: none; display: grid; gap: 8px; }
+  .transport { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+  .transport #annotate { margin-left: auto; }
+  .mute { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; color: var(--muted); }
+  .mute:hover { background: var(--card); color: var(--fg); }
+  .mute svg { width: 16px; height: 16px; }
+  /* How long the video runs, against what does best as a short. */
+  .length { padding: 2px 9px; border-radius: 9999px; font-size: 11px; font-weight: 600; line-height: 18px; white-space: nowrap; }
+  .length.good { background: rgb(26 127 55 / 0.12); color: var(--added); }
+  .length.long { background: rgb(255 99 8 / 0.14); color: #b54708; }
+  .length.short { background: var(--secondary); color: var(--muted); }
+  /* The first three seconds, which decide whether anyone keeps watching, as a line under the ruler: the ruler's
+     labels and ticks leave no room for words. */
+  .hook-window { position: absolute; left: 0; bottom: -1px; height: 3px; border-radius: 2px; background: var(--accent); cursor: help; }
+  .note-list .by { margin-right: 6px; padding: 1px 6px; border-radius: 9999px; background: var(--fg); color: var(--bg); font-size: 10px; font-weight: 600; letter-spacing: 0.02em; }
+  .badge { position: absolute; z-index: 3; top: 12px; left: 12px; right: 12px; padding: 8px 12px; border-radius: 12px; background: rgb(10 10 10 / 0.78); color: #fff; font-size: 12px; line-height: 16px; text-align: center; pointer-events: none; }
+  /* How the phone is shown floats on the canvas, in its corner, while there's a video to show. */
+  .canvas-tool { position: absolute; top: 12px; left: 12px; z-index: 4; display: flex; align-items: center; }
+  .canvas-tool svg { position: absolute; left: 11px; width: 15px; height: 15px; color: var(--muted); pointer-events: none; }
+  .canvas-tool select { height: 32px; padding: 0 30px 0 32px; border: 1px solid var(--line); border-radius: 9999px; appearance: none; background: var(--bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%230a0a0a' stroke-width='1.6' stroke-linecap='round'%3E%3Cpath d='M4.5 6.5 8 10l3.5-3.5'/%3E%3C/svg%3E") no-repeat right 10px center / 12px; box-shadow: 0 1px 2px rgb(0 0 0 / 0.06), 0 4px 14px rgb(0 0 0 / 0.06); color: var(--fg); font: 500 12px var(--sans); cursor: pointer; }
+  .phone-fit:has(video[hidden]) .canvas-tool, .phone:has(video[hidden]) .safe { display: none; }
+  .canvas-tool.on svg { color: #ff2d55; }
+  .canvas-tool option { color: var(--fg); }
+  /* Without room beside the phone, which is as wide as the canvas is tall allows, the menu is just its icon, red while
+     the zones show. */
+  @container (max-width: 860px) or (max-aspect-ratio: 6 / 5) {
+    .canvas-tool select { width: 32px; padding: 0; color: transparent; background-image: none; }
+    .canvas-tool svg { left: 8px; }
+  }
+  .play { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: var(--fg); color: #fff; }
+  .play svg { width: 12px; height: 12px; fill: currentColor; stroke: none; }
+  .clock { font: 500 12px/1 var(--mono); color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .lanes { position: relative; display: grid; gap: 4px; cursor: pointer; user-select: none; touch-action: none; }
+  .ruler { position: relative; height: 18px; border-bottom: 1px solid var(--line); }
+  .tick { position: absolute; bottom: 0; width: 1px; height: 4px; background: var(--border); }
+  .tick.major { height: 8px; background: var(--faint); }
+  .tick span { position: absolute; bottom: 9px; left: 3px; font: 10px/1 var(--mono); color: var(--faint); white-space: nowrap; }
+  .clips { position: relative; height: 56px; overflow: hidden; border-radius: 8px; background: #110f1a; }
+  /* The music, if the video has any, as a track of its own under the clips, the way an editor shows an audio track. */
+  .music-lane { position: relative; height: 30px; overflow: hidden; border-radius: 8px; background: #0e1714; }
+  .music-lane canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .music-name { position: absolute; left: 6px; top: 50%; max-width: calc(100% - 12px); padding: 1px 7px; overflow: hidden; border-radius: 9999px; background: rgb(0 0 0 / 0.6); color: #fff; font-size: 10px; font-weight: 500; line-height: 15px; white-space: nowrap; text-overflow: ellipsis; transform: translateY(-50%); }
+  .empty-music { display: flex; align-items: center; height: 30px; padding: 0 10px; border-radius: 8px; background: #0e1714; color: rgb(110 231 183 / 0.9); font-size: 11px; font-weight: 500; }
+  .clips canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .clip { position: absolute; top: 0; bottom: 0; border-radius: 8px; box-shadow: inset 0 0 0 2px rgb(255 255 255 / 0.7); transition: box-shadow 0.15s; }
+  .clip.current { box-shadow: inset 0 0 0 3px #fff; }
+  .clip.selected { box-shadow: inset 0 0 0 3px var(--accent); }
+  .clip.editable { cursor: grab; }
+  .clip .handle { position: absolute; z-index: 2; top: 0; bottom: 0; width: 10px; cursor: ew-resize; }
+  .clip .handle.head { left: -3px; }
+  .clip .handle.tail { right: -3px; }
+  .clip .handle::after { content: ""; position: absolute; top: 50%; left: 4px; width: 3px; height: 24px; margin-top: -12px; border-radius: 2px; background: #fff; box-shadow: 0 0 0 1px rgb(0 0 0 / 0.4); opacity: 0; transition: opacity 0.15s; }
+  .clip.editable:hover .handle::after { opacity: 1; }
+  .clip.moving { z-index: 3; cursor: grabbing; box-shadow: inset 0 0 0 3px #fff, 0 8px 24px rgb(0 0 0 / 0.45); }
+  .clip.drop { background: rgb(255 255 255 / 0.2); box-shadow: inset 0 0 0 3px #fff; }
+  .clip.trimmed { outline: 2px dashed rgb(255 255 255 / 0.85); outline-offset: -6px; }
+  .timeline-hint { margin: 8px 0 0; font-size: 12px; color: var(--faint); }
+  /* Until there's a cut, the timeline shows where it goes: a clip for each segment of the script, or of a typical one. */
+  .timeline-empty { flex: none; display: grid; gap: 8px; }
+  .timeline-empty .play { opacity: 0.3; cursor: default; }
+  .empty-ruler { height: 18px; border-bottom: 1px solid var(--line); background: repeating-linear-gradient(to right, var(--border) 0 1px, transparent 1px 5%) left bottom / 100% 6px no-repeat; }
+  .empty-lane { display: flex; gap: 4px; height: 56px; padding: 4px; border-radius: 8px; background: #110f1a; }
+  .empty-lane span { position: relative; flex: 1 1 0; display: flex; align-items: flex-end; gap: 6px; min-width: 0; padding: 5px 8px; overflow: hidden; border: 1px dashed rgb(255 255 255 / 0.22); border-radius: 6px; color: rgb(255 255 255 / 0.62); font-size: 11px; font-weight: 500; white-space: nowrap; }
+  .empty-lane b { position: relative; z-index: 1; min-width: 0; overflow: hidden; font-weight: 500; text-overflow: ellipsis; }
+  .empty-lane em { position: relative; z-index: 1; margin-left: auto; font-style: normal; font-variant-numeric: tabular-nums; }
+  /* While a video is made, each clip fills up as its takes film, then plays the take that's kept. */
+  .empty-lane .working { border-style: solid; border-color: rgb(255 255 255 / 0.3); color: #fff; }
+  .empty-lane .working::before { content: ""; position: absolute; inset: 0 auto 0 0; width: var(--done, 0%); background: rgb(255 255 255 / 0.18); transition: width 0.4s; }
+  .empty-lane .filmed { border: 0; color: #fff; }
+  .empty-lane .filmed::after { content: ""; position: absolute; inset: 35% 0 0; background: linear-gradient(transparent, rgb(0 0 0 / 0.7)); }
+  .empty-lane span.picks { cursor: pointer; }
+  .empty-lane span.selected { border: 2px solid var(--accent); color: #fff; }
+  .empty-lane span.drop { background: rgb(255 255 255 / 0.2); }
+  .empty-lane video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; animation: fade 0.4s ease-out; }
+  .timeline-empty .timeline-hint { margin: 0; }
+  .clip .clip-name { position: absolute; left: 6px; top: 6px; max-width: calc(100% - 12px); padding: 1px 7px; overflow: hidden; border-radius: 9999px; background: rgb(0 0 0 / 0.6); color: #fff; font-size: 10px; font-weight: 500; line-height: 15px; white-space: nowrap; text-overflow: ellipsis; }
+  .note-lane { position: relative; height: 20px; }
+  .note-lane .marker { position: absolute; top: 1px; min-width: 18px; height: 18px; padding: 0 2px; transform: translateX(-50%); border-radius: 9px; background: #ff2d55; box-shadow: 0 0 0 2px var(--bg); color: #fff; font: 700 10px/18px var(--sans); font-variant-numeric: tabular-nums; text-align: center; }
+  .lanes .playhead { position: absolute; z-index: 3; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: var(--fg); pointer-events: none; }
+  .lanes .playhead::before { content: ""; position: absolute; top: 0; left: -5px; width: 12px; height: 12px; border-radius: 3px 3px 6px 6px; background: var(--fg); }
+  .notes { min-height: 0; overflow: auto; }
+  .notes-head { display: grid; gap: 2px; margin: 0 0 10px; font-size: 13px; font-weight: 600; }
+  .notes-hint { font-size: 12px; font-weight: 400; color: var(--faint); }
+  .find-issues { display: grid; justify-items: start; gap: 6px; margin: 0 0 12px; padding: 10px 12px; border-radius: 12px; background: var(--card); line-height: 17px; }
+  .note-list { display: grid; gap: 6px; margin: 0; padding: 6px 0 8px 6px; list-style: none; }
+  .note-list li { display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; align-items: start; gap: 10px; padding: 8px; border-radius: 12px; background: var(--card); cursor: pointer; }
+  .note-list li:hover { background: var(--secondary); }
+  .note-list li.current { box-shadow: inset 0 0 0 2px #ff2d55; }
+  .note-list .thumb { position: relative; }
+  .note-list img { display: block; width: 36px; aspect-ratio: 9 / 16; border-radius: 6px; object-fit: cover; }
+  .note-list .number { position: absolute; top: -6px; left: -6px; min-width: 18px; height: 18px; padding: 0 2px; border-radius: 9px; background: #ff2d55; box-shadow: 0 0 0 2px var(--card); color: #fff; font: 700 10px/18px var(--sans); font-variant-numeric: tabular-nums; text-align: center; }
+  .note-list .where { margin: 0; font-size: 11px; line-height: 16px; color: var(--faint); font-variant-numeric: tabular-nums; }
+  .note-list .text { margin: 2px 0 0; font-size: 13px; line-height: 18px; }
+  .note-list .remove { width: 24px; height: 24px; border-radius: 50%; color: var(--faint); font-size: 16px; line-height: 24px; }
+  .note-list .remove:hover { background: var(--bg); color: var(--fg); }
+  .message.user .sent-notes { display: grid; gap: 2px; margin: 6px 0 0; padding: 0; list-style: none; font-size: 13px; line-height: 19px; color: var(--muted); }
+  /* In a narrower window, the chat and the panel next to the video give up room first, so the video keeps enough. */
+  @media (max-width: 1600px) {
+    .stage-bar .icon-pill { width: 32px; padding: 0; }
+    .stage-bar .icon-pill span { display: none; }
+  }
+  @media (max-width: 1440px) {
+    .workspace { grid-template-columns: 360px minmax(0, 1fr); }
+    .stage:has(> .side:not([hidden])) { grid-template-columns: minmax(0, 1fr) 300px; }
+  }
+  @media (max-width: 1200px) {
+    .workspace { grid-template-columns: 300px minmax(0, 1fr); }
+    .stage:has(> .side:not([hidden])) { grid-template-columns: minmax(0, 1fr) 272px; }
+    .side-tab { gap: 4px; font-size: 12px; }
+    .transport #annotate:not(.armed) { width: 32px; padding: 0; }
+    .transport #annotate:not(.armed) .annotate-text { display: none; }
+  }
+  @media (max-width: 900px) {
+    .surface { height: auto; }
+    .workspace, .workspace.chat-folded { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; }
+    .chat { order: 2; }
+    .thread { max-height: 560px; }
+    .welcome { margin: 24px 0; }
+    .stage, .stage:has(> .side:not([hidden])) { grid-template-columns: minmax(0, 1fr); }
+    .stage-bar, .side { grid-column: auto; grid-row: auto; }
+    .phone-area { height: 80vh; }
+  }
+</style>
+</head>
+<body>
+<header class="site">
+  <a class="logo" href="https://x.ai" target="_blank" rel="noopener" aria-label="SpaceXSI"><svg viewBox="0 7.4 24 9.2" aria-hidden="true"><path d="M24 7.417C8.882 8.287 1.89 14.75.321 16.28L0 16.583h2.797C10.356 9.005 21.222 7.663 24 7.417zm-17.046 6.35c-.472.321-.945.68-1.398 1.02l2.457 1.796h2.778zM2.948 10.8H.189l3.25 2.381c.473-.321 1.02-.661 1.512-.945Z"/></svg></a>
+  <nav class="crumbs"><span>Cookbook</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg><h1>Grok Shorts</h1></nav>
+  <nav class="tabs" aria-label="Pages">
+    <a href="/" aria-current="page">Create</a>
+    <a href="/videos">Your Videos</a>
+    <a href="/library">Library</a>
+    <a href="/apps">Apps</a>
+    <a href="/studio">Presenter Studio</a>
+    <a href="/brand">Brand Kit</a>
+  </nav>
+  <a class="pill pill-secondary pill-sm" href="https://github.com/xai-org/xai-cookbook/tree/main/examples/grok-shorts" target="_blank" rel="noopener">View Code</a>
+</header>
+
+<main class="surface">
+  <div class="workspace">
+    <aside class="panel chat">
+      <div class="chat-head"><span class="chat-title">Grok</span><button type="button" class="chat-toggle" id="restart" aria-label="New video" title="New video" hidden><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13.5 9v3.5a1 1 0 0 1-1 1h-9a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1H7"/><path d="m11 2.5 2.5 2.5L8 10.5H5.5V8z"/></svg></button><button type="button" class="chat-toggle" id="chat-toggle" aria-label="Hide the chat" title="Hide the chat"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3.5 5.5 8 10 12.5"/></svg></button></div>
+      <div class="thread" id="thread">
+        <div class="welcome" id="welcome">
+          <h2 class="welcome-title">What should we make?</h2>
+          <p>Paste a link to a pull request, or describe any video. Grok writes the script with you, and a presenter films it.</p>
+          <div class="starters" id="starters"></div>
+          <button type="button" class="more-ideas" id="more-ideas"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9M13.5 2.5v3h-3"/></svg>More ideas</button>
+        </div>
+      </div>
+      <form class="composer" id="composer">
+        <div class="box">
+          <textarea id="message" rows="1" aria-label="Message" placeholder="A link, or an idea for a video"></textarea>
+          <div class="tools">
+            <div class="picker" id="picker">
+              <button type="button" class="chip presenter-chip" id="presenter-chip" aria-haspopup="listbox" aria-expanded="false" title="Who presents the video, in their own personality. Change the personality for one video in Style."><img alt="" hidden><span class="who"></span><svg class="chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 6.5 8 10l3.5-3.5"/></svg></button>
+              <div class="picker-menu" id="picker-menu" role="listbox" aria-label="Presenter" hidden></div>
+              <select id="presenter" aria-label="Presenter" hidden></select>
+            </div>
+            <button type="button" id="several" class="chip" aria-pressed="false" title="Make several videos at once, one per line, each with a free preview">Batch</button>
+            <button id="send" class="send" aria-label="Send" title="Send" disabled><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 13V3.5M3.5 8 8 3.5 12.5 8"/></svg></button>
+          </div>
+        </div>
+      </form>
+    </aside>
+
+    <section class="panel stage">
+      <div class="stage-bar">
+        <div class="video-head">
+          <h2 class="video-title" id="video-title"></h2>
+          <div class="picker history" id="history" hidden>
+            <button type="button" class="pill pill-secondary pill-sm history-chip" id="history-chip" aria-haspopup="listbox" aria-expanded="false" title="Every cut of this video, to watch again or go back to"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="5.5"/><path d="M8 5v3l2 1.5"/></svg><span id="history-name"></span><svg class="chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 6.5 8 10l3.5-3.5"/></svg></button>
+            <div class="picker-menu history-menu" id="history-menu" role="listbox" aria-label="Versions" hidden></div>
+          </div>
+          <button type="button" id="restore" class="pill pill-secondary pill-sm" hidden>Go back to this version</button>
+        </div>
+        <div class="actions">
+          <button type="button" id="copy" class="pill pill-secondary pill-sm icon-pill" title="Copy transcript" hidden><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5.5" y="5.5" width="8" height="8" rx="1.5"/><path d="M10.5 3.5V3A1.5 1.5 0 0 0 9 1.5H4A1.5 1.5 0 0 0 2.5 3v5A1.5 1.5 0 0 0 4 9.5h.5"/></svg><span>Copy transcript</span></button>
+          <a id="download" class="pill pill-secondary pill-sm icon-pill" title="Download the video" download hidden><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.5v8M4.5 7 8 10.5 11.5 7M3 13.5h10"/></svg><span>Download</span></a>
+          <span class="actions-divider" aria-hidden="true"></span>
+          <div class="picker changes" id="changes" hidden>
+            <button type="button" class="pill pill-secondary pill-sm changes-chip" id="changes-chip" aria-haspopup="dialog" aria-expanded="false" title="What changed since the current version, to film or preview"><span class="changes-dot" aria-hidden="true"></span><span id="changes-count"></span><svg class="chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 6.5 8 10l3.5-3.5"/></svg></button>
+            <div class="picker-menu changes-menu" id="changes-menu" role="dialog" aria-label="Changes since the current version" hidden>
+              <p class="changes-head">Since the current version</p>
+              <ul class="changes-list" id="changes-list"></ul>
+              <p class="changes-note" id="changes-note"></p>
+              <div class="changes-actions">
+                <button type="button" class="pill pill-secondary pill-sm" id="changes-preview">Preview</button>
+                <button type="button" class="pill pill-primary pill-sm" id="changes-film">Film again</button>
+              </div>
+            </div>
+          </div>
+          <button type="button" id="preview" class="pill pill-secondary pill-sm" disabled title="Watch the whole video with the portrait and the presenter's voice from text to speech, before filming it">Preview</button>
+          <button type="button" id="film" class="pill pill-primary pill-sm" disabled>Film video</button>
+        </div>
+      </div>
+      <div class="phone-area">
+        <div class="phone-fit">
+        <div class="toast" id="toast" role="status" aria-live="polite" title="Click to close" hidden></div>
+        <label class="canvas-tool" title="Show where each app's buttons, caption, and top bar cover the video">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3.5" y="1.5" width="9" height="13" rx="2"/><path d="M5.5 4.5h5M5.5 11.5h5"/></svg>
+          <select id="safe-zones" aria-label="Safe zones"><option value="">Safe zones: off</option><option value="shorts">Safe zones: YouTube Shorts</option><option value="tiktok">Safe zones: TikTok</option><option value="reels">Safe zones: Reels</option></select>
+        </label>
+        <div class="phone" id="phone">
+          <video id="video" playsinline hidden></video>
+          <span class="badge" id="badge" hidden>Preview · a still portrait and a text-to-speech voice. Film it for the real takes.</span>
+          <div class="safe" id="safe" hidden><div class="safe-top"><span>Top bar</span></div><div class="safe-rail"><span>Buttons</span></div><div class="safe-bottom"><span>Caption and title</span></div></div>
+          <div class="pins" id="pins"></div>
+          <form class="note-editor" id="note-editor" hidden>
+            <textarea id="note-text" rows="2" aria-label="Note" placeholder="What should change here?"></textarea>
+            <div class="note-actions">
+              <button type="button" id="note-cancel" class="pill pill-secondary pill-sm">Cancel</button>
+              <button class="pill pill-primary pill-sm">Add note</button>
+            </div>
+          </form>
+          <div class="phone-note" id="phone-note">
+            <p class="phone-title">Your video plays here</p>
+            Preview it for free in the presenter's voice, then film it.
+          </div>
+        </div>
+        </div>
+        <div class="scrub" id="scrub" hidden>
+          <div class="transport">
+            <button type="button" id="play" class="play" aria-label="Play"></button>
+            <button type="button" id="mute" class="mute" aria-label="Mute" title="Mute (M)"></button>
+            <span class="clock" id="clock">0:00 / 0:00</span>
+            <span class="length" id="length" hidden></span>
+            <button type="button" id="annotate" class="pill pill-secondary pill-sm" title="Pause on a moment and click the spot a note is about (N)"><span aria-hidden="true">📍</span><span class="annotate-text">Add a note</span></button>
+          </div>
+          <div class="lanes" id="lanes">
+            <div class="ruler" id="ruler"></div>
+            <div class="clips" id="clips"><canvas id="filmstrip"></canvas></div>
+            <div class="music-lane" id="music-lane" title="The music under the video. Change it, or its volume, in Style." hidden><canvas id="waveform"></canvas><span class="music-name" id="music-name"></span></div>
+            <div class="note-lane" id="note-lane"></div>
+            <div class="playhead" id="playhead"></div>
+          </div>
+          <p class="timeline-hint" id="timeline-hint" hidden>The script's segments changed since this cut, so film again to edit it here.</p>
+        </div>
+        <div class="timeline-empty" id="timeline-empty">
+          <div class="transport"><button type="button" class="play" disabled aria-label="Play"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3.5v9l7-4.5z"/></svg></button><span class="clock">0:00 / 0:00</span></div>
+          <div class="empty-ruler"></div>
+          <div class="empty-lane" id="timeline-blocks"></div>
+          <div class="empty-music" id="empty-music" hidden></div>
+          <p class="timeline-hint" id="timeline-caption"></p>
+        </div>
+      </div>
+      <aside class="side" id="side" hidden>
+        <div class="side-tabs" role="tablist" aria-label="Details and comments">
+          <button type="button" role="tab" class="side-tab" id="tab-details" aria-controls="details" aria-selected="true">Details</button>
+          <button type="button" role="tab" class="side-tab" id="tab-media" aria-controls="media" aria-selected="false">Media</button>
+          <button type="button" role="tab" class="side-tab" id="tab-comments" aria-controls="notes" aria-selected="false">Comments<span class="tab-count" id="comments-count" hidden></span></button>
+          <button type="button" role="tab" class="side-tab" id="tab-publish" aria-controls="publish" aria-selected="false">Publish</button>
+        </div>
+        <div class="details" id="details" role="tabpanel" aria-labelledby="tab-details">
+          <div id="style-slot"></div>
+          <ol class="parts" id="segment-list"></ol>
+        </div>
+        <div class="media" id="media" role="tabpanel" aria-labelledby="tab-media" hidden>
+          <p class="media-hint" id="media-hint"></p>
+          <div class="media-grid" id="media-grid"></div>
+          <label class="pill pill-secondary pill-sm media-upload">Upload<input type="file" id="media-new" accept="image/*,video/*" hidden></label>
+        </div>
+        <div class="publish" id="publish" role="tabpanel" aria-labelledby="tab-publish" hidden>
+          <div class="platforms" id="platforms">
+            <button type="button" data-platform="shorts" aria-pressed="true">YouTube Shorts</button>
+            <button type="button" data-platform="tiktok" aria-pressed="false">TikTok</button>
+            <button type="button" data-platform="reels" aria-pressed="false">Reels</button>
+          </div>
+          <label class="publish-field">Title<input id="publish-title" maxlength="100" placeholder="What the video is about"></label>
+          <label class="publish-field">Description<textarea id="publish-description" rows="4" placeholder="A line or two that makes people watch"></textarea></label>
+          <label class="publish-field">Hashtags<input id="publish-hashtags" placeholder="grok ai shorts"></label>
+          <div class="publish-actions">
+            <button type="button" id="publish-write" class="pill pill-secondary pill-sm">Write with Grok</button>
+            <button type="button" id="publish-copy" class="pill pill-secondary pill-sm">Copy all</button>
+          </div>
+          <p class="publish-field">Cover</p>
+          <div class="cover"><img id="cover-image" alt="The cover" hidden><p class="cover-hint" id="cover-hint">Pause on the frame you want people to see first, then use it.</p></div>
+          <div class="publish-actions">
+            <button type="button" id="cover-use" class="pill pill-secondary pill-sm">Use this frame</button>
+            <a id="cover-download" class="pill pill-secondary pill-sm" download hidden>Download cover</a>
+          </div>
+          <a id="publish-download" class="pill pill-primary pill-sm publish-download" download hidden>Download video</a>
+          <p class="cover-hint" id="publish-hint">Film the video first, then download it here.</p>
+        </div>
+        <div class="notes" id="notes" role="tabpanel" aria-labelledby="tab-comments" hidden>
+          <p class="notes-head"><span id="notes-title">Notes for Grok</span><span class="notes-hint">They go with your next message</span></p>
+          <div class="find-issues" id="find-issues" hidden>
+            <button type="button" id="review" class="pill pill-secondary pill-sm">Find issues</button>
+            <span class="notes-hint">Grok looks at frames from every segment and leaves a note on anything that looks off, like a caption over a hand or a cut-off screenshot. It does this after every cut, too.</span>
+          </div>
+          <p class="notes-empty" id="notes-empty">No notes yet. Pause the video and add one on what you see, or have Grok find issues.</p>
+          <ol class="note-list" id="note-list"></ol>
+        </div>
+      </aside>
+    </section>
+  </div>
+</main>
+
+<dialog class="uploads" id="uploads">
+  <form method="dialog">
+    <div class="head"><h2 id="uploads-title">Show an upload</h2><button class="pill pill-secondary pill-sm" value="cancel">Close</button></div>
+    <div class="upload-list" id="upload-list"></div>
+    <p class="empty" id="uploads-empty">Nothing in your library yet. Upload an image or a video, like a screenshot of your product, and it shows on this segment.</p>
+    <div class="foot">
+      <label class="pill pill-primary pill-sm">Upload new<input type="file" id="upload-new" accept="image/png,image/jpeg,image/webp,video/mp4,video/quicktime,video/webm" hidden></label>
+      <a class="pill pill-secondary pill-sm" href="/library" target="_blank">Open your library</a>
+    </div>
+  </form>
+</dialog>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  const MOODS = { chill: "😌 chill", shocked: "😱 shocked", smug: "😏 smug", facepalm: "🤦 facepalm" };
+  const SHORT_NAMES = { hook: "Hook", why: "Why", ending: "Ending" };
+  const LAYOUTS = { overlay: "Overlay", split: "Split", full: "Full screen", green: "Green screen", bubble: "Bubble", visual: "Visual only" };
+  const LAYOUT_ABOUT = {
+    overlay: "The visual floats over the presenter's video",
+    split: "The visual on top, the presenter below",
+    full: "The presenter fills the screen",
+    green: "The presenter stands in front of the visual",
+    bubble: "The presenter in a circle over the visual",
+    visual: "Just the visual, with the presenter's voice",
+  };
+  const video = $("video");
+  // The themes to pick from, the conversation with the server, the latest script, its theme, and the list items showing
+  // it, and the cut being played.
+  let themes = {};
+  let session = null;
+  let segments = [];
+  let theme = "classic";
+  let sound = { volume: 0.5, effects: true };
+  let onScreen = { title: true, labels: true };
+  // Each presenter's voice, to hear a line in before it's filmed, and the name of each connected app, by its id.
+  let presenterVoices = {};
+  let sourceNames = {};
+  // The presenters, each with their own personality, every personality there is, the personality picked for this video
+  // in place of the presenter's own, if one is, and the one its latest script is written in.
+  let presenterList = [];
+  let personalityList = [];
+  let override = null;
+  // Whether the message box makes several videos at once, one per line, before a conversation starts.
+  let several = false;
+  let speaking = "";
+  let latest = [];
+  let timed = [];
+  // The segment picked on the timeline, whose details show next to the video.
+  let selected = 0;
+  // The video's music as the timeline draws it, once its song is read.
+  let musicTrack = null;
+  // How long the latest script runs, by how long each segment's take runs, for the timeline before there's a cut.
+  let estimated = 0;
+  // What changed in the latest script since the current version.
+  let pending = [];
+  let timing = [];
+  let shots = [];
+  let percents = [];
+  let chatting = false;
+  let filming = false;
+  // What stops the cut being made, while one is.
+  let stopping = null;
+  let asking = false;
+  let frame = 0;
+  const WELCOME = $("phone-note").innerHTML;
+  // The notes on the latest cut that Grok hasn't had yet, the cut's segment names and strip of frames for the timeline
+  // under it, and the spot of a note being written, while one is.
+  let notes = [];
+  let cutLabels = [];
+  let cutKinds = [];
+  let strip = null;
+  // Every version of the video, the one in the phone, and how many segments of the latest script need new takes.
+  let versions = [];
+  let viewing = null;
+  let unfilmed = null;
+  let annotating = false;
+  let spot = null;
+  let pinned = "";
+  // A video opened from Your Videos, by its folder's name.
+  const opening = new URLSearchParams(location.search).get("video");
+
+  fetch("/api/options")
+    .then((response) => response.json())
+    .then(({ presenters, personalities, themes: list, defaults, sources }) => {
+      themes = Object.fromEntries(list.map((each) => [each.id, each]));
+      presenterVoices = Object.fromEntries(presenters.map(({ id, voice }) => [id, voice]));
+      sourceNames = Object.fromEntries(sources.map(({ id, name }) => [id, name]));
+      presenterList = presenters;
+      personalityList = personalities;
+      $("presenter").replaceChildren(...presenters.map(({ id, name, personalityName }) => new Option(`${name} · ${personalityName}`, id)));
+      // Presenter Studio links here with the presenter it just saved, and otherwise a new video starts with the brand
+      // kit's presenter, if it has one.
+      const saved = new URLSearchParams(location.search).get("presenter") ?? defaults?.presenter;
+      if (presenters.some(({ id }) => id === saved)) $("presenter").value = saved;
+      showPresenter();
+      showPresenterChip();
+    })
+    .then(() => opening && openVideo(opening));
+  // Ideas to start a video from, five at a time under the welcome, with More ideas for the next five.
+  const IDEAS = [
+    ["Node.js: run scripts without npm", "https://github.com/nodejs/node/pull/52190 Aim it at developers who type npm run all day."],
+    ["Compound interest, Gen Z hook", "Explain compound interest in 40 seconds. Open with a Gen Z hook, then switch to a patient teacher who works through one real example with actual numbers."],
+    ["1983: the alarm that lied", "Tell the story of the night in 1983 when Stanislav Petrov's screens said the US had launched five missiles, and he chose not to believe them. Pace it like a thriller, with real footage and photos."],
+    ["Today's biggest tech fight on X", "Find the biggest tech argument on X today and give both sides in 30 seconds, with the actual posts on screen. Stay neutral, and end by asking viewers which side they're on."],
+    ["Nature doc: the fry thief", "A nature documentary about a seagull stealing fries on a crowded beach, narrated in a hushed, serious voice, as if it's the most dramatic hunt on Earth."],
+    ["How noise canceling works", "Explain how noise-canceling headphones cancel sound, in 35 seconds, with one clear analogy and a real diagram. End on the one sound they can't cancel."],
+    ["The Great Emu War of 1932", "Tell the true story of Australia's Great Emu War of 1932 like a sports commentator calling a losing season, with real photos from the time."],
+    ["Git rebase vs. merge, deadpan", "A deadpan senior engineer explains git rebase versus merge in 30 seconds, with one diagram, and settles which to use when."],
+    ["Pitch: smart fridges for ants", "Pitch a startup that makes smart fridges for ants, as an overconfident founder, in 30 seconds, ending with the ask."],
+    ["The Wow! signal of 1977", "Tell the story of the 1977 Wow! signal, the strangest radio signal ever recorded, like a thriller, with the real printout on screen."],
+    ["Why plane windows are round", "Explain why airplane windows are round, starting from the 1954 Comet crashes, in 30 seconds, with real photos."],
+    ["HTTP status codes as a restaurant", "Explain the HTTP status codes 200, 301, 404, 418, and 500 as moments at a restaurant, in 35 seconds, for developers who are just starting out."],
+    ["Where do lost socks go?", "A tongue-in-cheek conspiracy theorist investigates where the socks that vanish in the dryer go, with evidence that's obviously a joke. Keep it to 25 seconds."],
+    ["The first photo of a black hole", "Explain how scientists took the first photo of a black hole in 2019, in 40 seconds, with the real image and one analogy for how big the telescope had to be."],
+    ["1980: the Miracle on Ice", "Retell the last minute of the 1980 Miracle on Ice like a breathless sports commentator, with real footage and the final score on screen."],
+    ["Espresso vs. pour-over", "Settle espresso versus pour-over in 30 seconds: what's actually different, which has more caffeine, and a verdict. Use real photos."],
+    ["Keep a sourdough starter alive", "Explain how to keep a sourdough starter alive as if it's a demanding pet, in 30 seconds, with one feeding schedule viewers can follow."],
+    ["Word of the day: defenestration", "A 20-second word-of-the-day video about the word defenestration, with the 1618 story it comes from and real paintings of it."],
+    ["This week's biggest launch on X", "Find the biggest product launch on X this week and turn it into a 30-second hype video: what shipped, who it's for, and how to try it, with the real posts on screen."],
+    ["Why the sky is blue", "Explain why the sky is blue, and why sunsets are red, in 30 seconds, for someone who skipped physics, with one real diagram."],
+  ];
+  let ideasFrom = 0;
+  function showIdeas() {
+    const shown = Array.from({ length: 5 }, (_, index) => IDEAS[(ideasFrom + index) % IDEAS.length]);
+    $("starters").replaceChildren(
+      ...shown.map(([label, message]) => {
+        const idea = Object.assign(document.createElement("button"), { type: "button", textContent: label });
+        idea.dataset.message = message;
+        return idea;
+      }),
+    );
+  }
+  showIdeas();
+  $("more-ideas").onclick = () => {
+    ideasFrom = (ideasFrom + 5) % IDEAS.length;
+    showIdeas();
+  };
+  $("starters").onclick = (event) => {
+    const example = event.target.closest("[data-message]");
+    if (!example) return;
+    $("message").value = example.dataset.message;
+    grow();
+    canSend();
+    $("message").focus();
+  };
+  $("message").oninput = () => {
+    grow();
+    canSend();
+  };
+  // Enter sends, and Shift+Enter starts a new line. Writing several videos, one per line, Enter starts a new line, and
+  // Cmd or Ctrl and Enter sends.
+  $("message").onkeydown = (event) => {
+    if (event.key !== "Enter" || event.shiftKey || event.isComposing) return;
+    if (batchMode() && !event.metaKey && !event.ctrlKey) return;
+    event.preventDefault();
+    $("composer").requestSubmit();
+  };
+  $("restart").onclick = restart;
+  $("several").onclick = () => {
+    several = !several;
+    update();
+    $("message").focus();
+  };
+  // The Batch page that was folded into this one sends people here, ready to write several.
+  if (new URLSearchParams(location.search).has("several")) several = true;
+
+  // Sends a message and shows Grok's reply as it streams in: what it read, its thinking, its note, then each segment.
+  $("composer").onsubmit = async (event) => {
+    event.preventDefault();
+    if (batchMode()) return startBatch();
+    const message = $("message").value.trim();
+    // Only a personality picked for this video goes along. Otherwise the server keeps the video's, or for a new video,
+    // takes the presenter's own.
+    const personality = override ?? "";
+    // Notes on the cut go with the message, which can then be empty.
+    const sending = session ? [...notes] : [];
+    if ((!message && !sending.length) || chatting) return;
+    $("message").value = "";
+    grow();
+    $("welcome").hidden = true;
+    addUserMessage(message, sending);
+    const reply = addReply();
+    const since = Date.now();
+    const first = !session;
+    let read = false;
+    chatting = true;
+    update();
+    await stream("/api/chat", { session, message, presenter: $("presenter").value, personality, notes: sending.length > 0 }, {
+      session: ({ id }) => (session = id),
+      pull: (pr) => {
+        read = true;
+        showAbout(reply, pr);
+      },
+      persona: ({ name, summary }) => {
+        reply.persona.textContent = `${personality.startsWith("@") ? `Personality copied from ${personality}` : "Personality"}: ${name}. ${summary}`;
+        reply.persona.hidden = false;
+      },
+      reasoning: ({ text }) => {
+        reply.reasoning.textContent += text;
+        reply.reasoning.scrollTop = reply.reasoning.scrollHeight;
+        scrollDown();
+      },
+      research: ({ where, query }) => {
+        const said = where === "web" || where === "x" ? `🔎 Searched ${where === "x" ? "X" : "the web"}: ${query}` : `📎 Read ${sourceNames[where] ?? where}: ${query}`;
+        reply.research.append(Object.assign(document.createElement("li"), { textContent: said }));
+        reply.research.hidden = false;
+        scrollDown();
+      },
+      note: ({ note }) => {
+        reply.thinking.open = false;
+        reply.thinkingLabel.textContent = `Thought for ${plural(Math.round((Date.now() - since) / 1000), "second")}`;
+        reply.note.textContent = note;
+        scrollDown();
+      },
+      questions: ({ questions }) => {
+        reply.note.after(askQuestions(questions));
+        scrollDown();
+      },
+      segment: (segment) => {
+        addSegment(reply.parts, segment);
+        scrollDown();
+      },
+      done: ({ title, theme: picked, segments: written, sound: mixed, onScreen: shown, personality: spoken, folder }) => {
+        $("restart").hidden = false;
+        sound = mixed ?? sound;
+        onScreen = shown ?? onScreen;
+        speaking = spoken ?? speaking;
+        // The video is saved from its first reply, so this address opens it again, even after the server restarts.
+        history.replaceState(null, "", `/?video=${encodeURIComponent(folder)}`);
+        if (sending.length) {
+          notes = notes.filter((note) => !sending.includes(note));
+          renderNotes();
+        }
+        // Grok asked questions instead of writing, and the script comes with the answers.
+        asking = !written.length;
+        if (asking) return;
+        showTitle(title);
+        if (first && !read) showAbout(reply, undefined, title);
+        showScript(reply, picked, written);
+      },
+      failure: ({ message }) => {
+        reply.note.textContent = message;
+        reply.note.classList.add("failed");
+      },
+    });
+    chatting = false;
+    update();
+    $("message").focus();
+  };
+
+  // Films the latest script. Segments that haven't changed since the last cut keep their takes, screenshots, and clips. A
+  // preview films nothing: each segment is the portrait, still, saying its line with text to speech.
+  // While a cut is being made, its button stops it instead.
+  $("film").onclick = () => (filming === "film" ? stopping?.abort() : makeCut(false));
+  $("preview").onclick = () => (filming === "preview" ? stopping?.abort() : makeCut(true));
+  async function makeCut(preview) {
+    const parts = latest;
+    const filmed = segments;
+    const before = viewing;
+    filming = preview ? "preview" : "film";
+    stopping = new AbortController();
+    update();
+    reset();
+    shots = timelineClips(filmed);
+    percents = shots.map(() => 0);
+    for (const clip of shots) {
+      clip.classList.add("working");
+      clip.querySelector("em").textContent = "0%";
+    }
+    $("timeline-caption").textContent = "Each clip fills up as its takes are filmed, then plays the one that's kept.";
+    note(`${preview ? "Previewing" : "Filming"} ${plural(filmed.length, "segment")}`);
+    await stream("/api/film", { session, presenter: $("presenter").value, ...(preview ? { preview: "1" } : {}) }, {
+      stage: ({ stage, status }) => {
+        if (stage === "edit" && status === "active") note("Cutting it together");
+      },
+      portrait: ({ url }) => ($("phone").style.backgroundImage = `url("${url}")`),
+      media: (shown) => showMedia(parts, filmed, shown),
+      notice: ({ message }) => notify(parts, message),
+      take: ({ index, status, percent, video: url, heard, filmed: count, reused }) => {
+        const clip = shots[index];
+        if (!clip) return;
+        if (status === "filming") {
+          percents[index] = percent;
+          clip.style.setProperty("--done", `${percent}%`);
+          clip.querySelector("em").textContent = `${percent}%`;
+        } else {
+          percents[index] = 100;
+          clip.classList.replace("working", "filmed");
+          clip.prepend(Object.assign(document.createElement("video"), { src: url, muted: true, loop: true, autoplay: true, playsInline: true }));
+          clip.querySelector("em").textContent = preview || reused ? "" : `${Math.round(heard * 100)}%`;
+          clip.title = preview ? "Said with text to speech" : reused ? "Kept from the last cut" : `The best of ${count} takes, with ${Math.round(heard * 100)}% of the line heard`;
+        }
+        note(`${preview ? "Previewing" : "Filming"} ${plural(filmed.length, "segment")}`, `${Math.round(percents.reduce((sum, each) => sum + each, 0) / percents.length)}%`);
+      },
+      progress: ({ frame, frames }) => {
+        const percent = Math.round((frame / frames) * 100);
+        note("Cutting it together", `${percent}%`);
+      },
+      done: (cut) => {
+        showCut({ ...cut, segments: filmed }, parts);
+        versions = cut.versions;
+        showVersions(cut.id);
+        refreshEstimate();
+        const seconds = cut.parts.at(-1).end.toFixed(1);
+        const said = preview ? `👀 Previewed this version: ${seconds} seconds. Film it for the real takes.` : `🎬 Filmed this version: ${seconds} seconds`;
+        parts[0]?.closest(".message").append(Object.assign(document.createElement("p"), { className: "filmed", textContent: said }));
+        announce(`Saved to ${cut.folder}/${preview ? "cuts/" : ""}`);
+        video.play().catch(() => {});
+        scrollDown();
+        reviewWithGrok(cut.id);
+      },
+      failure: ({ message }) => {
+        alert(message);
+        $("timeline-blocks").querySelectorAll(".working").forEach((clip) => clip.classList.remove("working"));
+        note("Couldn't make the video");
+      },
+      // Takes that finished before it stopped are kept, so making it again picks up from there.
+      stopped: () => {
+        $("timeline-blocks").querySelectorAll(".working").forEach((clip) => clip.classList.remove("working"));
+        announce(`${preview ? "Stopped the preview" : "Stopped filming"}. Takes that were done are kept for next time.`);
+        if (before) watchVersion(before);
+        else note(preview ? "Preview stopped" : "Filming stopped");
+      },
+    }, stopping.signal);
+    stopping = null;
+    filming = false;
+    update();
+    refreshChanges();
+  }
+
+  // Gets what a new version of the script shows, before anything is filmed, and puts each one under its segment, so the
+  // visuals can be looked at and changed too. Filming uses the same ones.
+  async function preview(parts, written) {
+    await stream("/api/visuals", { session }, {
+      media: (shown) => showMedia(parts, written, shown),
+      notice: ({ message }) => notify(parts, message),
+      failure: ({ message }) => notify(parts, message),
+    });
+  }
+
+  // A segment's screenshot, post, clip, or picture, under its line in the chat.
+  function showMedia(parts, list, { index, url, video: moving }) {
+    const item = parts[index];
+    if (!item) return;
+    const shown = moving ? Object.assign(document.createElement("video"), { src: url, muted: true, loop: true, autoplay: true, playsInline: true }) : Object.assign(document.createElement("img"), { src: url, alt: "" });
+    shown.className = list[index].screen.kind === "page" ? "preview page" : "preview";
+    item.querySelector(".preview")?.remove();
+    item.querySelector(".line").before(shown);
+  }
+
+  // A note under the reply, like a screenshot that couldn't be taken. The preview and the cut can both report the same one.
+  function notify(parts, message) {
+    const reply = parts[0]?.closest(".message");
+    const text = `⚠️ ${message}`;
+    if (!reply || [...reply.querySelectorAll(".notice")].some((notice) => notice.textContent === text)) return;
+    reply.append(Object.assign(document.createElement("p"), { className: "notice", textContent: text }));
+    scrollDown();
+  }
+
+  // Grok's questions, each with likely answers. Picking one puts it in the message box, to send with the rest.
+  function askQuestions(questions) {
+    const box = Object.assign(document.createElement("div"), { className: "questions" });
+    for (const { question, choices } of questions) {
+      const block = document.createElement("div");
+      block.append(Object.assign(document.createElement("p"), { className: "question", textContent: question }));
+      const row = Object.assign(document.createElement("div"), { className: "choices" });
+      for (const choice of choices) {
+        const button = Object.assign(document.createElement("button"), { type: "button", className: "choice", textContent: choice });
+        button.onclick = () => {
+          row.querySelectorAll(".choice").forEach((each) => each.classList.toggle("picked", each === button));
+          answer(question, choice);
+        };
+        row.append(button);
+      }
+      block.append(row);
+      box.append(block);
+    }
+    box.append(Object.assign(document.createElement("p"), { className: "hint", textContent: "Pick answers or write your own, then send. Or tell Grok to go ahead." }));
+    return box;
+  }
+
+  // One line in the message box for each question answered, replaced if the answer changes.
+  function answer(question, choice) {
+    const lines = $("message").value.split("\n").filter((line) => line.trim() && !line.startsWith(`${question} `));
+    $("message").value = [...lines, `${question} ${choice}`].join("\n");
+    grow();
+    $("message").focus();
+  }
+
+  // Posts to the server and hands each server-sent event it streams back to the handler of that name. Aborting `signal`
+  // closes the connection, which stops the work on the server, and calls the `stopped` handler.
+  async function stream(path, body, handlers, signal) {
+    try {
+      const response = await fetch(path, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body), signal });
+      if (!response.ok) throw new Error((await response.json().catch(() => ({}))).error ?? `The server answered ${response.status}`);
+      const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
+      let buffer = "";
+      for (;;) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += value;
+        for (let end = buffer.indexOf("\n\n"); end >= 0; end = buffer.indexOf("\n\n")) {
+          const event = buffer.slice(0, end);
+          buffer = buffer.slice(end + 2);
+          const name = event.match(/^event: (.*)$/m)?.[1];
+          const data = event.match(/^data: (.*)$/m)?.[1];
+          if (!name || !data) continue;
+          // An event this page can't show, like a step an older copy of it doesn't know, mustn't stop it following the
+          // rest of a video that's still being made and paid for.
+          try {
+            handlers[name]?.(JSON.parse(data));
+          } catch (error) {
+            console.error(`Couldn't show the ${name} event`, error);
+          }
+        }
+      }
+    } catch (error) {
+      if (error.name === "AbortError") return handlers.stopped?.();
+      handlers.failure?.({ message: error instanceof TypeError ? "Lost the connection to the server." : error.message });
+    }
+  }
+
+  function addMessage(kind) {
+    const message = Object.assign(document.createElement("div"), { className: `message ${kind}` });
+    $("thread").append(message);
+    scrollDown();
+    return message;
+  }
+
+  // Your message, with the notes on the cut it sent, if any. A long one, like pasted notes, shows its first lines, with a
+  // button for the rest.
+  function addUserMessage(text, sent = []) {
+    const message = addMessage("user");
+    message.innerHTML = `<div class="text"></div><button type="button" class="more" hidden>Show more</button>`;
+    if (sent.length) {
+      const list = Object.assign(document.createElement("ol"), { className: "sent-notes" });
+      list.append(...sent.map((note) => Object.assign(document.createElement("li"), { textContent: `📍 ${clock(note.time)} · ${note.label}: ${note.text}` })));
+      message.append(list);
+    }
+    const shown = message.querySelector(".text");
+    shown.hidden = !text;
+    shown.textContent = text.replace(/\n\s*\n(\s*\n)+/g, "\n\n");
+    if (shown.scrollHeight <= shown.clientHeight) return;
+    const more = message.querySelector(".more");
+    message.classList.add("long");
+    more.hidden = false;
+    more.onclick = () => {
+      more.textContent = message.classList.toggle("open") ? "Show less" : "Show more";
+    };
+  }
+
+  // A reply from Grok: what it read, the personality, its thinking, its note, and the script's segments.
+  function addReply() {
+    const message = addMessage("grok");
+    message.innerHTML = `<div class="about" hidden></div><p class="persona" hidden></p><ul class="research" hidden></ul><details class="thinking" open><summary><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg><span>Thinking</span></summary><div class="reasoning"></div></details><p class="note"></p><ol class="parts"></ol>`;
+    const find = (selector) => message.querySelector(selector);
+    return { about: find(".about"), persona: find(".persona"), research: find(".research"), thinking: find(".thinking"), thinkingLabel: find(".thinking span"), reasoning: find(".reasoning"), note: find(".note"), parts: find(".parts") };
+  }
+
+  // A segment of the script: its sticker, how it's framed, how the presenter reacts, what it shows, and its line. Given
+  // its `index` in the latest script, its layout can be changed by hand.
+  function addSegment(list, { kind, label, emoji, mood, line, screen, layout, acting }, index) {
+    const item = document.createElement("li");
+    item.className = kind;
+    item.innerHTML = `<div class="top"><span class="sticker"></span><span class="mood"></span></div><p class="where"></p><p class="line"></p>`;
+    item.querySelector(".sticker").textContent = `${sentence(label)} ${emoji}`;
+    item.querySelector(".mood").textContent = MOODS[mood] ?? mood;
+    if (layout) item.querySelector(".mood").before(layoutPicker(screen, layout, index));
+    const where = item.querySelector(".where");
+    const prompted = screen.kind === "picture" || screen.kind === "broll";
+    if (screen.kind === "code") where.textContent = `${screen.file} · rows ${screen.from}–${screen.to}`;
+    if (prompted) where.textContent = `${screen.kind === "broll" ? "B-roll" : "Picture"}: ${screen.prompt}`;
+    if (screen.kind === "upload") where.textContent = `Your upload · ${screen.prompt}`;
+    if (screen.url) {
+      const name = { page: "Screenshot", post: "X post", clip: "Clip" }[screen.kind];
+      const from = screen.kind === "clip" && screen.start ? ` from ${Math.floor(screen.start / 60)}:${String(Math.floor(screen.start % 60)).padStart(2, "0")}` : "";
+      where.append(`${name} · `, Object.assign(document.createElement("a"), { href: screen.url, target: "_blank", rel: "noopener", textContent: shortUrl(screen.url) }), from);
+    }
+    where.classList.toggle("prompt", prompted);
+    where.hidden = !where.textContent;
+    item.querySelector(".line").textContent = line;
+    if (acting) item.append(Object.assign(document.createElement("p"), { className: "acting", textContent: `🎭 Acted: ${acting}` }));
+    if (index !== undefined) editable(item, kind, index);
+    list.append(item);
+    return item;
+  }
+
+  // In the latest script, a segment's line can be changed in place, and a beat can be moved or cut. Each segment shows how
+  // long its take runs, and whether it's filmed already or what filming it costs.
+  function editable(item, kind, index) {
+    const top = item.querySelector(".top");
+    top.querySelector(".mood").before(Object.assign(document.createElement("span"), { className: "estimate" }));
+    if (kind === "beat" || kind === "why") {
+      const tools = Object.assign(document.createElement("span"), { className: "tools" });
+      const pick = Object.assign(document.createElement("button"), { type: "button", textContent: "🖼", title: "Show one of your uploads here" });
+      pick.onclick = (event) => {
+        event.stopPropagation();
+        pickUpload(index);
+      };
+      tools.append(pick);
+      const tool = (label, title, action) => {
+        const button = Object.assign(document.createElement("button"), { type: "button", textContent: label, title });
+        button.onclick = (event) => {
+          event.stopPropagation();
+          changeSegment(index, action);
+        };
+        return button;
+      };
+      if (kind === "beat") tools.append(tool("↑", "Move it earlier", "up"), tool("↓", "Move it later", "down"));
+      tools.append(tool("×", "Cut this segment", "remove"));
+      top.querySelector(".estimate").before(tools);
+    }
+    if (kind === "hook") {
+      const tools = Object.assign(document.createElement("span"), { className: "tools" });
+      const lab = Object.assign(document.createElement("button"), { type: "button", textContent: "🎣", title: "Hook lab: four other hooks from Grok, scored, to hear and pick from" });
+      lab.onclick = (event) => {
+        event.stopPropagation();
+        hookLab(item, index);
+      };
+      tools.append(lab);
+      top.querySelector(".estimate").before(tools);
+    }
+    const shown = item.querySelector(".line");
+    Object.assign(shown, { contentEditable: "plaintext-only", spellcheck: true, title: "Click to change what the presenter says" });
+    // A click to edit the line mustn't also jump the video to the segment.
+    shown.onclick = (event) => event.stopPropagation();
+    shown.onkeydown = (event) => {
+      if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
+        shown.blur();
+      }
+      if (event.key === "Escape") {
+        shown.textContent = segments[index].line;
+        shown.blur();
+      }
+    };
+    item.append(Object.assign(document.createElement("div"), { className: "takes-row", hidden: true }));
+    shown.onblur = async () => {
+      const text = shown.textContent.replace(/\s+/g, " ").trim();
+      if (!text || text === segments[index].line) return (shown.textContent = segments[index].line);
+      const response = await fetch("/api/line", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ session, index, line: text }) });
+      const result = await response.json();
+      if (!response.ok) {
+        alert(result.error);
+        shown.textContent = segments[index].line;
+        return;
+      }
+      segments[index] = result.segment;
+      shown.textContent = result.segment.line;
+      refreshEstimate();
+    };
+  }
+
+  // The hook lab, under the hook: Grok scores the hook the video has and writes four others from different angles, each
+  // scored, to hear in the presenter's voice and use in its place.
+  async function hookLab(item, index) {
+    item.querySelector(".hooklab")?.remove();
+    const lab = Object.assign(document.createElement("div"), { className: "hooklab working" });
+    lab.onclick = (event) => event.stopPropagation();
+    lab.append(Object.assign(document.createElement("p"), { className: "head", textContent: "Grok is writing other hooks…" }));
+    item.append(lab);
+    const response = await fetch("/api/hooks", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ session }) });
+    const result = await response.json();
+    lab.classList.remove("working");
+    if (!response.ok) return lab.replaceChildren(Object.assign(document.createElement("p"), { className: "head", textContent: result.error }));
+    const head = Object.assign(document.createElement("p"), { className: "head" });
+    head.append("The hook it has scores ", Object.assign(document.createElement("strong"), { textContent: `${result.current.score}/10` }), `: ${result.current.why}`);
+    const list = document.createElement("ol");
+    list.append(
+      ...result.hooks.map((hook) => {
+        const option = document.createElement("li");
+        const why = Object.assign(document.createElement("p"), { className: "why" });
+        why.append(`${hook.angle} · `, Object.assign(document.createElement("span"), { className: "score", textContent: `${hook.score}/10` }), ` · ${hook.why}`);
+        const buttons = Object.assign(document.createElement("div"), { className: "buttons" });
+        const hear = Object.assign(document.createElement("button"), { type: "button", className: "pill pill-secondary pill-sm", textContent: "Hear it" });
+        hear.onclick = () => {
+          const voice = presenterVoices[$("presenter").value];
+          new Audio(`/api/studio/voice?voice=${encodeURIComponent(voice ?? "")}&text=${encodeURIComponent(hook.line)}`).play().catch(() => {});
+        };
+        const use = Object.assign(document.createElement("button"), { type: "button", className: "pill pill-primary pill-sm", textContent: "Use this" });
+        use.onclick = async () => {
+          const changed = await fetch("/api/line", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ session, index, line: hook.line }) });
+          const saved = await changed.json();
+          if (!changed.ok) return alert(saved.error);
+          segments[index] = saved.segment;
+          item.querySelector(".line").textContent = saved.segment.line;
+          list.querySelectorAll("li").forEach((each) => each.classList.toggle("used", each === option));
+          refreshEstimate();
+        };
+        buttons.append(hear, use);
+        option.append(Object.assign(document.createElement("p"), { className: "option", textContent: hook.line }), why, buttons);
+        return option;
+      }),
+    );
+    lab.replaceChildren(head, list);
+  }
+
+  // A picker of the images and videos in your library, to show one on a segment, with a way to upload a new one there.
+  async function pickUpload(index) {
+    const dialog = $("uploads");
+    const list = $("upload-list");
+    const { assets } = await (await fetch("/api/library")).json();
+    const shown = assets.filter((asset) => asset.kind !== "audio");
+    $("uploads-title").textContent = `Show an upload on “${segments[index].label}”`;
+    list.replaceChildren(
+      ...shown.map((asset) => {
+        const button = Object.assign(document.createElement("button"), { type: "button", className: "upload", title: asset.name });
+        button.append(Object.assign(document.createElement("img"), { src: asset.thumb, alt: "" }), Object.assign(document.createElement("span"), { textContent: asset.name }));
+        button.onclick = () => useUpload(index, asset.id);
+        return button;
+      }),
+    );
+    $("uploads-empty").hidden = shown.length > 0;
+    $("upload-new").onchange = async () => {
+      const file = $("upload-new").files[0];
+      if (!file) return;
+      $("uploads-empty").hidden = false;
+      $("uploads-empty").textContent = `Uploading ${file.name}…`;
+      const response = await fetch(`/api/library/upload?name=${encodeURIComponent(file.name.replace(/\.\w+$/, ""))}`, { method: "POST", headers: { "content-type": file.type }, body: file });
+      const result = await response.json();
+      $("upload-new").value = "";
+      if (!response.ok) return alert(result.error);
+      useUpload(index, result.asset.id);
+    };
+    dialog.showModal();
+  }
+
+  async function useUpload(index, asset) {
+    const response = await fetch("/api/upload-visual", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ session, index, asset }) });
+    const result = await response.json();
+    if (!response.ok) return alert(result.error);
+    $("uploads").close();
+    segments[index] = result.segment;
+    renderLatest(segments);
+  }
+
+  async function changeSegment(index, action) {
+    const response = await fetch("/api/segment", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ session, index, action }) });
+    const result = await response.json();
+    if (!response.ok) return alert(result.error);
+    renderLatest(result.segments);
+  }
+
+  // The latest script drawn again after a segment is moved or cut by hand. The cut in the phone no longer lines up with
+  // it, so the segments stop lighting up as it plays.
+  function renderLatest(written) {
+    const list = latest[0]?.closest(".parts");
+    if (!list) return;
+    list.replaceChildren();
+    segments = written;
+    latest = written.map((segment, index) => addSegment(list, segment, index));
+    timed = [];
+    const card = document.querySelector(".version-card.latest");
+    if (card) fillVersionCard(card, written);
+    select(selected);
+    drawEmptyTimeline();
+    preview(latest, written);
+    refreshEstimate();
+  }
+
+  // How long each segment's take runs, and which ones are filmed already, shown on the segments, with how many need new
+  // takes on the Film button.
+  async function refreshEstimate() {
+    if (!session || !segments.length) return;
+    const response = await fetch("/api/estimate", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ session, presenter: $("presenter").value }) });
+    if (!response.ok) return;
+    const { segments: estimates } = await response.json();
+    latest.forEach((item, index) => {
+      const shown = item.querySelector(".estimate");
+      const each = estimates[index];
+      if (!shown || !each) return;
+      shown.textContent = `${each.seconds}s · ${each.filmed ? "filmed" : "new take"}`;
+      shown.title = each.filmed ? "Its take is filmed already, so filming again uses it as it is" : "Filming films a new take of this line";
+      shown.classList.toggle("unfilmed", !each.filmed);
+    });
+    unfilmed = estimates.filter((each) => !each.filmed).length;
+    estimated = estimates.reduce((sum, each) => sum + each.seconds, 0);
+    update();
+    refreshTakes();
+    refreshChanges();
+  }
+
+  // What changed since the current version, next to Preview and Film again: each change, whether filming again films a
+  // new take for it, and the two buttons, to look over before making a new one.
+  async function refreshChanges() {
+    if (!session) return showChanges([], 0);
+    const response = await fetch("/api/changes", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ session, presenter: $("presenter").value }) });
+    if (!response.ok) return;
+    const { changes, newTakes } = await response.json();
+    showChanges(changes, newTakes);
+  }
+  function showChanges(changes, newTakes) {
+    pending = changes;
+    $("changes-count").textContent = plural(changes.length, "change");
+    $("changes-list").replaceChildren(
+      ...changes.map(({ text, film }) => {
+        const item = document.createElement("li");
+        item.append(Object.assign(document.createElement("span"), { textContent: text }));
+        if (film) item.append(Object.assign(document.createElement("span"), { className: "change-tag", textContent: "New take" }));
+        return item;
+      }),
+    );
+    $("changes-note").textContent = newTakes
+      ? `Filming again films ${plural(newTakes, "new take")} and keeps every other take. A preview shows it first with the portrait and text to speech.`
+      : "Nothing new to film, so filming again only cuts the video again.";
+    showChangesChip();
+  }
+  // Not while Grok is writing or a video's being made, which change what there is to film.
+  function showChangesChip() {
+    $("changes").hidden = !pending.length || Boolean(filming) || chatting;
+    if ($("changes").hidden) openChanges(false);
+  }
+  function openChanges(open) {
+    $("changes-menu").hidden = !open;
+    $("changes-chip").setAttribute("aria-expanded", String(open));
+  }
+  $("changes-chip").onclick = () => openChanges($("changes-menu").hidden);
+  $("changes-menu").onkeydown = (event) => {
+    if (event.key !== "Escape") return;
+    openChanges(false);
+    $("changes-chip").focus();
+  };
+  $("changes-preview").onclick = () => {
+    openChanges(false);
+    $("preview").click();
+  };
+  $("changes-film").onclick = () => {
+    openChanges(false);
+    $("film").click();
+  };
+
+  $("presenter").onchange = () => {
+    refreshEstimate();
+    showPresenter();
+  };
+  $("presenter-chip").onclick = () => openPicker($("picker-menu").hidden);
+  menuKeys($("presenter-chip"), $("picker-menu"), openPicker);
+  menuKeys($("history-chip"), $("history-menu"), openHistory);
+  document.addEventListener("click", (event) => {
+    if (!$("picker-menu").hidden && !event.target.closest("#picker")) openPicker(false);
+    if (!$("history-menu").hidden && !event.target.closest("#history")) openHistory(false);
+    if (!$("changes-menu").hidden && !event.target.closest("#changes")) openChanges(false);
+  });
+
+  // A select shown as a button that opens a menu like the presenter's, with a line about each option and its colors when
+  // it has some. The select stays, hidden, with its value and its change event, so the code using it doesn't change.
+  // `actions` are options that do something rather than pick something, like uploading music, listed last with an icon.
+  function dropdown(select, { label = "", about = () => "", colors = () => [], actions = {} }) {
+    const wrap = Object.assign(document.createElement("div"), { className: "dropdown" });
+    const button = Object.assign(document.createElement("button"), { type: "button", className: "dropdown-chip", title: select.title });
+    button.setAttribute("aria-haspopup", "listbox");
+    button.setAttribute("aria-expanded", "false");
+    button.innerHTML = `<span class="dropdown-label"></span><span class="swatches"></span><b></b><svg class="chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 6.5 8 10l3.5-3.5"/></svg>`;
+    // A popover, so the panel it's in doesn't cut it off.
+    const menu = Object.assign(document.createElement("div"), { className: "picker-menu dropdown-menu", popover: "manual" });
+    menu.setAttribute("role", "listbox");
+    menu.setAttribute("aria-label", label || select.title);
+    select.hidden = true;
+    wrap.append(button, menu, select);
+
+    // An option's name, without the label the select puts before it, and what's in brackets after it, shown fainter.
+    const named = (option) => {
+      const [, name, note] = option.text.replace(`${label}: `, "").match(/^(.*?)(?: \((.*)\))?$/);
+      return { name, note };
+    };
+    const swatches = (value) => (colors(value) ?? []).map((color) => Object.assign(document.createElement("i"), { style: `background: ${color}` }));
+    const show = () => {
+      const option = select.selectedOptions[0];
+      button.querySelector(".dropdown-label").textContent = label;
+      button.querySelector(".swatches").replaceChildren(...swatches(select.value));
+      button.querySelector("b").textContent = option ? named(option).name : "";
+      button.classList.toggle("edited", select.classList.contains("edited"));
+    };
+    // Code that sets the value, or changes the options, updates the button too.
+    const native = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value");
+    Object.defineProperty(select, "value", { get: () => native.get.call(select), set: (value) => (native.set.call(select, value), show()) });
+    new MutationObserver(show).observe(select, { childList: true, subtree: true, attributes: true, attributeFilter: ["class"] });
+
+    const pick = (value) => {
+      open(false);
+      button.focus();
+      if (value === select.value && !(value in actions)) return;
+      select.value = value;
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+    };
+    const row = (option) => {
+      const { name, note } = named(option);
+      if (option.value in actions) {
+        const action = Object.assign(document.createElement("button"), { type: "button", className: "new", innerHTML: actions[option.value] });
+        action.append(name);
+        action.onclick = () => pick(option.value);
+        return action;
+      }
+      const item = Object.assign(document.createElement("button"), { type: "button", className: "option" });
+      item.setAttribute("role", "option");
+      item.setAttribute("aria-selected", String(option.value === select.value));
+      item.innerHTML = `<span class="swatches"></span><span><span class="name"><b></b><span></span></span><span class="blurb"></span></span><svg class="check" viewBox="0 0 16 16" aria-hidden="true"><path d="m3.5 8.5 3 3 6-7"/></svg>`;
+      item.querySelector(".swatches").append(...swatches(option.value));
+      item.querySelector(".name b").textContent = name;
+      item.querySelector(".name span").textContent = note ? ` · ${note}` : "";
+      Object.assign(item.querySelector(".blurb"), { textContent: about(option.value) ?? "", hidden: !about(option.value) });
+      item.onclick = () => pick(option.value);
+      return item;
+    };
+    // Under the button, or over it when there's more room above, and inside the window.
+    const place = () => {
+      const box = button.getBoundingClientRect();
+      const below = innerHeight - box.bottom - 14;
+      const above = box.top - 14;
+      const up = below < Math.min(menu.scrollHeight, 240) && above > below;
+      Object.assign(menu.style, {
+        maxHeight: `${Math.min(360, up ? above : below)}px`,
+        left: `${Math.max(8, Math.min(box.left, innerWidth - menu.offsetWidth - 8))}px`,
+        top: up ? "auto" : `${box.bottom + 6}px`,
+        bottom: up ? `${innerHeight - box.top + 6}px` : "auto",
+      });
+    };
+    // A click anywhere else closes it, and so does scrolling the page under it.
+    const outside = (event) => !wrap.contains(event.target) && open(false);
+    const scrolled = (event) => event.target !== menu && open(false);
+    const open = (opening) => {
+      if (opening === menu.matches(":popover-open")) return;
+      button.setAttribute("aria-expanded", String(opening));
+      document[opening ? "addEventListener" : "removeEventListener"]("click", outside);
+      document[opening ? "addEventListener" : "removeEventListener"]("scroll", scrolled, true);
+      if (!opening) return menu.hidePopover();
+      const rows = [...select.children].flatMap((child) =>
+        child.tagName === "OPTGROUP" ? [Object.assign(document.createElement("p"), { className: "group", textContent: child.label }), ...[...child.children].map(row)] : [row(child)],
+      );
+      menu.replaceChildren(...rows.filter((each) => !each.classList.contains("new")), ...rows.filter((each) => each.classList.contains("new")));
+      menu.showPopover();
+      place();
+      (menu.querySelector('[aria-selected="true"]') ?? menu.querySelector(".option"))?.focus();
+    };
+    button.onclick = () => open(!menu.matches(":popover-open"));
+    menuKeys(button, menu, open);
+    show();
+    return wrap;
+  }
+
+  // The arrow keys open a menu from its button and go through its options, and Escape or Tab closes it.
+  function menuKeys(button, menu, open) {
+    button.onkeydown = (event) => {
+      if (event.key !== "ArrowUp" && event.key !== "ArrowDown") return;
+      event.preventDefault();
+      open(true);
+    };
+    menu.onkeydown = (event) => {
+      const options = [...menu.querySelectorAll(".option, .new")];
+      const at = options.indexOf(document.activeElement);
+      if (event.key === "Escape" || event.key === "Tab") {
+        event.preventDefault();
+        open(false);
+        button.focus();
+      }
+      if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+        event.preventDefault();
+        options[(at + (event.key === "ArrowDown" ? 1 : -1) + options.length) % options.length]?.focus();
+      }
+    };
+  }
+
+  // Every take of each segment in the latest script, under its line: the one the next cut uses is outlined, another can be
+  // picked instead, and the line can be retaken with new direction.
+  async function refreshTakes() {
+    if (!session || !segments.length) return;
+    const response = await fetch("/api/takes", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ session, presenter: $("presenter").value }) });
+    if (!response.ok) return;
+    const { segments: listed } = await response.json();
+    latest.forEach((item, index) => {
+      const row = item.querySelector(".takes-row");
+      const { takes = [] } = listed[index] ?? {};
+      if (!row || row.querySelector(".retake-form")) return;
+      row.replaceChildren(...takes.map((each) => takePick(index, each)), retakeButton(index));
+      row.hidden = !takes.length;
+    });
+  }
+
+  function takePick(index, { url, letter, chosen }) {
+    const button = Object.assign(document.createElement("button"), { type: "button", className: `take-pick${chosen ? " chosen" : ""}`, title: chosen ? `Take ${letter}, which the next cut uses` : `Use take ${letter} in the next cut` });
+    const clip = Object.assign(document.createElement("video"), { src: `${url}#t=1`, muted: true, playsInline: true, preload: "metadata" });
+    button.append(clip, Object.assign(document.createElement("span"), { textContent: letter }));
+    button.onmouseenter = () => clip.play().catch(() => {});
+    button.onmouseleave = () => {
+      clip.pause();
+      clip.currentTime = 1;
+    };
+    button.onclick = async (event) => {
+      event.stopPropagation();
+      if (chosen) return;
+      const response = await fetch("/api/take", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ session, presenter: $("presenter").value, index, url }) });
+      if (!response.ok) return alert((await response.json()).error);
+      refreshTakes();
+    };
+    return button;
+  }
+
+  // Retaking a line films more takes of it, with whatever direction is written, and the best new one is used.
+  function retakeButton(index) {
+    const button = Object.assign(document.createElement("button"), { type: "button", className: "retake", textContent: "Retake", title: "Film more takes of this line" });
+    button.onclick = (event) => {
+      event.stopPropagation();
+      const form = Object.assign(document.createElement("form"), { className: "retake-form" });
+      form.innerHTML = `<input aria-label="Direction" placeholder="What should change, like more energy, or slower"><button class="pill pill-primary pill-sm">Film 2 more</button>`;
+      form.onclick = (click) => click.stopPropagation();
+      form.onsubmit = async (submit) => {
+        submit.preventDefault();
+        const go = form.querySelector("button");
+        go.disabled = true;
+        await stream("/api/retake", { session, presenter: $("presenter").value, index, direction: form.querySelector("input").value }, {
+          progress: ({ percent }) => (go.textContent = `Filming ${percent}%`),
+          done: () => {},
+          failure: ({ message }) => alert(message),
+        });
+        form.remove();
+        refreshTakes();
+      };
+      button.replaceWith(form);
+      form.querySelector("input").focus();
+    };
+    return button;
+  }
+
+  // How a segment is framed. The hook and the ending are words on screen, so they're split or full screen.
+  function layoutPicker(screen, layout, index) {
+    if (index === undefined) return Object.assign(document.createElement("span"), { className: "layout", textContent: LAYOUTS[layout] });
+    const select = Object.assign(document.createElement("select"), { className: "layout", title: "How this segment is framed" });
+    const words = screen.kind === "headline" || screen.kind === "stamp";
+    for (const [value, name] of Object.entries(LAYOUTS)) if (!words || value === "split" || value === "full") select.append(new Option(name, value));
+    select.value = layout;
+    select.onchange = async () => {
+      const response = await fetch("/api/layout", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ session, index, layout: select.value }) });
+      const result = await response.json();
+      if (!response.ok) {
+        alert(result.error);
+        select.value = segments[index].layout;
+        return;
+      }
+      segments[index] = result.segment;
+      select.classList.add("edited");
+      refreshEstimate();
+    };
+    return dropdown(select, { about: (id) => LAYOUT_ABOUT[id] });
+  }
+
+  // How the latest script's video looks and sounds, folded into one menu: its personality, theme, what's drawn on screen,
+  // and its music and sound effects. Closed, it says the personality and theme picked.
+  function styleMenu(...rows) {
+    const menu = Object.assign(document.createElement("details"), { className: "style-menu" });
+    menu.innerHTML = `<summary><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5a6.5 6.5 0 1 0 0 13c.9 0 1.3-.6 1.3-1.2 0-.8-.6-1.1-.6-1.8 0-.7.6-1.2 1.3-1.2h1.4a3.1 3.1 0 0 0 3.1-3.1C14.5 4 11.6 1.5 8 1.5Z"/><circle cx="4.8" cy="7.4" r=".7"/><circle cx="7.2" cy="4.6" r=".7"/><circle cx="10.4" cy="5" r=".7"/></svg>Style<span class="style-now"></span><svg class="chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 6.5 8 10l3.5-3.5"/></svg></summary><div class="style-panel"></div>`;
+    menu.querySelector(".style-panel").append(...rows);
+    const picked = (row, prefix) => menu.querySelector(`${row} select`)?.selectedOptions[0]?.text.replace(prefix, "").replace(/ \(.*\)$/, "");
+    const now = () => (menu.querySelector(".style-now").textContent = [picked(".personality", "Personality: "), picked(".theme:not(.personality, .on-screen, .sound)", "Theme: ")].filter(Boolean).join(" · "));
+    menu.addEventListener("change", now);
+    now();
+    return menu;
+  }
+
+  // The theme of the latest script: the colors and letters of the words and stickers on screen. Grok picks it, and
+  // changing it here redraws the video the next time it's filmed, without filming anything new.
+  function themePicker() {
+    const row = Object.assign(document.createElement("div"), { className: "theme" });
+    const select = Object.assign(document.createElement("select"), { className: "layout", title: "The colors and letters of the words on screen" });
+    for (const [id, { name }] of Object.entries(themes)) select.append(new Option(`Theme: ${name}`, id));
+    select.value = theme;
+    const about = Object.assign(document.createElement("span"), { className: "about-theme" });
+    const show = () => (about.textContent = themes[theme].summary);
+    select.onchange = async () => {
+      const response = await fetch("/api/theme", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ session, theme: select.value }) });
+      const result = await response.json();
+      if (!response.ok) {
+        alert(result.error);
+        select.value = theme;
+        return;
+      }
+      theme = result.theme;
+      select.classList.add("edited");
+      show();
+      refreshChanges();
+    };
+    show();
+    row.append(dropdown(select, { label: "Theme", about: (id) => themes[id]?.summary, colors: (id) => themes[id]?.colors }), about);
+    return row;
+  }
+
+  // Whether the latest script's video has its title at the top of every frame, and each segment's label on its sticker.
+  // They're drawn on after filming, so changing them costs nothing.
+  function onScreenPicker() {
+    const row = Object.assign(document.createElement("div"), { className: "theme on-screen" });
+    const toggle = (key, text, title) => {
+      const label = Object.assign(document.createElement("label"), { className: "effects", title });
+      const box = Object.assign(document.createElement("input"), { type: "checkbox", checked: onScreen[key] });
+      box.onchange = async () => {
+        const response = await fetch("/api/on-screen", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ session, [key]: box.checked }) });
+        const result = await response.json();
+        if (!response.ok) {
+          alert(result.error);
+          box.checked = onScreen[key];
+          return;
+        }
+        onScreen = result.onScreen;
+        refreshChanges();
+      };
+      label.append(box, text);
+      return label;
+    };
+    const about = Object.assign(document.createElement("span"), { className: "about-theme", textContent: "On screen" });
+    row.append(about, toggle("title", "Title", "The video's title at the top of every frame and under the hook"), toggle("labels", "Labels", "Each segment's label on a sticker"));
+    return row;
+  }
+
+  // The music and sound effects of the latest script: music from your library, or uploaded here, how loud it is, and
+  // whether the sound effects play. They're mixed in after filming, so changing them costs nothing.
+  function soundPicker() {
+    const row = Object.assign(document.createElement("div"), { className: "theme sound" });
+    const select = Object.assign(document.createElement("select"), { className: "layout", title: "Music under the whole video, which dips whenever the presenter speaks" });
+    const volume = Object.assign(document.createElement("input"), { type: "range", min: 0, max: 100, value: Math.round(sound.volume * 100), title: "How loud the music is" });
+    const effects = Object.assign(document.createElement("label"), { className: "effects", title: "A boom, a whoosh on every cut, and a bell at the end" });
+    const box = Object.assign(document.createElement("input"), { type: "checkbox", checked: sound.effects });
+    effects.append(box, "Sound effects");
+    const file = Object.assign(document.createElement("input"), { type: "file", accept: "audio/mpeg,audio/mp4,audio/x-m4a,audio/wav", hidden: true });
+    const show = (songs) => {
+      select.replaceChildren(new Option("Music: None", ""), ...songs.map(({ id, name }) => new Option(`Music: ${name}`, id)), new Option("Upload music…", "upload"));
+      select.value = sound.music ?? "";
+      volume.hidden = !sound.music;
+    };
+    const load = async () => show((await (await fetch("/api/library")).json()).assets.filter((asset) => asset.kind === "audio"));
+    const save = async (change) => {
+      const response = await fetch("/api/sound", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ session, ...change }) });
+      const result = await response.json();
+      if (!response.ok) return alert(result.error);
+      sound = result.sound;
+      select.value = sound.music ?? "";
+      volume.hidden = !sound.music;
+      select.classList.add("edited");
+      drawMusic();
+      refreshChanges();
+    };
+    select.onchange = () => {
+      if (select.value !== "upload") return save({ music: select.value });
+      select.value = sound.music ?? "";
+      file.click();
+    };
+    file.onchange = async () => {
+      const song = file.files[0];
+      if (!song) return;
+      const response = await fetch(`/api/library/upload?name=${encodeURIComponent(song.name.replace(/\.\w+$/, ""))}`, { method: "POST", headers: { "content-type": song.type }, body: song });
+      const result = await response.json();
+      file.value = "";
+      if (!response.ok) return alert(result.error);
+      await save({ music: result.asset.id });
+      await load();
+    };
+    volume.onchange = () => save({ volume: volume.value / 100 });
+    box.onchange = () => save({ effects: box.checked });
+    show([]);
+    load();
+    const upload = `<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 11V3M4.5 6.5 8 3l3.5 3.5M3 13h10"/></svg>`;
+    row.append(dropdown(select, { label: "Music", actions: { upload } }), volume, effects, file);
+    return row;
+  }
+
+  // A segment's name in sentence case, the way the page writes everything, whatever case Grok wrote it in.
+  function sentence(text) {
+    return text.charAt(0).toUpperCase() + text.slice(1);
+  }
+
+  // Opens a video made before, from Your Videos or a reload, to keep working on it: the conversation so far, the latest
+  // script, the notes on the latest cut that Grok hasn't had, and the cut itself.
+  async function openVideo(name) {
+    const response = await fetch("/api/open", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ video: name }) });
+    const opened = await response.json();
+    if (!response.ok) {
+      alert(opened.error);
+      history.replaceState(null, "", "/");
+      return;
+    }
+    session = opened.session;
+    if ([...$("presenter").options].some((option) => option.value === opened.presenter)) $("presenter").value = opened.presenter;
+    // An opened video keeps the personality it's in, whoever's picked to present it.
+    override = null;
+    speaking = opened.personality;
+    $("welcome").hidden = true;
+    $("restart").hidden = false;
+    const last = opened.history.at(-1);
+    for (const turn of opened.history.slice(0, -1)) showTurn(turn);
+    const reply = addReply();
+    reply.thinking.hidden = true;
+    showAbout(reply, opened.pull, opened.title);
+    showTitle(opened.title);
+    reply.note.textContent = last?.note ?? "Opened from Your Videos. Ask Grok for changes here, or pause the video, add notes on what you see, and send them.";
+    sound = opened.sound ?? sound;
+    onScreen = opened.onScreen ?? onScreen;
+    if (opened.segments.length) showScript(reply, opened.theme, opened.segments);
+    else if (last?.questions) {
+      reply.note.after(askQuestions(last.questions));
+      asking = true;
+    }
+    notes = opened.notes;
+    versions = opened.versions;
+    if (opened.cut) {
+      showCut(opened.cut, opened.cut.segments.length === latest.length ? latest : []);
+      showVersions(opened.cut.id);
+    }
+    else $("phone-note").innerHTML = `<p class="phone-title">Not filmed yet</p>Film the script to see it here, then add notes on it.`;
+    renderNotes();
+    update();
+  }
+
+  // A message from earlier in the conversation, when a video is opened again.
+  function showTurn(turn) {
+    if (turn.role === "user") return addUserMessage(turn.text, turn.notes);
+    const reply = addReply();
+    reply.thinking.hidden = true;
+    reply.note.textContent = turn.note;
+  }
+
+  // The video's title over the stage, as Grok last wrote it.
+  function showTitle(title = "") {
+    Object.assign($("video-title"), { textContent: title, title });
+  }
+
+  // What the video is about, at the top of a reply: the pull request, or the video's title.
+  function showAbout(reply, pr, title) {
+    if (pr) {
+      reply.about.innerHTML = `<p class="repo"></p><p class="title"><a target="_blank" rel="noopener"></a></p><p class="meta"></p>`;
+      reply.about.querySelector(".repo").textContent = `${pr.repo} #${pr.number}`;
+      Object.assign(reply.about.querySelector("a"), { textContent: pr.title, href: pr.url });
+      reply.about.querySelector(".meta").innerHTML = `${escape(pr.author)} · ${plural(pr.changedFiles, "file")} · <span class="added">+${pr.additions}</span> <span class="removed">−${pr.deletions}</span>`;
+    } else {
+      reply.about.innerHTML = `<p class="repo">Video</p><p class="title"></p>`;
+      reply.about.querySelector(".title").textContent = title;
+    }
+    reply.about.hidden = false;
+  }
+
+  // A new version of the script: its segments go on the timeline, with the details of the one picked next to the video
+  // under the video's style, and the chat keeps a card of it.
+  function showScript(reply, picked, written) {
+    segments = written;
+    theme = picked;
+    $("style-slot").replaceChildren(styleMenu(personalityPicker(), themePicker(), onScreenPicker(), soundPicker()));
+    $("segment-list").replaceChildren();
+    latest = written.map((segment, index) => addSegment($("segment-list"), segment, index));
+    for (const card of document.querySelectorAll(".version-card.latest")) {
+      card.classList.remove("latest");
+      card.querySelector(".version-hint").textContent = "An earlier version of the script.";
+    }
+    reply.parts.replaceChildren(versionCard(written));
+    update();
+    select(selected);
+    preview(latest, written);
+    refreshEstimate();
+  }
+
+  // In the chat, a version of the script is a card with its segments, which are worked on from the timeline.
+  function versionCard(written) {
+    const card = Object.assign(document.createElement("li"), { className: "version-card latest" });
+    card.innerHTML = `<p class="version-title"></p><div class="chips"></div><p class="version-hint">On the timeline. Pick a segment to change it, or ask for changes here.</p>`;
+    fillVersionCard(card, written);
+    return card;
+  }
+
+  function fillVersionCard(card, written) {
+    card.querySelector(".version-title").textContent = `The script, in ${plural(written.length, "segment")}`;
+    card.querySelector(".chips").replaceChildren(
+      ...written.map(({ label, emoji }, index) => {
+        const chip = Object.assign(document.createElement("button"), { type: "button", textContent: `${sentence(label)} ${emoji}` });
+        chip.onclick = () => pick(index);
+        return chip;
+      }),
+    );
+  }
+
+  // Picks a segment: its details show next to the video, and it's outlined on the timeline.
+  function select(index) {
+    selected = Math.max(0, Math.min(index, latest.length - 1));
+    latest.forEach((item, each) => item.classList.toggle("selected", each === selected));
+    markSelection();
+  }
+
+  function markSelection() {
+    const editing = segments.length && timing.length === segments.length;
+    $("clips").querySelectorAll(".clip").forEach((clip, each) => clip.classList.toggle("selected", Boolean(editing && timed.length) && each === selected));
+    [...$("timeline-blocks").children].forEach((clip, each) => clip.classList.toggle("selected", clip.classList.contains("picks") && each === selected));
+  }
+
+  // Picking a segment by hand, from the timeline or the chat, shows its details, and goes to it in the video when the
+  // cut lines up with the script.
+  function pick(index) {
+    select(index);
+    showTab("details");
+    if (timed.length && timing[index]) {
+      video.pause();
+      video.currentTime = timing[index].start;
+      movePlayhead();
+    }
+  }
+
+  // A cut in the phone, with its timeline under it, and `items`, the latest script's segments if it was filmed from them,
+  // which are picked in turn as it plays.
+  function showCut({ video: url, transcript, folder, parts: times, segments: filmed, filmstrip: frames, preview }, items) {
+    $("badge").hidden = !preview;
+    $("find-issues").hidden = false;
+    timing = times;
+    strip = null;
+    if (frames) {
+      const image = new Image();
+      image.onload = () => {
+        strip = { image, frames: frames.frames };
+        paintFilmstrip();
+      };
+      image.src = frames.url;
+    }
+    cutLabels = filmed.map(({ kind, label }) => (kind === "beat" ? label : SHORT_NAMES[kind]));
+    cutKinds = filmed.map(({ kind }) => kind);
+    timed = items;
+    video.src = url;
+    video.hidden = false;
+    $("phone-note").hidden = true;
+    $("download").href = url;
+    $("download").download = `${folder.split("/").pop()}.mp4`;
+    $("download").hidden = false;
+    $("copy").onclick = async () => {
+      await navigator.clipboard.writeText(transcript);
+      $("copy").querySelector("span").textContent = "Copied";
+      setTimeout(() => ($("copy").querySelector("span").textContent = "Copy transcript"), 1500);
+    };
+    $("copy").hidden = !transcript;
+    $("scrub").hidden = false;
+    drawTimeline();
+    if (!$("publish").hidden) showPublish();
+  }
+
+  // The versions of the video to pick from, at the top of the stage, named for the one in the phone. An earlier version
+  // can be watched, and made the current one again, script and all.
+  function showVersions(shown) {
+    viewing = shown;
+    $("history").hidden = versions.length < 2;
+    const picked = namedVersions().find((version) => version.id === shown);
+    $("history-name").textContent = picked?.name ?? "Versions";
+    $("restore").hidden = !picked || picked.current || picked.preview;
+  }
+
+  // Filmed versions are numbered in the order they were made, and previews are just previews.
+  function namedVersions() {
+    let filmedCount = 0;
+    return versions.map((version) => ({ ...version, name: version.preview ? "Preview" : `Version ${++filmedCount}` }));
+  }
+
+  function openHistory(open) {
+    $("history-menu").hidden = !open;
+    $("history-chip").setAttribute("aria-expanded", String(open));
+    if (!open) return;
+    const options = namedVersions().reverse().map(({ id, name, made, duration, current }) => {
+      const option = Object.assign(document.createElement("button"), { type: "button", className: "option" });
+      option.setAttribute("role", "option");
+      option.setAttribute("aria-selected", String(id === viewing));
+      option.innerHTML = `<span><span class="name"><b></b><span></span></span><span class="blurb"></span></span><svg class="check" viewBox="0 0 16 16" aria-hidden="true"><path d="m3.5 8.5 3 3 6-7"/></svg>`;
+      option.querySelector(".name b").textContent = name;
+      option.querySelector(".name span").textContent = current ? " · current" : "";
+      option.querySelector(".blurb").textContent = `${new Date(made).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })} · ${clock(duration)}`;
+      option.onclick = () => {
+        openHistory(false);
+        $("history-chip").focus();
+        if (id !== viewing) watchVersion(id);
+      };
+      return option;
+    });
+    $("history-menu").replaceChildren(...options);
+    ($("history-menu").querySelector('[aria-selected="true"]') ?? options[0])?.focus();
+  }
+  $("history-chip").onclick = () => openHistory($("history-menu").hidden);
+
+  async function watchVersion(id) {
+    const response = await fetch("/api/cut", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ session, cut: id }) });
+    const cut = await response.json();
+    if (!response.ok) return alert(cut.error);
+    const current = versions.find((version) => version.id === cut.id)?.current;
+    showCut(cut, current ? latest : []);
+    showVersions(cut.id);
+  }
+  $("restore").onclick = async () => {
+    const response = await fetch("/api/restore", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ session, cut: viewing }) });
+    if (!response.ok) return alert((await response.json()).error);
+    location.reload();
+  };
+
+  // The cut's timeline: a ruler of seconds, the segments as clips over a strip of the video's frames, each outlined and
+  // named, and a lane with a marker for each note.
+  function drawTimeline() {
+    if (!timing.length) return;
+    const length = timing.at(-1).end;
+    const at = (time) => `${(time / length) * 100}%`;
+    // A label at least every 60 pixels, on a round number of seconds, with a small tick every second when there's room.
+    const width = $("lanes").clientWidth || 600;
+    const major = [1, 2, 5, 10, 15, 30, 60].find((step) => (width / length) * step >= 60) ?? 60;
+    const minor = width / length >= 6 ? 1 : major;
+    const ticks = [];
+    for (let time = 0; time <= length; time += minor) {
+      const tick = Object.assign(document.createElement("div"), { className: time % major ? "tick" : "tick major" });
+      tick.style.left = at(time);
+      if (!(time % major)) tick.append(Object.assign(document.createElement("span"), { textContent: clock(time) }));
+      ticks.push(tick);
+    }
+    const hook = Object.assign(document.createElement("div"), { className: "hook-window", title: "The hook: the first 3 seconds decide whether anyone keeps watching" });
+    hook.style.width = at(Math.min(3, length));
+    $("ruler").replaceChildren(...ticks, hook);
+    showLength($("length"), length);
+    const editing = timelineEditable();
+    const clips = timing.map((part, index) => {
+      const name = sentence(cutLabels[index] ?? "");
+      const clip = Object.assign(document.createElement("div"), { className: "clip", title: editing ? `${name}: drag its edges to trim it${segments[index].kind === "beat" ? ", or drag it to move it" : ""}` : name });
+      Object.assign(clip.style, { left: `calc(${at(part.start)} + 1px)`, width: `calc(${at(part.end - part.start)} - 2px)` });
+      clip.append(Object.assign(document.createElement("span"), { className: "clip-name", textContent: name }));
+      if (editing) editableClip(clip, index, length);
+      return clip;
+    });
+    $("clips").replaceChildren($("filmstrip"), ...clips);
+    markSelection();
+    $("timeline-hint").hidden = editing || Boolean(filming) || !segments.length;
+    $("note-lane").replaceChildren(
+      ...notes.map((note, index) => {
+        const marker = Object.assign(document.createElement("button"), { type: "button", className: "marker", textContent: index + 1, title: note.text });
+        marker.style.left = at(note.time);
+        marker.onpointerdown = (event) => event.stopPropagation();
+        marker.onclick = () => jumpToNote(note);
+        return marker;
+      }),
+    );
+    paintFilmstrip();
+    movePlayhead();
+    drawMusic();
+  }
+
+  // The video's music, if it has any, as a track of its own under the clips: its waveform, looped for as long as the
+  // video runs, faded in and out, and as loud as its volume, the way it's mixed in. Before there's a cut, the timeline
+  // says it's there. A song is fetched and read once, as how loud it is 50 times a second, from 0 to its loudest.
+  function loadMusic() {
+    if (!sound.music || musicTrack?.id === sound.music) return;
+    const id = sound.music;
+    const track = (musicTrack = { id });
+    (async () => {
+      const asset = (await (await fetch("/api/library")).json()).assets.find((each) => each.id === id);
+      if (!asset) return;
+      track.name = asset.name;
+      drawMusic();
+      const audio = await new OfflineAudioContext(1, 1, 44100).decodeAudioData(await (await fetch(asset.url)).arrayBuffer());
+      const samples = audio.getChannelData(0);
+      const step = Math.floor(audio.sampleRate / 50);
+      const peaks = new Float32Array(Math.ceil(samples.length / step));
+      let loudest = 0;
+      for (let peak = 0; peak < peaks.length; peak++) {
+        for (let at = peak * step; at < Math.min(samples.length, (peak + 1) * step); at++) peaks[peak] = Math.max(peaks[peak], Math.abs(samples[at]));
+        loudest = Math.max(loudest, peaks[peak]);
+      }
+      track.peaks = peaks.map((peak) => peak / (loudest || 1));
+      track.duration = audio.duration;
+      drawMusic();
+    })().catch(() => {});
+  }
+
+  function drawMusic() {
+    $("music-lane").hidden = !sound.music || !timing.length;
+    $("empty-music").hidden = !sound.music;
+    if (!sound.music) return;
+    loadMusic();
+    const name = `♪ ${musicTrack?.name ?? "Music"}`;
+    $("music-name").textContent = name;
+    $("empty-music").textContent = `${name}, under the whole video`;
+    const canvas = $("waveform");
+    const { clientWidth: width, clientHeight: height } = canvas;
+    if ($("music-lane").hidden || !musicTrack?.peaks || !width) return;
+    const scale = devicePixelRatio;
+    Object.assign(canvas, { width: width * scale, height: height * scale });
+    const ctx = canvas.getContext("2d");
+    ctx.scale(scale, scale);
+    ctx.fillStyle = "rgb(110 231 183 / 0.8)";
+    const length = timing.at(-1).end;
+    const loudness = (0.1 + 0.5 * sound.volume) / 0.6;
+    for (let x = 0; x < width; x += 2) {
+      const time = (x / width) * length;
+      const fade = Math.max(0, Math.min(1, time, (length - time) / 2));
+      const bar = Math.max(1, (musicTrack.peaks[Math.floor((time % musicTrack.duration) * 50)] ?? 0) * fade * loudness * (height - 6));
+      ctx.fillRect(x, (height - bar) / 2, 1.5, bar);
+    }
+  }
+
+  // How long a short runs, against what tends to do best: 15 to 45 seconds. Shorts and Reels take up to 3 minutes.
+  function lengthOf(seconds) {
+    if (seconds < 15) return { tone: "short", text: "Under 15 seconds" };
+    if (seconds <= 45) return { tone: "good", text: "In the sweet spot" };
+    if (seconds <= 60) return { tone: "long", text: "A bit long" };
+    return { tone: "long", text: "Over a minute" };
+  }
+
+  function showLength(badge, seconds) {
+    const { tone, text } = lengthOf(seconds);
+    Object.assign(badge, { className: `length ${tone}`, textContent: text, hidden: !seconds, title: "Short videos tend to do best at 15 to 45 seconds. YouTube Shorts and Instagram Reels take up to 3 minutes." });
+  }
+
+  // The clips can be edited when they're the latest script's segments, in order: the same kinds, and the same beats. After
+  // a beat is moved, they aren't until the video's cut again.
+  function timelineEditable() {
+    if (!timing.length || filming || timing.length !== segments.length) return false;
+    return segments.every((segment, index) => segment.kind === cutKinds[index] && (segment.kind !== "beat" || segment.label === cutLabels[index]));
+  }
+
+  // A clip on the timeline that can be edited: its edges trim its take, a beat can be dragged to another place among the
+  // beats, and an upload from the tray can be dropped on it to show there.
+  function editableClip(clip, index, length) {
+    const { kind, trim } = segments[index];
+    clip.classList.add("editable");
+    clip.classList.toggle("trimmed", Boolean(trim));
+    for (const side of ["head", "tail"]) {
+      const handle = Object.assign(document.createElement("span"), { className: `handle ${side}`, title: `Drag to trim the ${side === "head" ? "start" : "end"} of this take` });
+      handle.onpointerdown = (event) => trimDrag(event, clip, index, side, length);
+      clip.append(handle);
+    }
+    clip.onpointerdown = (event) => clipDrag(event, clip, index, length, kind === "beat");
+    if (kind === "beat" || kind === "why") {
+      clip.ondragover = (event) => {
+        if (!event.dataTransfer.types.includes("text/asset")) return;
+        event.preventDefault();
+        clip.classList.add("drop");
+      };
+      clip.ondragleave = () => clip.classList.remove("drop");
+      clip.ondrop = (event) => {
+        event.preventDefault();
+        clip.classList.remove("drop");
+        useUpload(index, event.dataTransfer.getData("text/asset")).then(() => edited(`“${sentence(segments[index].label)}” shows your upload`));
+      };
+    }
+  }
+
+  // Dragging a clip's edge trims its take: the cut uses less of it, or more, from the next time it's cut.
+  function trimDrag(event, clip, index, side, length) {
+    event.stopPropagation();
+    event.preventDefault();
+    const perPixel = length / $("lanes").getBoundingClientRect().width;
+    const startX = event.clientX;
+    const [left, width] = [clip.offsetLeft, clip.offsetWidth];
+    const before = segments[index].trim ?? { head: 0, tail: 0 };
+    const label = clip.querySelector("span");
+    let delta = 0;
+    const move = (moving) => {
+      const pixels = moving.clientX - startX;
+      delta = pixels * perPixel;
+      if (side === "head") Object.assign(clip.style, { left: `${left + pixels}px`, width: `${Math.max(14, width - pixels)}px` });
+      else clip.style.width = `${Math.max(14, width + pixels)}px`;
+      const shorter = side === "head" ? delta > 0 : delta < 0;
+      label.textContent = `${side === "head" ? "Start" : "End"} ${shorter ? "−" : "+"}${Math.abs(delta).toFixed(1)}s`;
+    };
+    const up = async () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+      if (Math.abs(delta) < 0.05) return drawTimeline();
+      const trim = side === "head" ? { head: before.head + delta, tail: before.tail } : { head: before.head, tail: before.tail - delta };
+      const response = await fetch("/api/trim", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ session, index, ...trim }) });
+      const result = await response.json();
+      if (!response.ok) {
+        alert(result.error);
+        return drawTimeline();
+      }
+      segments[index] = result.segment;
+      label.textContent = sentence(segments[index].label);
+      clip.classList.toggle("trimmed", Boolean(result.segment.trim));
+      edited(`Trimmed the ${side === "head" ? "start" : "end"} of “${sentence(segments[index].label)}”`);
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+  }
+
+  // Pressing a clip goes to that moment, like anywhere on the timeline, and dragging a beat moves it among the beats.
+  function clipDrag(event, clip, index, length, movable) {
+    event.stopPropagation();
+    const startX = event.clientX;
+    let moved = false;
+    const move = (moving) => {
+      const pixels = moving.clientX - startX;
+      if (!movable || (!moved && Math.abs(pixels) < 6)) return;
+      moved = true;
+      clip.classList.add("moving");
+      clip.style.transform = `translateX(${pixels}px)`;
+    };
+    const up = async (released) => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+      clip.classList.remove("moving");
+      clip.style.transform = "";
+      if (!moved) {
+        const box = $("lanes").getBoundingClientRect();
+        video.pause();
+        video.currentTime = Math.min(1, Math.max(0, (released.clientX - box.left) / box.width)) * length;
+        select(index);
+        showTab("details");
+        return movePlayhead();
+      }
+      // It goes where it was let go: before the first beat whose middle it's left of, or after the last it's right of.
+      const middles = [...$("clips").querySelectorAll(".clip")].map((each, at) => ({ at, middle: each.getBoundingClientRect().left + each.offsetWidth / 2 })).filter(({ at }) => segments[at].kind === "beat" && at !== index);
+      const before = middles.find(({ at, middle }) => at < index && released.clientX < middle);
+      const after = middles.findLast(({ at, middle }) => at > index && released.clientX > middle);
+      const to = before?.at ?? after?.at;
+      if (to === undefined) return;
+      const response = await fetch("/api/segment", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ session, index, action: "to", to }) });
+      const result = await response.json();
+      if (!response.ok) return alert(result.error);
+      renderLatest(result.segments);
+      edited(`Moved “${sentence(result.segments[to].label)}”`);
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+  }
+
+  // After an edit on the timeline, which shows in the video the next time it's cut.
+  function edited(what) {
+    announce(`${what}. Film again to see it in the video.`);
+    drawTimeline();
+    refreshEstimate();
+  }
+
+  // The Media tab next to the video: the images and videos in the library, to drag onto a clip on the timeline or click to
+  // show on the picked segment, and a way to upload another.
+  async function fillMedia() {
+    const segment = segments[selected];
+    const shows = segment && (segment.kind === "beat" || segment.kind === "why");
+    $("media-hint").textContent = shows ? `Click one to show it on “${sentence(segment.label)}”, or drag it onto a clip on the timeline.` : "Pick a beat on the timeline, then click one to show it there, or drag it onto a clip.";
+    const assets = (await (await fetch("/api/library")).json()).assets.filter((asset) => asset.kind !== "audio" && asset.thumb);
+    $("media-grid").replaceChildren(
+      ...assets.map((asset) => {
+        const item = Object.assign(document.createElement("button"), { type: "button", className: "media-item", title: asset.name, draggable: true });
+        item.append(Object.assign(document.createElement("img"), { src: asset.thumb, alt: "", draggable: false }), Object.assign(document.createElement("span"), { textContent: asset.name }));
+        item.ondragstart = (event) => event.dataTransfer.setData("text/asset", asset.id);
+        item.onclick = async () => {
+          if (!shows) return ($("media-hint").textContent = "Pick a beat on the timeline first. The hook and the ending are words on screen.");
+          await useUpload(selected, asset.id);
+          edited(`“${sentence(segments[selected].label)}” shows ${asset.name}`);
+          showTab("details");
+        };
+        return item;
+      }),
+    );
+    if (!assets.length) $("media-hint").textContent = "Nothing in your library yet. Upload a screenshot or a clip of your product, and show it on a beat.";
+  }
+  $("media-new").onchange = async () => {
+    const file = $("media-new").files[0];
+    if (!file) return;
+    $("media-hint").textContent = `Uploading ${file.name}…`;
+    const response = await fetch(`/api/library/upload?name=${encodeURIComponent(file.name.replace(/\.\w+$/, ""))}`, { method: "POST", headers: { "content-type": file.type }, body: file });
+    const result = await response.json();
+    $("media-new").value = "";
+    if (!response.ok) return alert(result.error);
+    fillMedia();
+  };
+
+  // The video's frames along the clips, as many as fit at their own shape, each from the moment it sits over.
+  function paintFilmstrip() {
+    const canvas = $("filmstrip");
+    const { clientWidth: width, clientHeight: height } = canvas;
+    const length = timing.at(-1)?.end;
+    if (!strip || !width || !length) return;
+    const scale = devicePixelRatio;
+    Object.assign(canvas, { width: width * scale, height: height * scale });
+    const ctx = canvas.getContext("2d");
+    const frameWidth = strip.image.width / strip.frames;
+    const slot = (height * 9) / 16;
+    for (let x = 0; x < width; x += slot) {
+      const frame = Math.min(strip.frames - 1, Math.floor(((x + slot / 2) / width) * length));
+      ctx.drawImage(strip.image, frame * frameWidth, 0, frameWidth, strip.image.height, x * scale, 0, slot * scale, height * scale);
+    }
+  }
+  new ResizeObserver(() => drawTimeline()).observe($("lanes"));
+
+  // Pressing anywhere on the timeline goes to that moment, and dragging scrubs through the video.
+  $("lanes").onpointerdown = (event) => {
+    const seek = (move) => {
+      const box = $("lanes").getBoundingClientRect();
+      video.currentTime = Math.min(1, Math.max(0, (move.clientX - box.left) / box.width)) * (timing.at(-1)?.end ?? 0);
+      movePlayhead();
+      if (timed.length) select(timing.findLastIndex((part) => part.start <= video.currentTime));
+    };
+    video.pause();
+    $("lanes").setPointerCapture(event.pointerId);
+    seek(event);
+    $("lanes").onpointermove = seek;
+    $("lanes").onpointerup = () => ($("lanes").onpointermove = null);
+  };
+
+  // Where the video is: the playhead, the time, which clip is playing, and whether it's playing.
+  function movePlayhead() {
+    const length = timing.at(-1)?.end;
+    if (!length) return;
+    $("playhead").style.left = `${Math.min(1, video.currentTime / length) * 100}%`;
+    $("clock").textContent = `${clock(video.currentTime)} / ${clock(length)}`;
+    const index = timing.findLastIndex((part) => part.start <= video.currentTime);
+    $("clips").querySelectorAll(".clip").forEach((clip, each) => clip.classList.toggle("current", each === index));
+    $("play").innerHTML = video.paused
+      ? `<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.5v9l7.5-4.5z"/></svg>`
+      : `<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 1.5h2.5v9H2.5zm4.5 0h2.5v9H7z"/></svg>`;
+    $("play").setAttribute("aria-label", video.paused ? "Play" : "Pause");
+  }
+  $("play").onclick = () => (video.paused ? video.play() : video.pause());
+  video.addEventListener("pause", movePlayhead);
+  // The phone plays and pauses when it's clicked, like the video in an app, except while a note's spot is being picked.
+  video.onclick = () => {
+    if (annotating) return;
+    video.paused ? video.play() : video.pause();
+  };
+  $("mute").onclick = () => (video.muted = !video.muted);
+  function showMute() {
+    $("mute").innerHTML = video.muted
+      ? `<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 6h2.5l3.5-3v10L5 10H2.5zM11 6l3 4M14 6l-3 4"/></svg>`
+      : `<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 6h2.5l3.5-3v10L5 10H2.5zM11 5.5a3.5 3.5 0 0 1 0 5M12.8 3.8a6 6 0 0 1 0 8.4"/></svg>`;
+    $("mute").setAttribute("aria-label", video.muted ? "Unmute" : "Mute");
+    $("mute").title = `${video.muted ? "Unmute" : "Mute"} (M)`;
+  }
+  video.addEventListener("volumechange", showMute);
+  showMute();
+
+  // Keys, like in an editor: Space plays and pauses, the arrows go to the segment before or after, M mutes, and N adds
+  // a note. Not while writing, in a menu, or with a dialog open, and Space still presses a button that has the focus.
+  document.addEventListener("keydown", (event) => {
+    const writing = event.target.closest?.("input, textarea, select, [contenteditable], [role=listbox]") || document.querySelector("dialog[open]");
+    if (writing || event.metaKey || event.ctrlKey || event.altKey || !timing.length) return;
+    if (event.key === " ") {
+      if (event.target.closest("button, a")) return;
+      event.preventDefault();
+      video.paused ? video.play() : video.pause();
+    } else if ((event.key === "ArrowLeft" || event.key === "ArrowRight") && timed.length) {
+      event.preventDefault();
+      pick(Math.max(0, Math.min(latest.length - 1, selected + (event.key === "ArrowRight" ? 1 : -1))));
+    } else if (event.key === "m" || event.key === "M") {
+      video.muted = !video.muted;
+    } else if (event.key === "n" || event.key === "N") {
+      $("annotate").click();
+    }
+  });
+  $("play").title = "Play or pause (Space)";
+
+  // Where each app's top bar, buttons, and caption cover the video, so the words and pictures stay out from under them.
+  function showSafeZones(platform) {
+    document.querySelector(".canvas-tool").classList.toggle("on", Boolean(platform));
+    $("safe").hidden = !platform;
+    $("safe").dataset.platform = platform;
+    $("safe-zones").value = platform;
+    localStorage.setItem("safe-zones", platform);
+  }
+  $("safe-zones").onchange = () => showSafeZones($("safe-zones").value);
+  showSafeZones(localStorage.getItem("safe-zones") ?? "");
+
+  // The chat folds away to a narrow strip for more room to edit, and stays how it was left.
+  function foldChat(folded) {
+    document.querySelector(".workspace").classList.toggle("chat-folded", folded);
+    $("chat-toggle").title = folded ? "Show the chat" : "Hide the chat";
+    $("chat-toggle").setAttribute("aria-label", $("chat-toggle").title);
+    localStorage.setItem("chat-folded", folded ? "1" : "");
+  }
+  $("chat-toggle").onclick = () => foldChat(!document.querySelector(".workspace").classList.contains("chat-folded"));
+  foldChat(localStorage.getItem("chat-folded") === "1");
+
+  // The notes within a second of the moment showing, as numbered pins where they are on the frame, with their comments
+  // outlined and scrolled into view, and the spot of the note being written. They're only drawn again when that changes.
+  function drawPins() {
+    const near = notes.map((note, index) => ({ note, index })).filter(({ note }) => Math.abs(note.time - video.currentTime) < 1);
+    const key = `${near.map(({ note }) => note.id).join()}|${spot ? `${spot.x},${spot.y}` : ""}`;
+    if (key === pinned) return;
+    pinned = key;
+    const comments = [...$("note-list").children];
+    comments.forEach((comment, index) => comment.classList.toggle("current", near.some((each) => each.index === index)));
+    comments[near[0]?.index]?.scrollIntoView({ block: "nearest" });
+    const pins = near.map(({ note, index }) => {
+      const pin = Object.assign(document.createElement("button"), { type: "button", className: "pin", textContent: index + 1, title: note.text });
+      Object.assign(pin.style, { left: `${note.x * 100}%`, top: `${note.y * 100}%` });
+      pin.onclick = () => jumpToNote(note);
+      return pin;
+    });
+    if (spot) {
+      const pin = Object.assign(document.createElement("span"), { className: "pin new", textContent: notes.length + 1 });
+      Object.assign(pin.style, { left: `${spot.x * 100}%`, top: `${spot.y * 100}%` });
+      pins.push(pin);
+    }
+    $("pins").replaceChildren(...pins);
+  }
+
+  // Adding a note: the video pauses, and the next click on the frame marks the spot the note is about.
+  function setAnnotating(on) {
+    annotating = on;
+    $("pins").classList.toggle("armed", on);
+    $("annotate").querySelector(".annotate-text").textContent = on ? "Click the spot on the video" : "Add a note";
+    $("annotate").classList.toggle("armed", on);
+    if (on) video.pause();
+  }
+  $("annotate").onclick = () => setAnnotating(!annotating);
+  $("pins").onclick = (event) => {
+    if (!annotating || event.target !== $("pins")) return;
+    const box = $("pins").getBoundingClientRect();
+    spot = { x: (event.clientX - box.left) / box.width, y: (event.clientY - box.top) / box.height, time: video.currentTime };
+    setAnnotating(false);
+    drawPins();
+    // The note goes above a spot low on the frame, and below one higher up, so it never covers the spot.
+    const low = spot.y > 0.5;
+    Object.assign($("note-editor").style, { top: low ? "" : `calc(${spot.y * 100}% + 26px)`, bottom: low ? `calc(${(1 - spot.y) * 100}% + 26px)` : "" });
+    $("note-editor").hidden = false;
+    $("note-text").value = "";
+    $("note-text").focus();
+  };
+  $("note-editor").onsubmit = async (event) => {
+    event.preventDefault();
+    const text = $("note-text").value.trim();
+    if (!text) return $("note-text").focus();
+    const response = await fetch("/api/notes/add", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ session, time: spot.time, x: spot.x, y: spot.y, text, cut: viewing }) });
+    const result = await response.json();
+    if (!response.ok) return alert(result.error);
+    notes.push(result.note);
+    closeEditor();
+    renderNotes();
+    showTab("comments");
+  };
+  // Enter adds the note, Shift+Enter starts a new line, and Escape lets it go.
+  $("note-text").onkeydown = (event) => {
+    if (event.key === "Enter" && !event.shiftKey && !event.isComposing) {
+      event.preventDefault();
+      $("note-editor").requestSubmit();
+    }
+    if (event.key === "Escape") closeEditor();
+  };
+  $("note-cancel").onclick = closeEditor;
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && annotating) setAnnotating(false);
+  });
+
+  function closeEditor() {
+    $("note-editor").hidden = true;
+    spot = null;
+    drawPins();
+  }
+
+  // The panel next to the video shows the picked segment's details, the library's media, the comments, or what's needed
+  // to post the video.
+  function showTab(name) {
+    $("tab-details").setAttribute("aria-selected", String(name === "details"));
+    $("tab-media").setAttribute("aria-selected", String(name === "media"));
+    $("tab-comments").setAttribute("aria-selected", String(name === "comments"));
+    $("tab-publish").setAttribute("aria-selected", String(name === "publish"));
+    $("details").hidden = name !== "details";
+    $("media").hidden = name !== "media";
+    $("notes").hidden = name !== "comments";
+    $("publish").hidden = name !== "publish";
+    if (name === "media") fillMedia();
+    if (name === "publish") showPublish();
+  }
+  $("tab-details").onclick = () => showTab("details");
+  $("tab-media").onclick = () => showTab("media");
+  $("tab-comments").onclick = () => showTab("comments");
+  $("tab-publish").onclick = () => showTab("publish");
+
+  // The Publish tab: what goes with the video on YouTube Shorts, TikTok, or Reels, which Grok can write, a cover picked
+  // from a frame of the video, and the video to post. What's written is kept for each video and platform in this browser.
+  let platform = localStorage.getItem("platform") || "shorts";
+  const publishKey = () => `publish:${new URLSearchParams(location.search).get("video") ?? ""}:${platform}`;
+  function showPublish() {
+    for (const button of $("platforms").children) button.setAttribute("aria-pressed", String(button.dataset.platform === platform));
+    const kept = JSON.parse(localStorage.getItem(publishKey()) || "{}");
+    $("publish-title").value = kept.title ?? "";
+    $("publish-description").value = kept.description ?? "";
+    $("publish-hashtags").value = kept.hashtags ?? "";
+    const filmed = timing.length > 0 && !$("download").hidden;
+    Object.assign($("publish-download"), { hidden: !filmed, href: $("download").href, download: $("download").download });
+    $("publish-hint").hidden = filmed;
+    $("cover-use").disabled = !filmed;
+  }
+  function keepPublish() {
+    localStorage.setItem(publishKey(), JSON.stringify({ title: $("publish-title").value, description: $("publish-description").value, hashtags: $("publish-hashtags").value }));
+  }
+  for (const field of ["publish-title", "publish-description", "publish-hashtags"]) $(field).oninput = keepPublish;
+  $("platforms").onclick = (event) => {
+    const button = event.target.closest("[data-platform]");
+    if (!button) return;
+    platform = button.dataset.platform;
+    localStorage.setItem("platform", platform);
+    // With the safe zones on, they follow the platform being posted to.
+    if (!$("safe").hidden) showSafeZones(platform);
+    showPublish();
+  };
+  $("publish-write").onclick = async () => {
+    const button = $("publish-write");
+    Object.assign(button, { disabled: true, textContent: "Writing…" });
+    const response = await fetch("/api/publish", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ session, platform }) });
+    const result = await response.json();
+    Object.assign(button, { disabled: false, textContent: "Write with Grok" });
+    if (!response.ok) return alert(result.error);
+    $("publish-title").value = result.title;
+    $("publish-description").value = result.description;
+    $("publish-hashtags").value = result.hashtags.map((tag) => `#${tag}`).join(" ");
+    keepPublish();
+  };
+  $("publish-copy").onclick = async () => {
+    const text = [$("publish-title").value, $("publish-description").value, $("publish-hashtags").value].map((part) => part.trim()).filter(Boolean).join("\n\n");
+    await navigator.clipboard.writeText(text);
+    $("publish-copy").textContent = "Copied";
+    setTimeout(() => ($("publish-copy").textContent = "Copy all"), 1500);
+  };
+  // The cover is the frame in the phone, drawn at the video's own size.
+  $("cover-use").onclick = () => {
+    if (!video.videoWidth) return;
+    const canvas = Object.assign(document.createElement("canvas"), { width: video.videoWidth, height: video.videoHeight });
+    canvas.getContext("2d").drawImage(video, 0, 0);
+    canvas.toBlob((blob) => {
+      const url = URL.createObjectURL(blob);
+      Object.assign($("cover-image"), { src: url, hidden: false });
+      Object.assign($("cover-download"), { href: url, download: `${new URLSearchParams(location.search).get("video") ?? "video"}-cover.png`, hidden: false });
+      $("cover-hint").textContent = `The frame at ${clock(video.currentTime)}.`;
+    }, "image/png");
+  };
+
+  // The notes waiting to go to Grok, as comments next to the phone, on the timeline, and on the frame.
+  function renderNotes() {
+    $("comments-count").textContent = notes.length;
+    $("comments-count").hidden = !notes.length;
+    $("notes-empty").hidden = notes.length > 0;
+    $("notes-title").textContent = `📍 ${plural(notes.length, "note")} for Grok`;
+    $("note-list").replaceChildren(...notes.map(noteItem));
+    pinned = "";
+    drawTimeline();
+    drawPins();
+    update();
+  }
+
+  // A note: a picture of its moment with the spot ringed and its number, as on the timeline and the frame, when and
+  // where it is, and what should change.
+  function noteItem(note, index) {
+    const item = document.createElement("li");
+    item.innerHTML = `<div class="thumb"><img alt=""><span class="number"></span></div><div><p class="where"></p><p class="text"></p></div><button type="button" class="remove" aria-label="Remove note">×</button>`;
+    item.querySelector("img").src = note.picture;
+    item.querySelector(".number").textContent = index + 1;
+    item.querySelector(".where").textContent = `${clock(note.time)} · ${note.label} · ${note.spot}`;
+    if (note.by) item.querySelector(".where").prepend(Object.assign(document.createElement("span"), { className: "by", textContent: note.by === "grok" ? "Grok" : note.by, title: note.by === "grok" ? "Grok left this note reviewing the cut" : "" }));
+    item.querySelector(".text").textContent = note.text;
+    item.onclick = () => jumpToNote(note);
+    item.querySelector(".remove").onclick = async (event) => {
+      event.stopPropagation();
+      const response = await fetch("/api/notes/remove", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ session, id: note.id }) });
+      if (!response.ok) return alert((await response.json()).error);
+      notes = notes.filter((each) => each !== note);
+      renderNotes();
+    };
+    return item;
+  }
+
+  function jumpToNote(note) {
+    video.pause();
+    video.currentTime = note.time;
+  }
+
+  // Grok reviews the cut in the phone and pins a note on each problem it sees. Every new cut is reviewed as soon as it's
+  // made, and any version can be reviewed again.
+  async function reviewWithGrok(id, show = false) {
+    const button = $("review");
+    Object.assign(button, { disabled: true, textContent: "Looking for issues…" });
+    const response = await fetch("/api/review", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ session, cut: id }) });
+    const result = await response.json();
+    Object.assign(button, { disabled: false, textContent: "Find issues" });
+    if (!response.ok) return announce(`Grok couldn't look for issues in this cut: ${result.error}`);
+    notes = [...notes, ...result.notes];
+    renderNotes();
+    if (show && result.notes.length) showTab("comments");
+    announce(result.notes.length ? `Grok found ${plural(result.notes.length, "issue")} in this cut and left a note on each, in Comments. Send them with a message, or delete the ones you disagree with.` : "Grok looked over this cut and found nothing to fix.");
+  }
+  $("review").onclick = () => reviewWithGrok(viewing, true);
+
+  // The personality the latest script is in: the presenter's own, unless another was picked for this video. Picking
+  // another has Grok write the script again in it, saying the same things another way. An X profile's style can be
+  // copied too.
+  function personalityPicker() {
+    const row = Object.assign(document.createElement("div"), { className: "theme personality" });
+    const select = Object.assign(document.createElement("select"), { className: "layout", title: "How the presenter talks and acts in this video" });
+    const presenter = presenterList.find((each) => each.id === $("presenter").value);
+    const own = presenter?.personality;
+    const option = ({ id, name }) => new Option(`Personality: ${name}${id === own ? ` (${presenter.name}'s own)` : ""}`, id);
+    const group = (label, list) => {
+      const element = Object.assign(document.createElement("optgroup"), { label });
+      element.append(...list.map(option));
+      return element;
+    };
+    const yours = personalityList.filter((each) => each.custom);
+    select.append(group("Built in", personalityList.filter((each) => !each.custom)), ...(yours.length ? [group("Yours", yours)] : []), new Option("Copy an X profile…", "x"));
+    if (speaking.startsWith("@")) select.prepend(new Option(`Personality: like ${speaking}`, speaking));
+    select.value = speaking || own || "hype";
+    const about = Object.assign(document.createElement("span"), { className: "about-theme", textContent: personalityList.find((each) => each.id === select.value)?.summary ?? "" });
+    const handle = Object.assign(document.createElement("input"), { className: "handle", placeholder: "@handle", hidden: true });
+    handle.setAttribute("aria-label", "X handle to copy");
+    const copy = Object.assign(document.createElement("button"), { type: "button", className: "pill pill-secondary pill-sm", textContent: "Copy", hidden: true });
+    const rewrite = (personality) => {
+      override = personality;
+      $("message").value = "Write it again in this personality. Keep what each segment says and shows, and change only how it's said.";
+      $("composer").requestSubmit();
+    };
+    select.onchange = () => {
+      const copying = select.value === "x";
+      handle.hidden = copy.hidden = !copying;
+      about.hidden = copying;
+      if (copying) return handle.focus();
+      if (select.value !== speaking) rewrite(select.value);
+    };
+    copy.onclick = () => {
+      const name = handle.value.trim().replace(/^@/, "");
+      if (name) rewrite(`@${name}`);
+    };
+    handle.onkeydown = (event) => {
+      if (event.key !== "Enter") return;
+      event.preventDefault();
+      copy.click();
+    };
+    const x = `<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="2.5"/><path d="M10.5 8v1a2 2 0 0 0 4 0V8a6.5 6.5 0 1 0-2.6 5.2"/></svg>`;
+    row.append(dropdown(select, { label: "Personality", about: (id) => personalityList.find((each) => each.id === id)?.summary, actions: { x } }), handle, copy, about);
+    return row;
+  }
+
+  function clock(seconds) {
+    return `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, "0")}`;
+  }
+
+  function shortUrl(url) {
+    const { hostname, pathname } = new URL(url);
+    return `${hostname.replace(/^www\./, "")}${pathname.length > 1 ? pathname : ""}`.slice(0, 60);
+  }
+
+  function update() {
+    $("side").hidden = !segments.length && !notes.length;
+    canSend();
+    drawEmptyTimeline();
+    showPresenter();
+    showPresenterChip();
+    // Several videos can be started instead of one, before a conversation starts.
+    $("several").hidden = Boolean(session) || chatting;
+    $("several").setAttribute("aria-pressed", String(batchMode()));
+    $("send").title = batchMode() ? "Write them all" : "Send";
+    $("send").setAttribute("aria-label", $("send").title);
+    // The one making a cut becomes its stop button, and the other waits.
+    $("film").disabled = chatting || filming === "preview" || (!filming && !segments.length);
+    $("preview").disabled = chatting || filming === "film" || (!filming && !segments.length);
+    $("film").textContent = filming === "film" ? "Stop filming" : timing.length ? "Film again" : "Film video";
+    $("film").title = filming === "film" ? "Stop filming. Takes that are done are kept for next time, and ones already started are still billed." : unfilmed === null ? "" : unfilmed ? `Films ${plural(unfilmed, "new take")}, and keeps every other take` : "Nothing new to film, so this only cuts the video again";
+    $("preview").textContent = filming === "preview" ? "Stop preview" : "Preview";
+    $("preview").title = filming === "preview" ? "Stop making the preview" : "Watch the whole video with the portrait and the presenter's voice from text to speech, before filming it";
+    $("changes-preview").disabled = $("preview").disabled;
+    $("changes-film").disabled = $("film").disabled;
+    showChangesChip();
+    $("restart").disabled = chatting || filming;
+    $("message").placeholder = batchMode()
+      ? "One video per line"
+      : asking
+      ? "Answer, or tell Grok to go ahead"
+      : notes.length
+        ? "Anything else to change?"
+        : segments.length
+          ? "Ask for changes, or add a note"
+          : "A link, or an idea for a video";
+  }
+  update();
+
+  // Says what just happened over the bottom of the canvas, for a few seconds, or until it's clicked.
+  let toastTimer;
+  function announce(text) {
+    clearTimeout(toastTimer);
+    Object.assign($("toast"), { textContent: text, hidden: !text });
+    if (text) toastTimer = setTimeout(() => ($("toast").hidden = true), 6000);
+  }
+  $("toast").onclick = () => announce("");
+
+  function note(title, percent = "") {
+    if (!video.hidden) return;
+    $("phone-note").innerHTML = `${percent ? `<span class="phone-percent">${percent}</span>` : ""}<p class="phone-title">${escape(title)}</p>`;
+  }
+
+  // While the video plays, the segment being said is picked, unless its details are being changed, the playhead moves
+  // along the track, and the notes near the moment show on the frame.
+  function follow() {
+    cancelAnimationFrame(frame);
+    const index = timing.findLastIndex((part) => part.start <= video.currentTime);
+    if (!video.paused && timed.length && index >= 0 && index !== selected && !$("details").contains(document.activeElement)) select(index);
+    movePlayhead();
+    drawPins();
+    if (!video.paused) frame = requestAnimationFrame(follow);
+  }
+  video.onplay = video.onseeked = follow;
+
+  // Clears the phone and the takes for a new cut.
+  function reset() {
+    video.pause();
+    video.removeAttribute("src");
+    video.hidden = true;
+    cancelAnimationFrame(frame);
+    shots = [];
+    percents = [];
+    $("download").hidden = true;
+    $("copy").hidden = true;
+    $("phone").style.backgroundImage = "";
+    $("phone-note").hidden = false;
+    $("scrub").hidden = true;
+    $("find-issues").hidden = true;
+    drawEmptyTimeline();
+    setAnnotating(false);
+    closeEditor();
+  }
+
+  // Until there's a cut, the timeline under the phone shows where it'll go: a clip for each segment of the latest script,
+  // as long as its line takes to say, or a typical script's before there is one.
+  // While a video is being made, filming fills its clips in instead.
+  function drawEmptyTimeline() {
+    const empty = $("timeline-empty");
+    empty.hidden = !$("scrub").hidden;
+    drawMusic();
+    if (empty.hidden || filming) return;
+    timelineClips(segments.length ? segments : null);
+    const about = segments.length && estimated ? `About ${Math.round(estimated)} seconds, ${lengthOf(estimated).text.toLowerCase()}. ` : "";
+    $("timeline-caption").textContent = segments.length ? `${about}Preview it for free, or film it, and the cut lands here.` : "Each segment of the script lands here as a clip.";
+  }
+
+  // A clip on the empty timeline for each of `list`'s segments, as long as its line takes to say, or for a typical
+  // script's segments without one.
+  function timelineClips(list) {
+    const clips = list
+      ? list.map(({ kind, label, line }) => ({ name: kind === "beat" ? label : SHORT_NAMES[kind], seconds: Math.max(2, line.split(/\s+/).length / 2.6) }))
+      : ["Hook", "Beat", "Beat", "Beat", "Ending"].map((name) => ({ name, seconds: name === "Beat" ? 7 : 3 }));
+    const made = clips.map(({ name, seconds }, index) => {
+      const clip = Object.assign(document.createElement("span"), { style: `flex-grow: ${seconds.toFixed(1)}` });
+      clip.innerHTML = "<b></b><em></em>";
+      clip.querySelector("b").textContent = name;
+      // The latest script's segments can be picked from here before there's a cut.
+      if (list === segments && latest.length === segments.length) {
+        clip.classList.add("picks");
+        clip.title = `${name}: pick it to change it`;
+        clip.onclick = () => pick(index);
+        if (list[index].kind === "beat" || list[index].kind === "why") {
+          clip.ondragover = (event) => {
+            if (!event.dataTransfer.types.includes("text/asset")) return;
+            event.preventDefault();
+            clip.classList.add("drop");
+          };
+          clip.ondragleave = () => clip.classList.remove("drop");
+          clip.ondrop = (event) => {
+            event.preventDefault();
+            clip.classList.remove("drop");
+            useUpload(index, event.dataTransfer.getData("text/asset")).then(() => edited(`“${name}” shows your upload`));
+          };
+        }
+      }
+      return clip;
+    });
+    $("timeline-blocks").replaceChildren(...made);
+    markSelection();
+    return made;
+  }
+
+  // The presenter picker in the message box: a chip with who's picked, and a menu of everyone, with their portrait,
+  // personality, and what it's like, opening above it. The hidden select under it is what the rest of the page reads.
+  function showPresenterChip() {
+    const presenter = presenterList.find(({ id }) => id === $("presenter").value);
+    if (!presenter) return;
+    const face = $("presenter-chip").querySelector("img");
+    face.hidden = !presenter.portrait;
+    if (presenter.portrait && face.getAttribute("src") !== presenter.portrait) face.src = presenter.portrait;
+    $("presenter-chip").querySelector(".who").innerHTML = `<b>${escape(presenter.name)}</b> · ${escape(presenter.personalityName)}`;
+  }
+
+  function openPicker(open) {
+    $("picker-menu").hidden = !open;
+    $("presenter-chip").setAttribute("aria-expanded", String(open));
+    if (!open) return;
+    const options = presenterList.map((presenter) => {
+      const option = Object.assign(document.createElement("button"), { type: "button", className: "option" });
+      option.setAttribute("role", "option");
+      option.setAttribute("aria-selected", String(presenter.id === $("presenter").value));
+      option.innerHTML = `${presenter.portrait ? `<img alt="">` : `<span class="face"></span>`}<span><span class="name"><b></b><span></span></span><span class="blurb"></span></span><svg class="check" viewBox="0 0 16 16" aria-hidden="true"><path d="m3.5 8.5 3 3 6-7"/></svg>`;
+      if (presenter.portrait) option.querySelector("img").src = presenter.portrait;
+      else option.querySelector(".face").textContent = presenter.name[0];
+      option.querySelector(".name b").textContent = presenter.name;
+      option.querySelector(".name span").textContent = ` · ${presenter.personalityName}`;
+      option.querySelector(".blurb").textContent = personalityList.find(({ id }) => id === presenter.personality)?.summary ?? presenter.look;
+      option.onclick = () => pickPresenter(presenter.id);
+      return option;
+    });
+    const create = Object.assign(document.createElement("a"), { className: "new", href: "/studio", innerHTML: `<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg>New presenter` });
+    $("picker-menu").replaceChildren(...options, create);
+    ($("picker-menu").querySelector('[aria-selected="true"]') ?? options[0])?.focus();
+  }
+
+  function pickPresenter(id) {
+    openPicker(false);
+    $("presenter-chip").focus();
+    if ($("presenter").value === id) return;
+    $("presenter").value = id;
+    $("presenter").dispatchEvent(new Event("change"));
+    showPresenterChip();
+  }
+
+  // With no video in the phone, it shows the presenter who'll film it.
+  function showPresenter() {
+    if (!video.hidden || filming) return;
+    const portrait = presenterList?.find(({ id }) => id === $("presenter").value)?.portrait;
+    $("phone").style.backgroundImage = portrait ? `url("${portrait}")` : "";
+  }
+
+  // The send button lights up once there's something to send: words, or notes on the cut, which can go on their own.
+  function canSend() {
+    $("send").disabled = chatting || (!$("message").value.trim() && !(session && notes.length));
+  }
+
+  // Whether the message box makes several videos, one per line, which it only can before a conversation starts.
+  function batchMode() {
+    return several && !session;
+  }
+
+  // Several videos at once: a script for each line, written at the same time without stopping for questions, each with a
+  // free preview. They show here as they're written, to watch in the phone or open to keep working on, and in Your
+  // videos as drafts.
+  async function startBatch() {
+    const lines = $("message").value.split("\n").map((line) => line.trim()).filter(Boolean);
+    if (!lines.length || chatting) return;
+    $("send").disabled = true;
+    const response = await fetch("/api/batch", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ sources: lines.join("\n"), presenter: $("presenter").value, preview: true }) });
+    const result = await response.json();
+    $("send").disabled = false;
+    if (!response.ok) return alert(result.error);
+    $("message").value = "";
+    grow();
+    several = false;
+    $("welcome").hidden = true;
+    $("restart").hidden = false;
+    addUserMessage(lines.join("\n"));
+    const card = Object.assign(document.createElement("div"), { className: "message grok" });
+    card.innerHTML = `<p class="note"></p><ol class="batch-items"></ol>`;
+    card.querySelector(".note").textContent = `Writing ${plural(lines.length, "video")} at the same time, then a free preview of each. They're in Your Videos too.`;
+    $("thread").append(card);
+    scrollDown();
+    update();
+    watchBatch(result.id, card);
+  }
+
+  // Checks on the batch every few seconds until every video is written and previewed.
+  async function watchBatch(id, card) {
+    if (!card.isConnected) return;
+    const batch = (await (await fetch("/api/batches")).json()).batches.find((each) => each.id === id);
+    if (!batch) return;
+    card.querySelector(".batch-items").replaceChildren(...batch.items.map(batchItem));
+    if (batch.items.some((item) => ["waiting", "writing", "previewing"].includes(item.status))) return setTimeout(() => watchBatch(id, card), 3000);
+    const ready = batch.items.filter((item) => item.status === "ready").length;
+    card.querySelector(".note").textContent = `${plural(ready, "video")} ready. Watch the previews, and open the ones you like to keep working on them and film them.`;
+  }
+
+  function batchItem(item) {
+    const STATUS = { waiting: "Waiting", writing: "Writing…", previewing: "Previewing…", ready: "Ready", failed: "Didn't work" };
+    const row = Object.assign(document.createElement("li"), { className: `batch-item ${item.status}` });
+    row.innerHTML = `<div><p class="title"></p><p class="meta"></p></div><div class="buttons"></div>`;
+    row.querySelector(".title").textContent = item.title ?? item.source;
+    row.querySelector(".meta").textContent = [STATUS[item.status], item.theme, item.error].filter(Boolean).join(" · ");
+    const buttons = row.querySelector(".buttons");
+    if (item.preview) {
+      const watch = Object.assign(document.createElement("button"), { type: "button", className: "pill pill-secondary pill-sm", textContent: "Watch" });
+      watch.onclick = () => {
+        video.src = item.preview;
+        video.hidden = false;
+        $("phone-note").hidden = true;
+        $("badge").hidden = false;
+        video.play().catch(() => {});
+      };
+      buttons.append(watch);
+    }
+    if (item.folder) buttons.append(Object.assign(document.createElement("a"), { className: "pill pill-primary pill-sm", href: `/?video=${encodeURIComponent(item.folder)}`, textContent: "Open" }));
+    return row;
+  }
+
+  // Starts over with a new conversation.
+  function restart() {
+    reset();
+    session = null;
+    several = false;
+    asking = false;
+    segments = [];
+    latest = [];
+    timed = [];
+    timing = [];
+    notes = [];
+    unfilmed = null;
+    versions = [];
+    sound = { volume: 0.5, effects: true };
+    onScreen = { title: true, labels: true };
+    override = null;
+    speaking = "";
+    selected = 0;
+    $("segment-list").replaceChildren();
+    $("style-slot").replaceChildren();
+    showTab("details");
+    renderNotes();
+    history.replaceState(null, "", "/");
+    $("thread").replaceChildren($("welcome"));
+    $("welcome").hidden = false;
+    $("restart").hidden = true;
+    showTitle();
+    showChanges([], 0);
+    announce("");
+    $("phone-note").innerHTML = WELCOME;
+    update();
+    $("message").focus();
+  }
+
+  function grow() {
+    $("message").style.height = "auto";
+    $("message").style.height = `${$("message").scrollHeight + 2}px`;
+  }
+
+  function scrollDown() {
+    $("thread").scrollTop = $("thread").scrollHeight;
+  }
+
+  function plural(count, word) {
+    return `${count} ${word}${count === 1 ? "" : "s"}`;
+  }
+
+  function escape(text) {
+    return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+</script>
+</body>
+</html>

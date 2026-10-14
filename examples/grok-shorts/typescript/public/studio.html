@@ -1,0 +1,604 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Presenter Studio · Grok Shorts</title>
+<style>
+  /* The look every SpaceXSI Cookbook page shares, after x.ai. */
+  :root {
+    --bg: #fff;
+    --card: #f9f8f6;
+    --secondary: #f2f1ef;
+    --secondary-hover: #e9e8e5;
+    --tint: rgb(10 10 10 / 0.04);
+    --line: rgb(10 10 10 / 0.08);
+    --border: rgb(10 10 10 / 0.15);
+    --fg: #0a0a0a;
+    --muted: rgb(10 10 10 / 0.6);
+    --faint: rgb(10 10 10 / 0.36);
+    --accent: #ff6308;
+    --accent-soft: rgb(255 99 8 / 0.1);
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; font: 14px/22px var(--sans); background: var(--bg); color: var(--fg); -webkit-font-smoothing: antialiased; }
+  button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
+  a { color: inherit; }
+  svg { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  @keyframes blink { 50% { opacity: 0.3; } }
+  @keyframes pulse { to { background-color: var(--secondary-hover); } }
+  @keyframes fade { from { opacity: 0; } }
+
+  .site { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 12px; height: 52px; padding: 0 20px; background: rgb(255 255 255 / 0.85); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+  .logo { flex: none; margin-right: 4px; color: var(--fg); }
+  .logo svg { display: block; width: 52px; height: 20px; fill: currentColor; stroke: none; }
+  .crumbs { display: flex; align-items: center; gap: 8px; min-width: 0; color: var(--muted); white-space: nowrap; }
+  .crumbs svg { width: 12px; height: 12px; color: var(--faint); }
+  .crumbs a { text-decoration: none; }
+  .crumbs a:hover { color: var(--fg); }
+  .crumbs h1 { margin: 0; overflow: hidden; text-overflow: ellipsis; font-size: inherit; line-height: inherit; font-weight: 500; color: var(--fg); }
+  .site .pill { flex: none; margin-left: auto; }
+  .tabs + .pill { margin-left: 0; }
+  /* The menu is the same on every page, as tabs like the ones on x.ai/changelog, with the page you're on lit up. */
+  .tabs { flex: none; display: inline-flex; max-width: 100%; margin-left: auto; padding: 4px; overflow-x: auto; border: 1px solid rgb(10 10 10 / 0.1); border-radius: 9999px; scrollbar-width: none; }
+  .tabs a { display: inline-flex; flex: none; align-items: center; height: 32px; padding: 0 18px; border-radius: 9999px; color: var(--muted); font-size: 14px; font-weight: 500; line-height: 20px; white-space: nowrap; text-decoration: none; transition: color 0.2s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+  .tabs a:hover { color: var(--fg); }
+  .tabs a[aria-current="page"] { background: var(--fg); color: #fff; }
+  .pill { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 40px; padding: 0 18px; border-radius: 9999px; font-size: 14px; font-weight: 500; white-space: nowrap; text-decoration: none; }
+  .pill-sm { height: 32px; padding: 0 14px; font-size: 13px; }
+  .pill-primary { background: var(--fg); color: #fff; }
+  .pill-primary:hover { background: #202329; }
+  .pill-secondary { background: var(--secondary); color: var(--fg); }
+  .pill-secondary:hover { background: var(--secondary-hover); }
+  .pill:disabled { opacity: 0.4; cursor: default; }
+  .pill svg { width: 14px; height: 14px; }
+  .field { min-width: 0; height: 40px; padding: 0 18px; border: 1px solid var(--border); border-radius: 9999px; background: var(--bg); color: var(--fg); font: inherit; outline: none; }
+  .field:focus { border-color: var(--fg); }
+  .field::placeholder { color: var(--faint); }
+  .surface { display: flex; flex-direction: column; gap: 8px; height: calc(100vh - 64px); min-height: 560px; margin: 0 12px 12px; padding: 8px; border-radius: 20px; background: var(--card); }
+  .panel { min-width: 0; padding: 20px 22px; border-radius: 16px; background: var(--bg); }
+  .label { margin: 0; font-size: 13px; font-weight: 500; color: var(--muted); }
+  @media (max-width: 1100px) {
+    .crumbs > span, .crumbs > svg, .crumbs > a { display: none; }
+  }
+  @media (max-width: 860px) {
+    .site { overflow-x: auto; }
+  }
+  @media (max-width: 640px) {
+    .site { padding: 0 16px; }
+    .surface { margin: 0 8px 8px; }
+  }
+
+  /* Presenter Studio */
+  .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px; border-radius: 16px; background: var(--bg); }
+  .toolbar .field { flex: 1 1 260px; }
+  #summary { padding: 0 8px; color: var(--faint); font-size: 13px; font-variant-numeric: tabular-nums; }
+  .workspace { flex: 1; display: grid; grid-template-columns: 360px minmax(0, 1fr) auto; gap: 8px; min-height: 0; }
+  .form { display: flex; flex-direction: column; gap: 12px; overflow: auto; }
+  .form label { display: grid; gap: 4px; font-size: 13px; font-weight: 500; color: var(--muted); }
+  .form input, .form textarea, .form select { width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg); color: var(--fg); font: 14px/20px var(--sans); outline: none; resize: none; }
+  .form input:focus, .form textarea:focus, .form select:focus { border-color: var(--fg); }
+  .from-video { display: grid; gap: 8px; padding: 12px; border-radius: 12px; background: var(--card); }
+  .from-video .label span { font-weight: 400; color: var(--faint); }
+  .from-video .pick { display: flex; align-items: center; gap: 10px; font-weight: 400; cursor: pointer; }
+  .from-video .chosen { min-width: 0; overflow: hidden; font-size: 13px; color: var(--faint); white-space: nowrap; text-overflow: ellipsis; }
+  .from-video .chosen.picked { color: var(--fg); }
+  .from-video.dropping { box-shadow: inset 0 0 0 2px var(--fg); }
+  .form .check { display: flex; align-items: flex-start; gap: 8px; font-weight: 400; line-height: 19px; color: var(--fg); }
+  .form .check input { width: auto; margin-top: 2px; }
+  .from-video audio { width: 100%; height: 32px; }
+  .form .at { display: flex; align-items: center; gap: 8px; font-weight: 400; color: var(--fg); }
+  .form .at input { width: 72px; }
+  .from-video .hint { margin: -4px 0 0; font-size: 12px; color: var(--faint); }
+  .from-video .pill { justify-self: start; }
+  .voice-row { display: flex; gap: 8px; }
+  .voice-row select { flex: 1; }
+  .form .actions { display: flex; gap: 8px; margin-top: 4px; }
+  .portraits { display: flex; flex-direction: column; gap: 12px; min-height: 0; }
+  .portraits .label { display: flex; align-items: center; gap: 8px; }
+  .grid { flex: 1; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; min-height: 0; container-type: size; }
+  .slot { position: relative; align-self: center; width: 100%; max-height: 100cqh; aspect-ratio: 9 / 16; overflow: hidden; padding: 0; border-radius: 16px; background: var(--secondary); outline: 3px solid transparent; outline-offset: -3px; }
+  .slot.working { animation: pulse 1s ease-in-out infinite alternate; }
+  .slot img { display: block; width: 100%; height: 100%; object-fit: cover; animation: fade 0.4s ease-out; }
+  .slot.selected { outline-color: var(--accent); }
+  .slot .pick { position: absolute; left: 8px; top: 8px; padding: 0 8px; border-radius: 9999px; background: rgb(0 0 0 / 0.6); font: 600 11px/20px var(--sans); color: #fff; }
+  .empty { display: grid; place-items: center; grid-column: 1 / -1; color: var(--faint); text-align: center; }
+  .bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  #saved { padding: 0 8px; font-size: 13px; color: var(--muted); }
+  #saved a { color: var(--fg); font-weight: 500; }
+  .stage { display: grid; place-items: center; padding: 12px; }
+  .phone { position: relative; display: grid; place-items: center; height: min(100%, 640px); aspect-ratio: 9 / 16; overflow: hidden; border-radius: 28px; background: #110f1a center / cover no-repeat; color: #f2f1ef; box-shadow: 0 0 0 6px #0a0a0a; }
+  .phone::before { content: ""; position: absolute; inset: 0; background: rgb(10 8 16 / 0.35); }
+  .phone.clear::before { display: none; }
+  .phone video { position: absolute; inset: 0; z-index: 2; width: 100%; height: 100%; object-fit: cover; }
+  .phone-note { position: relative; z-index: 1; display: grid; justify-items: center; gap: 6px; padding: 0 22px; text-align: center; color: rgb(242 241 239 / 0.8); }
+  .phone-title { margin: 0; font-size: 20px; line-height: 26px; font-weight: 800; text-transform: uppercase; color: #fff; }
+  .phone-percent { font: 500 36px/40px var(--sans); color: #fff; font-variant-numeric: tabular-nums; }
+  .persona { display: grid; gap: 8px; padding: 12px; border-radius: 12px; background: var(--card); }
+  .persona .write-row { display: flex; gap: 6px; }
+  .persona .write-row input { flex: 1; min-width: 0; }
+  .persona details { display: grid; gap: 8px; }
+  .persona summary { font-size: 13px; font-weight: 500; color: var(--muted); cursor: pointer; }
+  .persona details[open] summary { margin-bottom: 8px; }
+  .persona details label + label { margin-top: 8px; }
+  .views { display: flex; gap: 4px; }
+  .views button { height: 30px; padding: 0 12px; border-radius: 9999px; color: var(--muted); font-size: 13px; font-weight: 500; }
+  .views button:hover { color: var(--fg); }
+  .views button[aria-pressed="true"] { background: var(--secondary); color: var(--fg); }
+  .lines { flex: 1; display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+  .lines .row { display: flex; gap: 8px; }
+  .lines .row input { flex: 1; min-width: 0; height: 36px; padding: 0 14px; border: 1px solid var(--border); border-radius: 9999px; font: 14px var(--sans); outline: none; }
+  .lines .row input:focus { border-color: var(--fg); }
+  .samples { flex: 1; display: grid; align-content: start; gap: 10px; min-height: 0; margin: 0; padding: 0; overflow: auto; list-style: none; }
+  .sample { display: grid; gap: 8px; padding: 14px 16px; border-radius: 14px; background: var(--card); animation: fade 0.3s ease-out; }
+  .sample.working { min-height: 104px; animation: pulse 1s ease-in-out infinite alternate; }
+  .sample .about { margin: 0; font-size: 12px; line-height: 17px; color: var(--faint); }
+  .sample .line { margin: 0; font-size: 17px; line-height: 25px; font-weight: 500; letter-spacing: -0.01em; }
+  .sample .buttons { display: flex; gap: 6px; }
+  .lines .empty { display: block; margin: 0; text-align: left; }
+
+  @media (max-width: 1100px) {
+    .surface { height: auto; }
+    .workspace { grid-template-columns: minmax(0, 1fr); }
+    .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); container-type: normal; }
+    .phone { height: 70vh; }
+  }
+</style>
+</head>
+<body>
+<header class="site">
+  <a class="logo" href="https://x.ai" target="_blank" rel="noopener" aria-label="SpaceXSI"><svg viewBox="0 7.4 24 9.2" aria-hidden="true"><path d="M24 7.417C8.882 8.287 1.89 14.75.321 16.28L0 16.583h2.797C10.356 9.005 21.222 7.663 24 7.417zm-17.046 6.35c-.472.321-.945.68-1.398 1.02l2.457 1.796h2.778zM2.948 10.8H.189l3.25 2.381c.473-.321 1.02-.661 1.512-.945Z"/></svg></a>
+  <nav class="crumbs"><span>Cookbook</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg><a href="/">Grok Shorts</a><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg><h1>Presenter Studio</h1></nav>
+  <nav class="tabs" aria-label="Pages">
+    <a href="/">Create</a>
+    <a href="/videos">Your Videos</a>
+    <a href="/library">Library</a>
+    <a href="/apps">Apps</a>
+    <a href="/studio" aria-current="page">Presenter Studio</a>
+    <a href="/brand">Brand Kit</a>
+  </nav>
+  <a class="pill pill-secondary pill-sm" href="https://github.com/xai-org/xai-cookbook/tree/main/examples/grok-shorts" target="_blank" rel="noopener">View Code</a>
+</header>
+
+<main class="surface">
+  <form id="invent" class="toolbar">
+    <input id="idea" class="field" aria-label="Idea" placeholder="An idea, like a pirate who became a staff engineer, or leave it empty">
+    <span id="summary">Describe someone, or start from a video of them, give them a personality, then draw portraits and film a screen test</span>
+    <button id="surprise" class="pill pill-secondary">Surprise me</button>
+  </form>
+
+  <div class="workspace">
+    <form id="form" class="panel form">
+      <label>Start from<select id="start"></select></label>
+      <div class="from-video" id="from-video">
+        <p class="label">Start from a video of them <span>(optional)</span></p>
+        <label class="pick"><input type="file" id="source" accept="video/*" hidden><span class="pill pill-secondary pill-sm" id="choose">Choose a video</span><span class="chosen" id="chosen">or drop one here</span></label>
+        <label class="at">Copy the person talking at <input id="at" placeholder="0:02" autocomplete="off"></label>
+        <p class="hint">Leave it empty to copy whoever talks the most.</p>
+        <label class="check"><input type="checkbox" id="consent"> This is me, or I have their permission to use their face and voice.</label>
+        <label class="check"><input type="checkbox" id="clone" checked> Clone their voice from the video</label>
+        <button type="button" id="use-video" class="pill pill-secondary pill-sm" disabled>Use this video</button>
+        <audio id="sample" controls hidden></audio>
+      </div>
+      <p class="label">Presenter</p>
+      <label>Name<input id="name" required placeholder="Barnaby"></label>
+      <label>Look<textarea id="look" rows="4" placeholder="A weathered man in his late forties with a gray ponytail, a gold hoop earring, and a faded black hoodie"></textarea></label>
+      <label>Where they film<textarea id="room" rows="2" required placeholder="a home office with rope knots and a ship wheel on the wall"></textarea></label>
+      <label>Voice<span class="voice-row"><select id="voice"></select><button type="button" id="hear" class="pill pill-secondary pill-sm">Hear</button></span></label>
+      <div class="persona">
+        <label>Personality<select id="personality"></select></label>
+        <div class="write-row"><input id="persona-idea" aria-label="Idea or X handle" placeholder="Write one from an idea, or an X handle to copy"><button type="button" id="write" class="pill pill-secondary pill-sm">Write it</button></div>
+        <details id="persona-details">
+          <summary>How they talk and act</summary>
+          <label>Name<input id="p-name" placeholder="Pirate staff engineer"></label>
+          <label>In a sentence<input id="p-about" placeholder="A retired buccaneer who reviews code like charting a course through a storm"></label>
+          <label>How they talk<textarea id="p-style" rows="5" placeholder="Salty and theatrical, with sea talk for everything: bugs are leaks, releases are voyages."></textarea></label>
+          <label>How they act on camera<textarea id="p-delivery" rows="3" placeholder="Leans into the lens with one eye squinted, big sweeping gestures."></textarea></label>
+        </details>
+      </div>
+      <label>Screen test line<input id="line" placeholder="I traded the helm for pull requests, and this bug still mutinied."></label>
+      <div class="actions"><button id="draw" class="pill pill-primary">Draw four portraits</button></div>
+    </form>
+
+    <section class="panel portraits">
+      <div class="views" id="views"><button type="button" data-view="portraits" aria-pressed="true">Portraits</button><button type="button" data-view="lines" aria-pressed="false">How they sound</button></div>
+      <p class="label" data-pane="portraits">Portraits<span id="pick-note"></span></p>
+      <div class="grid" id="grid" data-pane="portraits"><p class="empty">Describe a presenter, click Surprise me, or start from a video of them, then draw four portraits and pick one. Every take in the video starts from it.</p></div>
+      <div class="lines" data-pane="lines" hidden>
+        <div class="row"><input id="topic" aria-label="Topic" placeholder="A topic to try the personality on, or leave it empty"><button type="button" id="try" class="pill pill-secondary pill-sm">Try it out</button></div>
+        <ol class="samples" id="samples"><p class="empty">Grok writes a few lines in their personality, to hear in their voice or film in a screen test, acted the way the personality says.</p></ol>
+      </div>
+      <div class="bar">
+        <button type="button" id="test" class="pill pill-secondary" disabled>Screen test</button>
+        <button type="button" id="save" class="pill pill-primary" disabled>Save presenter</button>
+        <span id="saved"></span>
+      </div>
+    </section>
+
+    <section class="panel stage">
+      <div class="phone" id="phone">
+        <video id="video" playsinline controls hidden></video>
+        <div class="phone-note" id="phone-note"><p class="phone-title">Screen test</p>Pick a portrait, then film a few seconds of them saying the line.</div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  let portraits = [];
+  let picked = -1;
+  // After a video is read, the grid shows frames from it, and the one picked is the likeness the portraits are drawn from.
+  let frames = [];
+  let likeness = null;
+  // Every presenter and personality there is, the presenter being changed, if it's one already saved or built in, and
+  // whether their personality was changed here, so it's saved as one of yours.
+  let presenters = [];
+  let personalities = [];
+  let editing = "";
+  let personaEdited = false;
+
+  Promise.all([fetch("/api/options").then((response) => response.json()), fetch("/api/personalities/list").then((response) => response.json())]).then(([options, list]) => {
+    presenters = options.presenters;
+    personalities = list;
+    showPresenters();
+    showPersonalities("hype");
+    fillPersona(personalities.find((each) => each.id === "hype"));
+    // Another page can open the studio on a presenter, to change them.
+    const asked = new URLSearchParams(location.search).get("presenter");
+    if (presenters.some(({ id }) => id === asked)) {
+      $("start").value = asked;
+      $("start").onchange();
+    }
+  });
+
+  const optgroup = (label, options) => {
+    const group = Object.assign(document.createElement("optgroup"), { label });
+    group.append(...options);
+    return group;
+  };
+
+  function showPresenters(selected = "") {
+    $("start").replaceChildren(new Option("A new presenter", ""), optgroup("Presenters", presenters.map(({ id, name, personalityName }) => new Option(`${name} · ${personalityName}`, id))));
+    $("start").value = selected;
+  }
+
+  // The built-in personalities, then yours, then a new one to write.
+  function showPersonalities(selected) {
+    const option = ({ id, name, summary }) => Object.assign(new Option(name, id), { title: summary });
+    const yours = personalities.filter((each) => each.custom).map(option);
+    $("personality").replaceChildren(optgroup("Built in", personalities.filter((each) => !each.custom).map(option)), ...(yours.length ? [optgroup("Yours", yours)] : []), new Option("A new personality", ""));
+    $("personality").value = selected;
+  }
+
+  function fillPersona({ name = "", summary = "", style = "", delivery = "" } = {}) {
+    $("p-name").value = name;
+    $("p-about").value = summary;
+    $("p-style").value = style;
+    $("p-delivery").value = delivery;
+    personaEdited = false;
+  }
+
+  function persona() {
+    return { name: $("p-name").value, summary: $("p-about").value, style: $("p-style").value, delivery: $("p-delivery").value };
+  }
+
+  // A presenter already there opens with everything about them, their portrait, and their personality, to change any of
+  // it. Their name, voice, and personality can be saved without drawing new portraits.
+  $("start").onchange = () => {
+    const presenter = presenters.find(({ id }) => id === $("start").value);
+    editing = presenter?.id ?? "";
+    portraits = [];
+    picked = -1;
+    frames = [];
+    likeness = null;
+    $("saved").textContent = "";
+    for (const field of ["name", "look", "room"]) $(field).value = presenter?.[field] ?? "";
+    if (presenter) $("voice").value = presenter.voice;
+    const personality = presenter?.personality ?? "hype";
+    showPersonalities(personalities.some(({ id }) => id === personality) ? personality : "");
+    fillPersona(personalities.find(({ id }) => id === personality));
+    $("grid").replaceChildren(Object.assign(document.createElement("p"), { className: "empty", textContent: presenter ? "Their portrait is in the phone. Draw four new ones to change how they look." : "Describe a presenter, click Surprise me, or start from a video of them, then draw four portraits and pick one." }));
+    $("phone").style.backgroundImage = presenter?.portrait ? `url("${presenter.portrait}")` : "";
+    $("phone").classList.toggle("clear", Boolean(presenter?.portrait));
+    $("video").hidden = true;
+    $("phone-note").hidden = Boolean(presenter?.portrait);
+    updateButtons();
+  };
+
+  $("personality").onchange = () => {
+    fillPersona(personalities.find(({ id }) => id === $("personality").value));
+    if (!$("personality").value) $("persona-details").open = true;
+  };
+  for (const field of ["p-name", "p-about", "p-style", "p-delivery"]) $(field).oninput = () => (personaEdited = true);
+
+  // Grok writes a personality from the idea, copies an X account's style, or makes one up.
+  $("persona-idea").oninput = () => ($("write").textContent = /^@|(?:x|twitter)\.com\//i.test($("persona-idea").value.trim()) ? "Copy their style" : "Write it");
+  $("write").onclick = () => writePersona($("persona-idea").value, $("write"));
+  async function writePersona(idea, button) {
+    await busy(button, /^@/.test(idea.trim()) ? "Reading their posts…" : "Writing…", async () => {
+      fillPersona(await post("/api/personalities/write", { idea }));
+      $("personality").value = "";
+      personaEdited = true;
+      $("persona-details").open = true;
+    });
+  }
+
+  // Portraits, or how they sound: a few lines Grok writes in their personality, to hear or film.
+  $("views").onclick = (event) => {
+    const button = event.target.closest("button");
+    if (!button) return;
+    $("views").querySelectorAll("button").forEach((each) => each.setAttribute("aria-pressed", String(each === button)));
+    document.querySelectorAll("[data-pane]").forEach((pane) => (pane.hidden = pane.dataset.pane !== button.dataset.view));
+  };
+  $("try").onclick = async () => {
+    $("samples").replaceChildren(...Array.from({ length: 3 }, () => Object.assign(document.createElement("li"), { className: "sample working" })));
+    const tried = await busy($("try"), "Writing lines…", async () => {
+      const { lines } = await post("/api/personalities/lines", { ...persona(), topic: $("topic").value });
+      $("samples").replaceChildren(...lines.map(sample));
+    });
+    if (!tried) $("samples").replaceChildren();
+  };
+
+  function sample({ about, line }) {
+    const item = Object.assign(document.createElement("li"), { className: "sample" });
+    item.innerHTML = `<p class="about"></p><p class="line"></p><div class="buttons"><button type="button" class="pill pill-secondary pill-sm hear">Hear it</button><button type="button" class="pill pill-secondary pill-sm film">Screen test</button></div>`;
+    item.querySelector(".about").textContent = `${about[0].toUpperCase()}${about.slice(1)}`;
+    item.querySelector(".line").textContent = line;
+    item.querySelector(".hear").onclick = () => new Audio(`/api/studio/voice?${new URLSearchParams({ voice: $("voice").value, text: line })}`).play();
+    item.querySelector(".film").onclick = () => screenTest(line);
+    return item;
+  }
+
+  const videoReady = () => ($("use-video").disabled = !$("source").files.length || !$("consent").checked);
+  // The chosen video's name goes next to the button, which then offers to choose another.
+  const showChosen = () => {
+    const file = $("source").files[0];
+    $("chosen").textContent = file ? file.name : "or drop one here";
+    $("chosen").classList.toggle("picked", Boolean(file));
+    $("choose").textContent = file ? "Choose another" : "Choose a video";
+    videoReady();
+  };
+  $("source").onchange = showChosen;
+  $("consent").onchange = videoReady;
+  // A video dropped anywhere on its box is chosen the same way.
+  const dropBox = $("from-video");
+  dropBox.ondragover = (event) => {
+    if (!event.dataTransfer.types.includes("Files")) return;
+    event.preventDefault();
+    dropBox.classList.add("dropping");
+  };
+  dropBox.ondragleave = (event) => {
+    if (!dropBox.contains(event.relatedTarget)) dropBox.classList.remove("dropping");
+  };
+  dropBox.ondrop = (event) => {
+    event.preventDefault();
+    dropBox.classList.remove("dropping");
+    const video = [...event.dataTransfer.files].find((file) => file.type.startsWith("video/"));
+    if (!video) return;
+    const chosen = new DataTransfer();
+    chosen.items.add(video);
+    $("source").files = chosen.files;
+    showChosen();
+  };
+
+  // The video goes to the server as is. It finds who talks the most, takes their voice and four frames of them, describes
+  // them, and clones the voice if asked.
+  $("use-video").onclick = async () => {
+    const file = $("source").files[0];
+    const query = new URLSearchParams({ consent: "yes", clone: $("clone").checked ? "yes" : "no", name: $("name").value, filename: file.name });
+    // "0:02", "1:05", or "2" all work: each part before a colon counts sixty of the next.
+    if ($("at").value.trim()) query.set("at", String($("at").value.trim().split(":").reduce((total, part) => total * 60 + Number(part), 0)));
+    $("grid").replaceChildren(...Array.from({ length: 4 }, () => Object.assign(document.createElement("div"), { className: "slot working" })));
+    await busy($("use-video"), "Reading the video…", async () => {
+      const response = await fetch(`/api/studio/video?${query}`, { method: "POST", body: file });
+      const read = await response.json();
+      if (!response.ok) throw new Error(read.error ?? `The server answered ${response.status}`);
+      $("look").value = read.look;
+      $("room").value = read.room;
+      $("sample").src = read.sample;
+      $("sample").hidden = false;
+      if (read.voice) {
+        $("voice").prepend(new Option("Their voice, cloned from the video", read.voice));
+        $("voice").value = read.voice;
+      }
+      if (read.voiceError) alert(read.voiceError);
+      frames = read.frames;
+      showFrames();
+    });
+  };
+
+  function showFrames() {
+    picked = -1;
+    portraits = [];
+    $("pick-note").textContent = " · frames from the video: pick the best likeness, then draw four portraits from it";
+    $("grid").replaceChildren(
+      ...frames.map((url, index) => {
+        const slot = document.createElement("button");
+        slot.type = "button";
+        slot.className = "slot";
+        slot.innerHTML = `<img alt="Frame ${index + 1}"><span class="pick">frame ${index + 1}</span>`;
+        slot.querySelector("img").src = url;
+        slot.onclick = () => pickFrame(index);
+        return slot;
+      }),
+    );
+    pickFrame(0);
+  }
+
+  function pickFrame(index) {
+    likeness = frames[index];
+    $("grid").querySelectorAll(".slot").forEach((slot, each) => slot.classList.toggle("selected", each === index));
+    $("phone").style.backgroundImage = `url("${likeness}")`;
+    $("phone").classList.add("clear");
+    $("phone-note").hidden = true;
+    $("video").hidden = true;
+    updateButtons();
+  }
+
+  fetch("/api/studio/voices")
+    .then((response) => response.json())
+    .then((voices) => $("voice").replaceChildren(...voices.map(({ id, name, gender }) => new Option(`${name} (${gender})`, id))));
+
+  // Grok writes a presenter from the idea, or makes one up, and fills in the form, and writes them a personality to go
+  // with it.
+  $("invent").onsubmit = async (event) => {
+    event.preventDefault();
+    showPresenters();
+    $("start").onchange();
+    await busy($("surprise"), "Inventing…", async () => {
+      const draft = await post("/api/studio/invent", { idea: $("idea").value });
+      for (const field of ["name", "look", "room", "voice", "line"]) $(field).value = draft[field];
+      // A made-up presenter is drawn from their description, not from a frame of an earlier video.
+      frames = [];
+      likeness = null;
+      await writePersona(`${$("idea").value.trim() || draft.name}: ${draft.look}`, $("write"));
+    });
+  };
+
+  $("hear").onclick = () => {
+    const query = new URLSearchParams({ voice: $("voice").value, text: $("line").value || $("line").placeholder });
+    new Audio(`/api/studio/voice?${query}`).play();
+  };
+
+  $("form").onsubmit = async (event) => {
+    event.preventDefault();
+    picked = -1;
+    $("saved").textContent = "";
+    $("grid").replaceChildren(...Array.from({ length: 4 }, () => Object.assign(document.createElement("div"), { className: "slot working" })));
+    updateButtons();
+    const drawn = await busy($("draw"), "Drawing…", async () => {
+      ({ portraits } = await post("/api/studio/portraits", { look: $("look").value, room: $("room").value, likeness: likeness ?? "" }));
+      $("grid").replaceChildren(
+        ...portraits.map((url, index) => {
+          const slot = document.createElement("button");
+          slot.type = "button";
+          slot.className = "slot";
+          slot.innerHTML = `<img alt="Portrait ${index + 1}"><span class="pick">${index + 1}</span>`;
+          slot.querySelector("img").src = url;
+          slot.onclick = () => pick(index);
+          return slot;
+        }),
+      );
+      pick(0);
+    });
+    if (!drawn && frames.length) showFrames();
+    else if (!drawn) $("grid").replaceChildren();
+  };
+
+  function pick(index) {
+    picked = index;
+    $("grid").querySelectorAll(".slot").forEach((slot, each) => slot.classList.toggle("selected", each === index));
+    $("pick-note").textContent = ` · portrait ${index + 1}${likeness ? ", drawn from the frame you picked" : ""}`;
+    $("video").hidden = true;
+    $("phone").style.backgroundImage = `url("${portraits[index]}")`;
+    $("phone").classList.add("clear");
+    $("phone-note").hidden = true;
+    updateButtons();
+  }
+
+  // A few seconds of the presenter saying the line, acted the way their personality says, filmed by Grok Imagine from
+  // the portrait the same way the video's takes are: a new portrait picked here, or the saved one of a presenter being
+  // changed.
+  $("test").onclick = () => screenTest($("line").value || $("line").placeholder);
+  function screenTest(line) {
+    const buttons = [$("test"), ...document.querySelectorAll(".film")];
+    buttons.forEach((button) => (button.disabled = true));
+    $("video").hidden = true;
+    $("phone").classList.remove("clear");
+    note("Filming", "0%");
+    const delivery = $("p-delivery").value;
+    const events =
+      picked >= 0
+        ? new EventSource(`/api/studio/screen-test?${new URLSearchParams({ portrait: portraits[picked], voice: $("voice").value, room: $("room").value, line, delivery })}`)
+        : new EventSource(`/api/personalities/screen-test?${new URLSearchParams({ presenter: editing, delivery: delivery || "Friendly and natural.", line })}`);
+    const on = (name, handler) => events.addEventListener(name, (message) => handler(JSON.parse(message.data)));
+    const finish = () => {
+      events.close();
+      buttons.forEach((button) => (button.disabled = false));
+      updateButtons();
+    };
+    on("progress", ({ percent }) => note("Filming", `${percent}%`));
+    on("done", ({ video }) => {
+      $("video").src = video;
+      $("video").hidden = false;
+      $("phone-note").hidden = true;
+      $("video").play().catch(() => {});
+      finish();
+    });
+    on("failure", ({ message }) => {
+      alert(message);
+      note("Couldn't film it");
+      finish();
+    });
+    events.onerror = () => {
+      note("Lost the connection");
+      finish();
+    };
+  }
+
+  // A personality written or changed here is saved as one of yours first, and the presenter is saved with it.
+  $("save").onclick = async () => {
+    await busy($("save"), "Saving…", async () => {
+      let personality = $("personality").value;
+      if (!personality || personaEdited) {
+        const written = persona();
+        if (!written.name.trim() || !written.style.trim() || !written.delivery.trim()) throw new Error("Give their personality a name, how they talk, and how they act on camera.");
+        ({ id: personality } = await post("/api/personalities/save", written));
+        personalities = await (await fetch("/api/personalities/list")).json();
+        showPersonalities(personality);
+        personaEdited = false;
+      }
+      const { id } = await post("/api/studio/save", { id: editing, name: $("name").value, look: $("look").value, room: $("room").value, voice: $("voice").value, portrait: picked >= 0 ? portraits[picked] : "", personality });
+      presenters = (await (await fetch("/api/options")).json()).presenters;
+      showPresenters(id);
+      editing = id;
+      $("saved").innerHTML = `Saved. <a href="/?presenter=${encodeURIComponent(id)}">Create a video with ${escape($("name").value || id)} →</a>`;
+    });
+  };
+
+  function updateButtons() {
+    $("test").disabled = picked < 0 && !editing;
+    $("save").disabled = picked < 0 && !editing;
+  }
+
+  function note(title, percent = "") {
+    $("phone-note").hidden = false;
+    $("phone-note").innerHTML = `${percent ? `<span class="phone-percent">${percent}</span>` : ""}<p class="phone-title">${escape(title)}</p>`;
+  }
+
+  // Runs the work with the button showing what's happening, and says whether it worked.
+  async function busy(button, label, work) {
+    const text = button.textContent;
+    button.disabled = true;
+    button.textContent = label;
+    try {
+      await work();
+      return true;
+    } catch (error) {
+      alert(error.message);
+      return false;
+    } finally {
+      button.disabled = false;
+      button.textContent = text;
+    }
+  }
+
+  async function post(url, body) {
+    const response = await fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error ?? `The server answered ${response.status}`);
+    return data;
+  }
+
+  function escape(text) {
+    return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Apps · Grok Shorts</title>
+<style>
+  /* The look every SpaceXSI Cookbook page shares, after x.ai. */
+  :root {
+    --bg: #fff;
+    --card: #f9f8f6;
+    --secondary: #f2f1ef;
+    --secondary-hover: #e9e8e5;
+    --tint: rgb(10 10 10 / 0.04);
+    --line: rgb(10 10 10 / 0.08);
+    --border: rgb(10 10 10 / 0.15);
+    --fg: #0a0a0a;
+    --muted: rgb(10 10 10 / 0.6);
+    --faint: rgb(10 10 10 / 0.36);
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; font: 14px/22px var(--sans); background: var(--bg); color: var(--fg); -webkit-font-smoothing: antialiased; }
+  button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
+  a { color: inherit; }
+  svg { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  @keyframes fade { from { opacity: 0; } }
+
+  .site { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 12px; height: 52px; padding: 0 20px; background: rgb(255 255 255 / 0.85); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+  .logo { flex: none; margin-right: 4px; color: var(--fg); }
+  .logo svg { display: block; width: 52px; height: 20px; fill: currentColor; stroke: none; }
+  .crumbs { display: flex; align-items: center; gap: 8px; min-width: 0; color: var(--muted); white-space: nowrap; }
+  .crumbs svg { width: 12px; height: 12px; color: var(--faint); }
+  .crumbs a { text-decoration: none; }
+  .crumbs a:hover { color: var(--fg); }
+  .crumbs h1 { margin: 0; overflow: hidden; text-overflow: ellipsis; font-size: inherit; line-height: inherit; font-weight: 500; color: var(--fg); }
+  .site .pill { flex: none; margin-left: auto; }
+  .tabs + .pill { margin-left: 0; }
+  /* The menu is the same on every page, as tabs like the ones on x.ai/changelog, with the page you're on lit up. */
+  .tabs { flex: none; display: inline-flex; max-width: 100%; margin-left: auto; padding: 4px; overflow-x: auto; border: 1px solid rgb(10 10 10 / 0.1); border-radius: 9999px; scrollbar-width: none; }
+  .tabs a { display: inline-flex; flex: none; align-items: center; height: 32px; padding: 0 18px; border-radius: 9999px; color: var(--muted); font-size: 14px; font-weight: 500; line-height: 20px; white-space: nowrap; text-decoration: none; transition: color 0.2s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+  .tabs a:hover { color: var(--fg); }
+  .tabs a[aria-current="page"] { background: var(--fg); color: #fff; }
+  .pill { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 40px; padding: 0 18px; border-radius: 9999px; font-size: 14px; font-weight: 500; white-space: nowrap; text-decoration: none; }
+  .pill-sm { height: 32px; padding: 0 14px; font-size: 13px; }
+  .pill-primary { background: var(--fg); color: #fff; }
+  .pill-primary:hover { background: #202329; }
+  .pill-secondary { background: var(--secondary); color: var(--fg); }
+  .pill-secondary:hover { background: var(--secondary-hover); }
+  .pill:disabled { opacity: 0.4; cursor: default; }
+  .surface { display: grid; grid-template-columns: minmax(0, 1fr) 420px; gap: 8px; min-height: calc(100vh - 64px); margin: 0 12px 12px; padding: 8px; border-radius: 20px; background: var(--card); }
+  .panel { min-width: 0; padding: 20px 22px; border-radius: 16px; background: var(--bg); }
+  @media (max-width: 1100px) {
+    .crumbs > span, .crumbs > svg, .crumbs > a { display: none; }
+    .surface { grid-template-columns: minmax(0, 1fr); }
+  }
+  @media (max-width: 860px) {
+    .site { overflow-x: auto; }
+  }
+
+  /* Apps */
+  h2 { margin: 0 0 4px; font-size: 18px; line-height: 26px; font-weight: 500; }
+  .intro { margin: 0 0 18px; color: var(--muted); font-size: 13px; line-height: 19px; max-width: 640px; }
+  .list { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+  .source { display: grid; gap: 6px; padding: 14px 16px; border-radius: 14px; box-shadow: inset 0 0 0 1px var(--line); animation: fade 0.3s ease-out; }
+  .source.off { opacity: 0.55; }
+  .source .top { display: flex; align-items: center; gap: 10px; }
+  .source .name { margin: 0; font-weight: 500; }
+  .source .url { margin: 0; overflow: hidden; font: 12px/17px var(--mono); color: var(--faint); white-space: nowrap; text-overflow: ellipsis; }
+  .source .about { margin: 0; font-size: 13px; line-height: 19px; color: var(--muted); }
+  .source .tested { margin: 0; font-size: 12px; line-height: 17px; color: var(--muted); }
+  .source .buttons { display: flex; gap: 6px; margin-left: auto; }
+  .switch { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); cursor: pointer; }
+  .switch input { margin: 0; accent-color: var(--fg); }
+  .empty { margin: 0; color: var(--faint); }
+  form { display: flex; flex-direction: column; gap: 12px; }
+  form label { display: grid; gap: 4px; font-size: 13px; font-weight: 500; color: var(--muted); }
+  form input, form select { width: 100%; height: 40px; padding: 0 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg); color: var(--fg); font: 14px/20px var(--sans); outline: none; }
+  form input:focus, form select:focus { border-color: var(--fg); }
+  .hint { margin: -6px 0 0; font-size: 12px; line-height: 17px; color: var(--faint); }
+</style>
+</head>
+<body>
+<header class="site">
+  <a class="logo" href="https://x.ai" target="_blank" rel="noopener" aria-label="SpaceXSI"><svg viewBox="0 7.4 24 9.2" aria-hidden="true"><path d="M24 7.417C8.882 8.287 1.89 14.75.321 16.28L0 16.583h2.797C10.356 9.005 21.222 7.663 24 7.417zm-17.046 6.35c-.472.321-.945.68-1.398 1.02l2.457 1.796h2.778zM2.948 10.8H.189l3.25 2.381c.473-.321 1.02-.661 1.512-.945Z"/></svg></a>
+  <nav class="crumbs"><span>Cookbook</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg><a href="/">Grok Shorts</a><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg><h1>Apps</h1></nav>
+  <nav class="tabs" aria-label="Pages">
+    <a href="/">Create</a>
+    <a href="/videos">Your Videos</a>
+    <a href="/library">Library</a>
+    <a href="/apps" aria-current="page">Apps</a>
+    <a href="/studio">Presenter Studio</a>
+    <a href="/brand">Brand Kit</a>
+  </nav>
+  <a class="pill pill-secondary pill-sm" href="https://github.com/xai-org/xai-cookbook/tree/main/examples/grok-shorts" target="_blank" rel="noopener">View Code</a>
+</header>
+
+<main class="surface">
+  <section class="panel">
+    <h2>Connected apps</h2>
+    <p class="intro">Grok reads from these apps while it researches a video, through each one's MCP server. Paste a link from one of them, like a Slack thread, a GitHub issue, or a Notion doc, and Grok reads it there and makes the video about what it says. Tokens stay on this computer.</p>
+    <ul class="list" id="list"></ul>
+    <p class="empty" id="empty">Nothing connected yet. Connect an app on the right.</p>
+  </section>
+
+  <aside class="panel">
+    <h2>Connect an app</h2>
+    <form id="form">
+      <label>Start from<select id="preset"></select></label>
+      <label>Name<input id="name" maxlength="40" required placeholder="Slack"></label>
+      <label>Server address<input id="url" required placeholder="https://mcp.example.com/mcp"></label>
+      <label>What it has<input id="about" maxlength="200" placeholder="Slack channels, threads, and messages"></label>
+      <p class="hint">Grok reads this to know when to use it.</p>
+      <label>Token<input id="token" type="password" autocomplete="off" placeholder="Sent as its bearer token"></label>
+      <p class="hint" id="token-hint">Leave it empty for a server that doesn't need one, or to keep the one saved.</p>
+      <label>Only these tools<input id="tools" placeholder="Every tool it has, or a few, like search_messages, get_thread"></label>
+      <button class="pill pill-primary">Connect</button>
+    </form>
+  </aside>
+</main>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  let presets = [];
+
+  async function load() {
+    const { sources, presets: starts } = await (await fetch("/api/sources")).json();
+    presets = starts;
+    $("preset").replaceChildren(...presets.map(({ name }, index) => new Option(name, index)), new Option("Another MCP server", ""));
+    $("preset").onchange();
+    draw(sources);
+  }
+
+  $("preset").onchange = () => {
+    const preset = presets[$("preset").value] ?? { name: "", url: "", about: "", token: "" };
+    $("name").value = preset.name;
+    $("url").value = preset.url;
+    $("about").value = preset.about;
+    $("token-hint").textContent = preset.token ? `${preset.token}. Leave it empty to keep the one saved.` : "Leave it empty for a server that doesn't need one, or to keep the one saved.";
+  };
+
+  function draw(sources) {
+    $("empty").hidden = sources.length > 0;
+    $("list").replaceChildren(
+      ...sources.map((source) => {
+        const item = Object.assign(document.createElement("li"), { className: `source${source.enabled ? "" : " off"}` });
+        item.innerHTML = `<div class="top"><p class="name"></p><label class="switch"><input type="checkbox"> On</label><div class="buttons"><button type="button" class="pill pill-secondary pill-sm" data-act="test">Test</button><button type="button" class="pill pill-secondary pill-sm" data-act="remove">Remove</button></div></div><p class="url"></p><p class="about"></p><p class="tested" hidden></p>`;
+        item.querySelector(".name").textContent = source.name;
+        item.querySelector(".url").textContent = `${source.url}${source.token ? " · token saved" : ""}${source.tools?.length ? ` · only ${source.tools.join(", ")}` : ""}`;
+        item.querySelector(".about").textContent = source.about;
+        const toggle = item.querySelector("input");
+        toggle.checked = source.enabled;
+        toggle.onchange = async () => {
+          await save({ ...source, token: "", enabled: toggle.checked });
+          item.classList.toggle("off", !toggle.checked);
+        };
+        item.querySelector('[data-act="test"]').onclick = async (event) => {
+          const button = event.target;
+          const tested = item.querySelector(".tested");
+          Object.assign(button, { disabled: true, textContent: "Testing…" });
+          const result = await (await fetch("/api/sources/test", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ id: source.id }) })).json();
+          Object.assign(button, { disabled: false, textContent: "Test" });
+          tested.hidden = false;
+          tested.textContent = result.error ?? `Grok can reach it, with ${result.tools.length} tools: ${result.tools.slice(0, 12).join(", ")}${result.tools.length > 12 ? ", and more" : ""}.`;
+        };
+        item.querySelector('[data-act="remove"]').onclick = async () => {
+          if (!confirm(`Disconnect ${source.name}? Its token is deleted too.`)) return;
+          await fetch("/api/sources/remove", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ id: source.id }) });
+          load();
+        };
+        return item;
+      }),
+    );
+  }
+
+  async function save(source) {
+    const response = await fetch("/api/sources", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(source) });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error);
+    return result.source;
+  }
+
+  $("form").onsubmit = async (event) => {
+    event.preventDefault();
+    try {
+      await save({ name: $("name").value, url: $("url").value, about: $("about").value, token: $("token").value, tools: $("tools").value, enabled: true });
+      $("token").value = "";
+      $("tools").value = "";
+      load();
+    } catch (error) {
+      alert(error.message);
+    }
+  };
+
+  load();
+</script>
+</body>
+</html>

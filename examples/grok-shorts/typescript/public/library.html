@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Library · Grok Shorts</title>
+<style>
+  /* The look every SpaceXSI Cookbook page shares, after x.ai. */
+  :root {
+    --bg: #fff;
+    --card: #f9f8f6;
+    --secondary: #f2f1ef;
+    --secondary-hover: #e9e8e5;
+    --tint: rgb(10 10 10 / 0.04);
+    --line: rgb(10 10 10 / 0.08);
+    --border: rgb(10 10 10 / 0.15);
+    --fg: #0a0a0a;
+    --muted: rgb(10 10 10 / 0.6);
+    --faint: rgb(10 10 10 / 0.36);
+    --accent: #ff6308;
+    --accent-soft: rgb(255 99 8 / 0.1);
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; font: 14px/22px var(--sans); background: var(--bg); color: var(--fg); -webkit-font-smoothing: antialiased; }
+  button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
+  a { color: inherit; }
+  svg { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  @keyframes fade { from { opacity: 0; } }
+  @keyframes pulse { to { background-color: var(--secondary-hover); } }
+
+  .site { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 12px; height: 52px; padding: 0 20px; background: rgb(255 255 255 / 0.85); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+  .logo { flex: none; margin-right: 4px; color: var(--fg); }
+  .logo svg { display: block; width: 52px; height: 20px; fill: currentColor; stroke: none; }
+  .crumbs { display: flex; align-items: center; gap: 8px; min-width: 0; color: var(--muted); white-space: nowrap; }
+  .crumbs svg { width: 12px; height: 12px; color: var(--faint); }
+  .crumbs a { text-decoration: none; }
+  .crumbs a:hover { color: var(--fg); }
+  .crumbs h1 { margin: 0; overflow: hidden; text-overflow: ellipsis; font-size: inherit; line-height: inherit; font-weight: 500; color: var(--fg); }
+  .site .pill { flex: none; margin-left: auto; }
+  .tabs + .pill { margin-left: 0; }
+  /* The menu is the same on every page, as tabs like the ones on x.ai/changelog, with the page you're on lit up. */
+  .tabs { flex: none; display: inline-flex; max-width: 100%; margin-left: auto; padding: 4px; overflow-x: auto; border: 1px solid rgb(10 10 10 / 0.1); border-radius: 9999px; scrollbar-width: none; }
+  .tabs a { display: inline-flex; flex: none; align-items: center; height: 32px; padding: 0 18px; border-radius: 9999px; color: var(--muted); font-size: 14px; font-weight: 500; line-height: 20px; white-space: nowrap; text-decoration: none; transition: color 0.2s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+  .tabs a:hover { color: var(--fg); }
+  .tabs a[aria-current="page"] { background: var(--fg); color: #fff; }
+  .pill { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 40px; padding: 0 18px; border-radius: 9999px; font-size: 14px; font-weight: 500; white-space: nowrap; text-decoration: none; cursor: pointer; }
+  .pill-sm { height: 32px; padding: 0 14px; font-size: 13px; }
+  .pill-primary { background: var(--fg); color: #fff; }
+  .pill-primary:hover { background: #202329; }
+  .pill-secondary { background: var(--secondary); color: var(--fg); }
+  .pill-secondary:hover { background: var(--secondary-hover); }
+  .pill:disabled { opacity: 0.4; cursor: default; }
+  .surface { display: flex; flex-direction: column; gap: 8px; min-height: calc(100vh - 64px); margin: 0 12px 12px; padding: 8px; border-radius: 20px; background: var(--card); }
+  @media (max-width: 1100px) {
+    .crumbs > span, .crumbs > svg, .crumbs > a { display: none; }
+  }
+  @media (max-width: 860px) {
+    .site { overflow-x: auto; }
+  }
+  @media (max-width: 640px) {
+    .site { padding: 0 16px; }
+    .surface { margin: 0 8px 8px; }
+  }
+
+  /* Library */
+  .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 8px 8px 12px; border-radius: 16px; background: var(--bg); }
+  .filters { display: inline-flex; gap: 4px; }
+  .filters button { height: 32px; padding: 0 14px; border-radius: 9999px; color: var(--muted); font-size: 13px; font-weight: 500; }
+  .filters button:hover { color: var(--fg); }
+  .filters button[aria-pressed="true"] { background: var(--secondary); color: var(--fg); }
+  #summary { flex: 1; min-width: 200px; color: var(--faint); font-size: 13px; }
+  .shelf { flex: 1; padding: 20px 22px; border-radius: 16px; background: var(--bg); transition: box-shadow 0.15s; }
+  .shelf.over { box-shadow: inset 0 0 0 2px var(--fg); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; }
+  .asset { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; min-width: 0; animation: fade 0.3s ease-out; }
+  .asset .media { position: relative; display: grid; place-items: center; aspect-ratio: 4 / 3; overflow: hidden; border-radius: 14px; background: var(--secondary); }
+  .asset.working .media { animation: pulse 1s ease-in-out infinite alternate; }
+  .asset .media img, .asset .media video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .asset .media img { object-position: top; }
+  /* A gray checkerboard behind images, so a white logo shows as well as a dark screenshot. */
+  .asset .media.contain { background: repeating-conic-gradient(#cfcdc9 0% 25%, #bdbbb7 0% 50%) 50% / 18px 18px; }
+  .asset .media.contain img { object-fit: contain; object-position: center; }
+  .asset .media audio { width: calc(100% - 24px); }
+  .asset .media .note { position: absolute; top: 14px; left: 14px; font-size: 28px; }
+  .asset .kind { position: absolute; left: 8px; bottom: 8px; height: 22px; padding: 0 8px; border-radius: 9999px; background: rgb(0 0 0 / 0.55); color: #fff; font-size: 11px; font-weight: 600; line-height: 22px; }
+  .asset .about { display: flex; align-items: start; justify-content: space-between; gap: 8px; }
+  .asset .about > div { min-width: 0; }
+  .asset .name { margin: 0; overflow: hidden; font-weight: 500; white-space: nowrap; text-overflow: ellipsis; }
+  .asset .detail { margin: 0; font-size: 12px; line-height: 17px; color: var(--faint); }
+  .asset .remove { flex: none; width: 28px; height: 28px; border-radius: 8px; color: var(--faint); font-size: 16px; }
+  .asset .remove:hover { background: var(--secondary); color: var(--fg); }
+  .empty { display: grid; justify-items: center; gap: 10px; max-width: 460px; margin: 12vh auto; text-align: center; color: var(--muted); }
+  .empty h2 { margin: 0; font-size: 18px; line-height: 26px; color: var(--fg); }
+  .empty p { margin: 0; }
+</style>
+</head>
+<body>
+<header class="site">
+  <a class="logo" href="https://x.ai" target="_blank" rel="noopener" aria-label="SpaceXSI"><svg viewBox="0 7.4 24 9.2" aria-hidden="true"><path d="M24 7.417C8.882 8.287 1.89 14.75.321 16.28L0 16.583h2.797C10.356 9.005 21.222 7.663 24 7.417zm-17.046 6.35c-.472.321-.945.68-1.398 1.02l2.457 1.796h2.778zM2.948 10.8H.189l3.25 2.381c.473-.321 1.02-.661 1.512-.945Z"/></svg></a>
+  <nav class="crumbs"><span>Cookbook</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg><a href="/">Grok Shorts</a><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg><h1>Library</h1></nav>
+  <nav class="tabs" aria-label="Pages">
+    <a href="/">Create</a>
+    <a href="/videos">Your Videos</a>
+    <a href="/library" aria-current="page">Library</a>
+    <a href="/apps">Apps</a>
+    <a href="/studio">Presenter Studio</a>
+    <a href="/brand">Brand Kit</a>
+  </nav>
+  <a class="pill pill-secondary pill-sm" href="https://github.com/xai-org/xai-cookbook/tree/main/examples/grok-shorts" target="_blank" rel="noopener">View Code</a>
+</header>
+
+<main class="surface">
+  <div class="toolbar">
+    <div class="filters" id="filters">
+      <button type="button" data-kind="" aria-pressed="true">All</button>
+      <button type="button" data-kind="image" aria-pressed="false">Images</button>
+      <button type="button" data-kind="video" aria-pressed="false">Videos</button>
+      <button type="button" data-kind="audio" aria-pressed="false">Music</button>
+    </div>
+    <span id="summary">Grok can show your images and videos in any video it writes, and you can put one on a segment yourself. Music plays under a video.</span>
+    <label class="pill pill-primary">Upload<input type="file" id="file" multiple accept="image/png,image/jpeg,image/webp,video/mp4,video/quicktime,video/webm,audio/mpeg,audio/mp4,audio/x-m4a,audio/wav" hidden></label>
+  </div>
+
+  <section class="shelf" id="shelf">
+    <ul class="grid" id="grid"></ul>
+    <div class="empty" id="empty" hidden>
+      <h2>Your library is empty</h2>
+      <p>Upload screenshots of your product, logos, clips you filmed, or music you have the rights to. Or drop them anywhere here.</p>
+    </div>
+  </section>
+</main>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  let assets = [];
+  let showing = "";
+
+  const KINDS = { image: "Image", video: "Video", audio: "Music" };
+
+  fetch("/api/library").then((response) => response.json()).then((library) => {
+    assets = library.assets;
+    draw();
+  });
+
+  function draw() {
+    const shown = assets.filter((asset) => !showing || asset.kind === showing);
+    $("grid").replaceChildren(...shown.map(card));
+    $("empty").hidden = assets.length > 0;
+  }
+
+  function card(asset) {
+    const item = Object.assign(document.createElement("li"), { className: "asset" });
+    item.innerHTML = `<div class="media"><span class="kind"></span></div><div class="about"><div><p class="name"></p><p class="detail"></p></div><button type="button" class="remove" aria-label="Delete">×</button></div>`;
+    const media = item.querySelector(".media");
+    item.querySelector(".kind").textContent = KINDS[asset.kind];
+    item.querySelector(".name").textContent = asset.name;
+    item.querySelector(".name").title = asset.name;
+    item.querySelector(".detail").textContent = detail(asset);
+    if (asset.kind === "image") {
+      // A screenshot taller than it's wide fills the tile from its top. Anything else, like a logo, is shown whole.
+      if (!(asset.height > asset.width)) media.classList.add("contain");
+      media.prepend(Object.assign(document.createElement("img"), { src: asset.url, alt: asset.name, loading: "lazy" }));
+    }
+    if (asset.kind === "video") {
+      const clip = Object.assign(document.createElement("video"), { src: asset.url, poster: asset.thumb ?? "", muted: true, loop: true, playsInline: true, preload: "none" });
+      media.prepend(clip);
+      media.onmouseenter = () => clip.play().catch(() => {});
+      media.onmouseleave = () => clip.pause();
+    }
+    if (asset.kind === "audio") {
+      media.prepend(Object.assign(document.createElement("span"), { className: "note", textContent: "🎵" }), Object.assign(document.createElement("audio"), { src: asset.url, controls: true, preload: "none" }));
+    }
+    item.querySelector(".remove").onclick = async () => {
+      if (!confirm(`Delete “${asset.name}”? A video that shows it gets a picture in its place the next time it's filmed.`)) return;
+      const response = await fetch("/api/library/remove", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ id: asset.id }) });
+      if (!response.ok) return alert((await response.json()).error);
+      assets = assets.filter((each) => each !== asset);
+      draw();
+    };
+    return item;
+  }
+
+  function detail({ kind, width, height, duration, size }) {
+    const parts = [];
+    if (width) parts.push(`${width} × ${height}`);
+    if (duration) parts.push(`${Math.floor(duration / 60)}:${String(Math.round(duration % 60)).padStart(2, "0")}`);
+    parts.push(size > 1024 * 1024 ? `${(size / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(size / 1024))} KB`);
+    return parts.join(" · ");
+  }
+
+  // Uploads go up one at a time, each shown as it's working, and land at the front of the library.
+  async function uploadAll(files) {
+    for (const file of files) {
+      const working = Object.assign(document.createElement("li"), { className: "asset working" });
+      working.innerHTML = `<div class="media"></div><div class="about"><div><p class="name"></p><p class="detail">Uploading…</p></div></div>`;
+      working.querySelector(".name").textContent = file.name;
+      $("grid").prepend(working);
+      $("empty").hidden = true;
+      const response = await fetch(`/api/library/upload?name=${encodeURIComponent(file.name.replace(/\.\w+$/, ""))}`, { method: "POST", headers: { "content-type": file.type }, body: file });
+      const result = await response.json();
+      working.remove();
+      if (!response.ok) {
+        alert(`${file.name}: ${result.error}`);
+        continue;
+      }
+      assets = [result.asset, ...assets];
+      draw();
+    }
+  }
+  $("file").onchange = () => {
+    uploadAll([...$("file").files]);
+    $("file").value = "";
+  };
+  $("shelf").ondragover = (event) => {
+    event.preventDefault();
+    $("shelf").classList.add("over");
+  };
+  $("shelf").ondragleave = () => $("shelf").classList.remove("over");
+  $("shelf").ondrop = (event) => {
+    event.preventDefault();
+    $("shelf").classList.remove("over");
+    uploadAll([...event.dataTransfer.files]);
+  };
+
+  $("filters").onclick = (event) => {
+    const button = event.target.closest("button");
+    if (!button) return;
+    showing = button.dataset.kind;
+    $("filters").querySelectorAll("button").forEach((each) => each.setAttribute("aria-pressed", String(each === button)));
+    draw();
+  };
+</script>
+</body>
+</html>

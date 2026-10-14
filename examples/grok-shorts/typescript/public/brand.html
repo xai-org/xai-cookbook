@@ -1,0 +1,482 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Brand Kit · Grok Shorts</title>
+<style>
+  /* The look every SpaceXSI Cookbook page shares, after x.ai. */
+  :root {
+    --bg: #fff;
+    --card: #f9f8f6;
+    --secondary: #f2f1ef;
+    --secondary-hover: #e9e8e5;
+    --tint: rgb(10 10 10 / 0.04);
+    --line: rgb(10 10 10 / 0.08);
+    --border: rgb(10 10 10 / 0.15);
+    --fg: #0a0a0a;
+    --muted: rgb(10 10 10 / 0.6);
+    --faint: rgb(10 10 10 / 0.36);
+    --accent: #ff6308;
+    --accent-soft: rgb(255 99 8 / 0.1);
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; font: 14px/22px var(--sans); background: var(--bg); color: var(--fg); -webkit-font-smoothing: antialiased; }
+  button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
+  a { color: inherit; }
+  svg { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  @keyframes fade { from { opacity: 0; } }
+
+  .site { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 12px; height: 52px; padding: 0 20px; background: rgb(255 255 255 / 0.85); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+  .logo { flex: none; margin-right: 4px; color: var(--fg); }
+  .logo svg { display: block; width: 52px; height: 20px; fill: currentColor; stroke: none; }
+  .crumbs { display: flex; align-items: center; gap: 8px; min-width: 0; color: var(--muted); white-space: nowrap; }
+  .crumbs svg { width: 12px; height: 12px; color: var(--faint); }
+  .crumbs a { text-decoration: none; }
+  .crumbs a:hover { color: var(--fg); }
+  .crumbs h1 { margin: 0; overflow: hidden; text-overflow: ellipsis; font-size: inherit; line-height: inherit; font-weight: 500; color: var(--fg); }
+  .site .pill { flex: none; margin-left: auto; }
+  .tabs + .pill { margin-left: 0; }
+  /* The menu is the same on every page, as tabs like the ones on x.ai/changelog, with the page you're on lit up. */
+  .tabs { flex: none; display: inline-flex; max-width: 100%; margin-left: auto; padding: 4px; overflow-x: auto; border: 1px solid rgb(10 10 10 / 0.1); border-radius: 9999px; scrollbar-width: none; }
+  .tabs a { display: inline-flex; flex: none; align-items: center; height: 32px; padding: 0 18px; border-radius: 9999px; color: var(--muted); font-size: 14px; font-weight: 500; line-height: 20px; white-space: nowrap; text-decoration: none; transition: color 0.2s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+  .tabs a:hover { color: var(--fg); }
+  .tabs a[aria-current="page"] { background: var(--fg); color: #fff; }
+  .pill { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 40px; padding: 0 18px; border-radius: 9999px; font-size: 14px; font-weight: 500; white-space: nowrap; text-decoration: none; }
+  .pill-sm { height: 32px; padding: 0 14px; font-size: 13px; }
+  .pill-primary { background: var(--fg); color: #fff; }
+  .pill-primary:hover { background: #202329; }
+  .pill-secondary { background: var(--secondary); color: var(--fg); }
+  .pill-secondary:hover { background: var(--secondary-hover); }
+  .pill:disabled { opacity: 0.4; cursor: default; }
+  .surface { display: flex; flex-direction: column; gap: 8px; height: calc(100vh - 64px); min-height: 600px; margin: 0 12px 12px; padding: 8px; border-radius: 20px; background: var(--card); }
+  .panel { min-width: 0; padding: 20px 22px; border-radius: 16px; background: var(--bg); }
+  .label { margin: 0; font-size: 13px; font-weight: 500; color: var(--muted); }
+  @media (max-width: 1100px) {
+    .crumbs > span, .crumbs > svg, .crumbs > a { display: none; }
+  }
+  @media (max-width: 860px) {
+    .site { overflow-x: auto; }
+  }
+  @media (max-width: 640px) {
+    .site { padding: 0 16px; }
+    .surface { margin: 0 8px 8px; }
+  }
+
+  /* Brand Kit */
+  .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 8px 8px 16px; border-radius: 16px; background: var(--bg); }
+  .from-site { display: flex; align-items: center; gap: 6px; }
+  .from-site input { width: 220px; height: 32px; padding: 0 14px; border: 1px solid var(--border); border-radius: 9999px; background: var(--bg); color: var(--fg); font: 13px/18px var(--sans); outline: none; }
+  .from-site input:focus { border-color: var(--fg); }
+  #summary { flex: 1; color: var(--faint); font-size: 13px; }
+  #saved { font-size: 13px; color: var(--muted); }
+  .workspace { flex: 1; display: grid; grid-template-columns: 400px minmax(0, 1fr); gap: 8px; min-height: 0; }
+  .form { display: flex; flex-direction: column; gap: 18px; overflow: auto; }
+  .group { display: grid; gap: 10px; }
+  .group + .group { padding-top: 18px; border-top: 1px solid var(--line); }
+  .form label { display: grid; gap: 4px; font-size: 13px; font-weight: 500; color: var(--muted); }
+  .form input[type="text"], .form select { width: 100%; height: 40px; padding: 0 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg); color: var(--fg); font: 14px/20px var(--sans); outline: none; }
+  .form input[type="text"]:focus, .form select:focus { border-color: var(--fg); }
+  .form .hint { margin: 0; font-size: 12px; line-height: 17px; color: var(--faint); }
+  .check { display: flex !important; align-items: center; gap: 10px !important; color: var(--fg) !important; font-weight: 500; cursor: pointer; }
+  .check input { width: 16px; height: 16px; margin: 0; accent-color: var(--fg); }
+  .drop { display: flex; align-items: center; gap: 14px; padding: 12px; border: 1px dashed var(--border); border-radius: 14px; }
+  .drop.over { border-color: var(--fg); background: var(--tint); }
+  .drop .shown { display: grid; place-items: center; flex: none; width: 96px; height: 56px; overflow: hidden; border-radius: 10px; background: #1b1a22; color: rgb(255 255 255 / 0.5); font-size: 11px; }
+  .drop .shown img { max-width: 84px; max-height: 44px; }
+  .drop .buttons { display: flex; flex-wrap: wrap; gap: 6px; }
+  .swatches { display: flex; flex-wrap: wrap; gap: 10px; }
+  .swatch { display: grid; justify-items: center; gap: 4px; font-size: 12px; color: var(--faint); }
+  .swatch input[type="color"] { width: 52px; height: 52px; padding: 0; border: 0; border-radius: 14px; background: none; cursor: pointer; }
+  .swatch input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+  .swatch input[type="color"]::-webkit-color-swatch { border: 1px solid var(--line); border-radius: 14px; }
+  .swatch.off input[type="color"] { opacity: 0.25; }
+  .swatch button { font-size: 12px; color: var(--muted); }
+  .swatch button:hover { color: var(--fg); }
+  .fonts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+  .fonts button { height: 44px; padding: 0 12px; overflow: hidden; border-radius: 12px; box-shadow: inset 0 0 0 1px var(--line); font-size: 17px; text-align: left; white-space: nowrap; text-overflow: ellipsis; }
+  .fonts button:hover { background: var(--tint); }
+  .fonts button[aria-pressed="true"] { box-shadow: inset 0 0 0 2px var(--fg); }
+
+  .previews { display: flex; flex-direction: column; gap: 14px; min-height: 0; }
+  .phones { flex: 1; display: flex; justify-content: center; align-items: center; gap: 28px; min-height: 0; }
+  .shot { display: flex; flex-direction: column; align-items: center; gap: 10px; height: 100%; min-height: 0; }
+  .shot p { flex: none; margin: 0; font-size: 13px; color: var(--muted); }
+  .phone { position: relative; flex: 1; min-height: 0; max-height: 620px; aspect-ratio: 9 / 16; overflow: hidden; border-radius: 28px; background: #1b1a22 center / cover no-repeat; box-shadow: 0 0 0 6px #0a0a0a; container-type: size; }
+  .phone::after { content: ""; position: absolute; inset: 0; background: linear-gradient(rgb(0 0 0 / 0.45), transparent 28%, transparent 70%, rgb(0 0 0 / 0.5)); }
+  .phone > * { position: absolute; z-index: 1; }
+  .bars { top: 1.6cqh; left: 4.6cqw; right: 4.6cqw; display: flex; gap: 1.4cqw; }
+  .bars span { flex: 1; height: 0.55cqh; border-radius: 9999px; background: rgb(255 255 255 / 0.3); }
+  .tag { top: 3.1cqh; left: 4.6cqw; padding: 0.7cqh 2cqw; border-radius: 9999px; background: rgb(0 0 0 / 0.45); color: #fff; font: 600 2.8cqw/1.3 var(--sans); }
+  .mark { top: 2.9cqh; right: 4.6cqw; display: flex; align-items: center; height: 2.9cqh; }
+  .mark img { max-width: 20cqw; max-height: 100%; opacity: 0.92; filter: drop-shadow(0 1px 3px rgb(0 0 0 / 0.35)); }
+  .sticker { top: 6.8cqh; left: 4.6cqw; display: flex; align-items: center; gap: 2cqw; height: 3.4cqh; padding: 0 2.2cqw; border-radius: 9999px; font-size: 3.7cqw; font-weight: 900; letter-spacing: 0.01em; white-space: nowrap; }
+  .caption { bottom: 7cqh; left: 4cqw; right: 4cqw; text-align: center; font-size: 8.4cqw; font-weight: 900; line-height: 1.05; text-transform: uppercase; -webkit-text-stroke: 0.5cqw #000; paint-order: stroke fill; }
+  .caption b { display: inline-block; margin: 0 0.25em; }
+  .caption.pop b { transform: scale(1.12); }
+  .caption.box b { padding: 0 1.4cqw; border-radius: 1.6cqw; -webkit-text-stroke: 0; }
+  .caption.underline b { color: inherit !important; box-shadow: 0 1.2cqw 0 -0.1cqw var(--c); }
+  .caption.single { font-size: 12cqw; }
+  .sticker.block { border-radius: 0.4cqw; box-shadow: 0.9cqw 0.9cqw 0 #000; }
+  .sticker.tape { border-radius: 0; transform: rotate(-2deg); }
+  .sticker.outline { background: rgb(0 0 0 / 0.55) !important; box-shadow: inset 0 0 0 0.5cqw var(--c); color: var(--c) !important; border-radius: 1.6cqw; }
+  .sticker.underline { padding: 0; background: none !important; color: #fff !important; border-radius: 0; box-shadow: 0 0.9cqw 0 var(--c); -webkit-text-stroke: 0.3cqw #000; paint-order: stroke fill; }
+  .end { inset: 0; z-index: 2; display: grid; place-content: center; justify-items: center; gap: 3cqh; padding: 0 8cqw; background: #0b0b0f; text-align: center; }
+  .end img { max-width: 52cqw; max-height: 17cqh; }
+  .end .name { margin: 0; color: #fff; font-size: 6cqw; font-weight: 900; line-height: 1.1; }
+  .end .line { margin: 0; padding: 1.4cqh 3.6cqw; border-radius: 9999px; font-size: 4.4cqw; font-weight: 800; }
+  .phone.off { opacity: 0.35; }
+
+  @media (max-width: 1100px) {
+    .surface { height: auto; }
+    .workspace { grid-template-columns: minmax(0, 1fr); }
+    .phones { height: 70vh; }
+  }
+</style>
+</head>
+<body>
+<header class="site">
+  <a class="logo" href="https://x.ai" target="_blank" rel="noopener" aria-label="SpaceXSI"><svg viewBox="0 7.4 24 9.2" aria-hidden="true"><path d="M24 7.417C8.882 8.287 1.89 14.75.321 16.28L0 16.583h2.797C10.356 9.005 21.222 7.663 24 7.417zm-17.046 6.35c-.472.321-.945.68-1.398 1.02l2.457 1.796h2.778zM2.948 10.8H.189l3.25 2.381c.473-.321 1.02-.661 1.512-.945Z"/></svg></a>
+  <nav class="crumbs"><span>Cookbook</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg><a href="/">Grok Shorts</a><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg><h1>Brand Kit</h1></nav>
+  <nav class="tabs" aria-label="Pages">
+    <a href="/">Create</a>
+    <a href="/videos">Your Videos</a>
+    <a href="/library">Library</a>
+    <a href="/apps">Apps</a>
+    <a href="/studio">Presenter Studio</a>
+    <a href="/brand" aria-current="page">Brand Kit</a>
+  </nav>
+  <a class="pill pill-secondary pill-sm" href="https://github.com/xai-org/xai-cookbook/tree/main/examples/grok-shorts" target="_blank" rel="noopener">View Code</a>
+</header>
+
+<main class="surface">
+  <div class="toolbar">
+    <form class="from-site" id="from-site">
+      <input type="text" id="site" placeholder="Your website, like x.ai" aria-label="Website" autocomplete="url">
+      <button class="pill pill-secondary pill-sm" id="read-site">Fill from website</button>
+    </form>
+    <span id="summary">Your brand goes on every video you make from here on, and on any you film again.</span>
+    <span id="saved"></span>
+    <button type="button" id="save" class="pill pill-primary">Save Brand Kit</button>
+  </div>
+
+  <div class="workspace">
+    <form id="form" class="panel form">
+      <div class="group">
+        <label>Name<input type="text" id="name" maxlength="40" placeholder="Your name, or your brand's, like SpaceXSI Research"></label>
+        <div class="drop" id="drop">
+          <div class="shown" id="logo-shown">No logo</div>
+          <div>
+            <div class="buttons">
+              <button type="button" id="upload" class="pill pill-secondary pill-sm">Upload a logo</button>
+              <button type="button" id="remove" class="pill pill-secondary pill-sm" hidden>Remove</button>
+            </div>
+            <p class="hint">A PNG, JPEG, or WebP. A transparent PNG looks best. Or drop it here.</p>
+          </div>
+          <input type="file" id="file" accept="image/png,image/jpeg,image/webp" hidden>
+        </div>
+      </div>
+
+      <div class="group">
+        <p class="label">Colors</p>
+        <div class="swatches" id="swatches"></div>
+        <p class="hint">Each segment takes the next color for its sticker, the word being said, its bar along the top, and the ring around the presenter in a bubble.</p>
+        <label class="check"><input type="checkbox" id="glow">Make the colors glow</label>
+      </div>
+
+      <div class="group">
+        <p class="label">Font, for the hook, captions, stickers, and stamp</p>
+        <div class="fonts" id="fonts"></div>
+        <label>Look<select id="look"></select></label>
+        <p class="hint">How the stickers, captions, and ending are drawn and move, taken from one of the built-in themes, in your colors and font.</p>
+      </div>
+
+      <div class="group">
+        <label class="check"><input type="checkbox" id="watermark" checked>Put the logo in the corner of every frame</label>
+        <label class="check"><input type="checkbox" id="end-on" checked>End every video with a card</label>
+        <label>Call to action on the end card<input type="text" id="end-line" maxlength="60" placeholder="Follow @xai for more"></label>
+      </div>
+
+      <div class="group">
+        <p class="label">New videos start with</p>
+        <label>Presenter<select id="presenter"></select></label>
+      </div>
+    </form>
+
+    <section class="panel previews">
+      <p class="label">How it looks</p>
+      <div class="phones">
+        <div class="shot">
+          <div class="phone" id="frame">
+            <div class="bars" id="bars"></div>
+            <span class="tag">Why Manpreet left</span>
+            <span class="mark" id="mark"><img alt=""></span>
+            <span class="sticker" id="sticker">THE HOOK 🔥</span>
+            <p class="caption" id="caption"></p>
+          </div>
+          <p>Every frame</p>
+        </div>
+        <div class="shot">
+          <div class="phone" id="end">
+            <div class="end">
+              <img id="end-logo" alt="">
+              <p class="name" id="end-name"></p>
+              <p class="line" id="end-cta"></p>
+            </div>
+          </div>
+          <p>The end card, for 2.5 seconds after the last line</p>
+        </div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  const DEFAULT = { name: "", colors: ["#ffdd00"], text: "#ffffff", font: "heavy", glow: false, watermark: true, endCard: { on: true, line: "" } };
+  const SPARE = ["#3ee6ff", "#ff4fa3"];
+  let brand = DEFAULT;
+  let fonts = [];
+  let looks = [];
+  let presenters = [];
+  // Three swatches: the first color is always used, and the other two can be turned on and off.
+  let colors = [];
+  // A logo read off a website, as a data URL, shown in the preview and saved with the rest by Save Brand Kit.
+  let pendingLogo;
+
+  fetch("/api/brand").then((response) => response.json()).then((kit) => {
+    // The fonts that come with the app, like Inter, so the preview draws them the way the video will.
+    for (const { family, weight, url } of kit.faces) {
+      const face = new FontFace(family, `url("${url}")`, { weight: String(weight) });
+      document.fonts.add(face);
+      face.load().catch(() => {});
+    }
+    fonts = kit.fonts;
+    looks = kit.looks;
+    presenters = kit.presenters;
+    brand = kit.brand ?? DEFAULT;
+    $("look").replaceChildren(...looks.map(({ id, name, style }) => new Option(`${name}: ${lookOf(style)}`, id)));
+    $("presenter").replaceChildren(...presenters.map(({ id, name, personalityName }) => new Option(`${name} · ${personalityName}`, id)));
+    fill(brand);
+  });
+
+  function fill(saved) {
+    $("name").value = saved.name;
+    colors = [0, 1, 2].map((index) => ({ value: saved.colors[index] ?? SPARE[index - 1] ?? "#ffffff", on: index === 0 || Boolean(saved.colors[index]) }));
+    $("glow").checked = saved.glow;
+    $("watermark").checked = saved.watermark;
+    $("end-on").checked = saved.endCard.on;
+    $("end-line").value = saved.endCard.line;
+    $("look").value = saved.look ?? "pop";
+    if (saved.presenter) $("presenter").value = saved.presenter;
+    showLogo(saved.logo);
+    drawSwatches();
+    drawFonts(saved.font);
+    preview();
+  }
+
+  function drawSwatches() {
+    const names = ["Main", "Second", "Third"];
+    $("swatches").replaceChildren(
+      ...colors.map((color, index) => {
+        const swatch = Object.assign(document.createElement("div"), { className: `swatch${color.on ? "" : " off"}` });
+        const input = Object.assign(document.createElement("input"), { type: "color", value: color.value, title: `${names[index]} color` });
+        input.oninput = () => {
+          Object.assign(color, { value: input.value, on: true });
+          swatch.classList.remove("off");
+          preview();
+        };
+        swatch.append(input);
+        if (index === 0) swatch.append(Object.assign(document.createElement("span"), { textContent: names[index] }));
+        else {
+          const toggle = Object.assign(document.createElement("button"), { type: "button", textContent: color.on ? `${names[index]} ×` : `+ ${names[index]}` });
+          toggle.onclick = () => {
+            color.on = !color.on;
+            drawSwatches();
+            preview();
+          };
+          swatch.append(toggle);
+        }
+        return swatch;
+      }),
+    );
+  }
+
+  function drawFonts(picked) {
+    $("fonts").replaceChildren(
+      ...fonts.map(({ id, name, stack }) => {
+        const button = Object.assign(document.createElement("button"), { type: "button", textContent: name });
+        button.style.fontFamily = stack;
+        button.style.fontWeight = "900";
+        button.setAttribute("aria-pressed", String(id === picked));
+        button.dataset.id = id;
+        button.onclick = () => {
+          $("fonts").querySelectorAll("button").forEach((each) => each.setAttribute("aria-pressed", String(each === button)));
+          preview();
+        };
+        return button;
+      }),
+    );
+  }
+
+  // The brand kit as it is on the page, saved or not.
+  function current() {
+    return {
+      name: $("name").value.trim(),
+      colors: colors.filter((color) => color.on).map((color) => color.value),
+      text: "#ffffff",
+      font: $("fonts").querySelector('[aria-pressed="true"]')?.dataset.id ?? "heavy",
+      glow: $("glow").checked,
+      look: $("look").value || "pop",
+      watermark: $("watermark").checked,
+      endCard: { on: $("end-on").checked, line: $("end-line").value.trim() },
+      presenter: $("presenter").value,
+    };
+  }
+
+  // A look in a few words: its stickers, how it picks out the word being said, and how it ends.
+  function lookOf({ sticker, caption, stamp }) {
+    const stickers = { pill: "rounded stickers", tape: "taped labels", block: "blocks with a hard shadow", outline: "outlines on dark glass", underline: "underlined labels" };
+    const captions = { pop: "the word popping out", box: "the word boxed", underline: "the word underlined", karaoke: "karaoke captions", single: "one word at a time" };
+    const stamps = { stamp: "a stamp", badge: "a badge", banner: "a banner", outline: "outlined words" };
+    return `${stickers[sticker]}, ${captions[caption]}, ending on ${stamps[stamp]}`;
+  }
+
+  // Near black or white, whichever stands out more on `color`, the way the video picks the ink for its stickers.
+  function inkOn(color) {
+    const [r, g, b] = [1, 3, 5].map((at) => parseInt(color.slice(at, at + 2), 16) / 255).map((c) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
+    const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b + 0.05;
+    return luminance / 0.0556 >= 1.05 / luminance ? "#111" : "#fff";
+  }
+
+  // A frame and the end card the way the video draws them, in the brand's colors and font, over the default presenter.
+  function preview() {
+    const kit = current();
+    const stack = fonts.find((font) => font.id === kit.font)?.stack ?? "inherit";
+    const [first] = kit.colors;
+    const glow = (color) => (kit.glow ? `0 0 2.4cqw ${color}, 0 0 5cqw ${color}` : "none");
+    const portrait = presenters.find((each) => each.id === kit.presenter)?.portrait;
+    $("frame").style.backgroundImage = portrait ? `url("${portrait}")` : "";
+    $("bars").replaceChildren(...[0, 1, 2, 3, 4].map((index) => {
+      const bar = document.createElement("span");
+      if (index < 2) bar.style.background = kit.colors[index % kit.colors.length];
+      return bar;
+    }));
+    const style = looks.find((look) => look.id === kit.look)?.style ?? { sticker: "pill", caption: "pop" };
+    $("sticker").className = `sticker ${style.sticker}`;
+    $("sticker").style.cssText = "";
+    $("sticker").style.setProperty("--c", first);
+    Object.assign($("sticker").style, { background: first, color: inkOn(first), fontFamily: stack, filter: kit.glow ? `drop-shadow(0 0 1.6cqw ${first})` : "" });
+    $("caption").className = `caption ${style.caption}`;
+    $("caption").style.fontFamily = stack;
+    $("caption").style.color = kit.text;
+    $("caption").style.setProperty("--c", first);
+    const said = Object.assign(document.createElement("b"), { textContent: "brand" });
+    Object.assign(said.style, style.caption === "box" ? { background: first, color: inkOn(first) } : { color: first, textShadow: glow(first) });
+    if (style.caption === "single") $("caption").replaceChildren(said);
+    else if (style.caption === "karaoke") {
+      const sung = Object.assign(document.createElement("span"), { textContent: "This is your " });
+      sung.style.color = first;
+      said.style.color = kit.text;
+      $("caption").replaceChildren(sung, said);
+    } else $("caption").replaceChildren("This is your ", said);
+    $("mark").hidden = !kit.watermark || !brand.logo;
+    $("end").classList.toggle("off", !kit.endCard.on);
+    $("end-name").textContent = kit.name;
+    $("end-name").style.fontFamily = stack;
+    $("end-cta").textContent = kit.endCard.line || "Follow for more";
+    Object.assign($("end-cta").style, { background: first, color: inkOn(first), fontFamily: stack, boxShadow: glow(first) });
+    $("end-logo").hidden = !brand.logo;
+  }
+  $("form").oninput = preview;
+  $("form").onchange = preview;
+  $("form").onsubmit = (event) => event.preventDefault();
+
+  function showLogo(url) {
+    brand = { ...brand, logo: url };
+    $("logo-shown").replaceChildren(url ? Object.assign(document.createElement("img"), { src: url, alt: "Your logo" }) : "No logo");
+    $("remove").hidden = !url;
+    $("mark").querySelector("img").src = url ?? "";
+    $("end-logo").src = url ?? "";
+    preview();
+  }
+
+  async function uploadLogo(file) {
+    if (!file) return;
+    $("saved").textContent = "Uploading the logo…";
+    const response = await fetch("/api/brand/logo", { method: "POST", headers: { "content-type": file.type }, body: file });
+    const result = await response.json();
+    $("saved").textContent = response.ok ? "Logo saved" : "";
+    if (!response.ok) return alert(result.error);
+    pendingLogo = undefined;
+    showLogo(result.brand.logo);
+  }
+  $("upload").onclick = () => $("file").click();
+  $("file").onchange = () => uploadLogo($("file").files[0]);
+  $("remove").onclick = async () => {
+    pendingLogo = undefined;
+    const response = await fetch("/api/brand/logo/remove", { method: "POST" });
+    if (!response.ok) return alert((await response.json()).error);
+    showLogo(undefined);
+  };
+  $("drop").ondragover = (event) => {
+    event.preventDefault();
+    $("drop").classList.add("over");
+  };
+  $("drop").ondragleave = () => $("drop").classList.remove("over");
+  $("drop").ondrop = (event) => {
+    event.preventDefault();
+    $("drop").classList.remove("over");
+    uploadLogo(event.dataTransfer.files[0]);
+  };
+
+  // Grok reads the brand off a website and fills in the form, logo and all, which shows in the preview until it's saved.
+  $("from-site").onsubmit = async (event) => {
+    event.preventDefault();
+    const site = $("site").value.trim();
+    if (!site) return $("site").focus();
+    $("read-site").disabled = true;
+    $("read-site").textContent = "Reading…";
+    $("saved").textContent = `Reading ${site}…`;
+    try {
+      const response = await fetch("/api/brand/website", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ url: site }) });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error);
+      const { name, colors, font, look, glow, line, note } = result.suggested;
+      if (result.logo) pendingLogo = result.logo;
+      fill({ ...current(), name, colors, font, look, glow, endCard: { on: $("end-on").checked, line }, logo: result.logo ?? brand.logo });
+      $("saved").textContent = `${note} Check it, then save.`;
+    } catch (error) {
+      $("saved").textContent = "";
+      alert(error.message);
+    } finally {
+      $("read-site").disabled = false;
+      $("read-site").textContent = "Fill from website";
+    }
+  };
+
+  $("save").onclick = async () => {
+    $("save").disabled = true;
+    if (pendingLogo) {
+      const uploaded = await fetch("/api/brand/logo", { method: "POST", headers: { "content-type": "image/png" }, body: await (await fetch(pendingLogo)).blob() });
+      if (!uploaded.ok) {
+        $("save").disabled = false;
+        return alert((await uploaded.json()).error);
+      }
+      pendingLogo = undefined;
+    }
+    const response = await fetch("/api/brand", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(current()) });
+    const result = await response.json();
+    $("save").disabled = false;
+    if (!response.ok) return alert(result.error);
+    brand = result.brand;
+    $("saved").replaceChildren("Saved. New videos start in it, and it's on every video you film from now on. ", Object.assign(document.createElement("a"), { href: "/", textContent: "Create a video" }));
+  };
+</script>
+</body>
+</html>

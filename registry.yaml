@@ -446,6 +446,28 @@
   level: advanced
   languages:
   - typescript
+- title: Grok Shorts
+  seo_title: 'AI Short Video Maker: Turn Any Idea into a Short with Grok Imagine'
+  path: examples/grok-shorts/README.md
+  icon: video
+  description: Turn a pull request or any idea into a TikTok-style video. Grok researches it and writes it with you in a chat, and a lifelike presenter films it.
+  date: 2026-10-07
+  authors:
+  - Eric Zakariasson
+  tags:
+  - structured-output
+  - streaming
+  - web-search
+  - x-data
+  - image-understanding
+  - image-generation
+  - video-generation
+  - speech-to-text
+  - text-to-speech
+  type: app
+  level: advanced
+  languages:
+  - typescript
 - title: Meeting to Action Items
   seo_title: 'AI Meeting Notes: Live Transcripts and Action Items with the Grok API'
   path: examples/meeting-to-action-items/README.md

@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Your Videos · Grok Shorts</title>
+<style>
+  /* The look every SpaceXSI Cookbook page shares, after x.ai. */
+  :root {
+    --bg: #fff;
+    --card: #f9f8f6;
+    --secondary: #f2f1ef;
+    --secondary-hover: #e9e8e5;
+    --tint: rgb(10 10 10 / 0.04);
+    --line: rgb(10 10 10 / 0.08);
+    --border: rgb(10 10 10 / 0.15);
+    --fg: #0a0a0a;
+    --muted: rgb(10 10 10 / 0.6);
+    --faint: rgb(10 10 10 / 0.36);
+    --accent: #ff6308;
+    --accent-soft: rgb(255 99 8 / 0.1);
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; font: 14px/22px var(--sans); background: var(--bg); color: var(--fg); -webkit-font-smoothing: antialiased; }
+  button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
+  a { color: inherit; }
+  svg { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  @keyframes fade { from { opacity: 0; } }
+
+  .site { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 12px; height: 52px; padding: 0 20px; background: rgb(255 255 255 / 0.85); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+  .logo { flex: none; margin-right: 4px; color: var(--fg); }
+  .logo svg { display: block; width: 52px; height: 20px; fill: currentColor; stroke: none; }
+  .crumbs { display: flex; align-items: center; gap: 8px; min-width: 0; color: var(--muted); white-space: nowrap; }
+  .crumbs svg { width: 12px; height: 12px; color: var(--faint); }
+  .crumbs a { text-decoration: none; }
+  .crumbs a:hover { color: var(--fg); }
+  .crumbs h1 { margin: 0; overflow: hidden; text-overflow: ellipsis; font-size: inherit; line-height: inherit; font-weight: 500; color: var(--fg); }
+  .site .pill { flex: none; margin-left: auto; }
+  .tabs + .pill { margin-left: 0; }
+  /* The menu is the same on every page, as tabs like the ones on x.ai/changelog, with the page you're on lit up. */
+  .tabs { flex: none; display: inline-flex; max-width: 100%; margin-left: auto; padding: 4px; overflow-x: auto; border: 1px solid rgb(10 10 10 / 0.1); border-radius: 9999px; scrollbar-width: none; }
+  .tabs a { display: inline-flex; flex: none; align-items: center; height: 32px; padding: 0 18px; border-radius: 9999px; color: var(--muted); font-size: 14px; font-weight: 500; line-height: 20px; white-space: nowrap; text-decoration: none; transition: color 0.2s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+  .tabs a:hover { color: var(--fg); }
+  .tabs a[aria-current="page"] { background: var(--fg); color: #fff; }
+  .pill { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 40px; padding: 0 18px; border-radius: 9999px; font-size: 14px; font-weight: 500; white-space: nowrap; text-decoration: none; }
+  .pill-sm { height: 32px; padding: 0 14px; font-size: 13px; }
+  .pill-primary { background: var(--fg); color: #fff; }
+  .pill-primary:hover { background: #202329; }
+  .pill-secondary { background: var(--secondary); color: var(--fg); }
+  .pill-secondary:hover { background: var(--secondary-hover); }
+  .surface { display: flex; flex-direction: column; gap: 8px; height: calc(100vh - 64px); min-height: 560px; margin: 0 12px 12px; padding: 8px; border-radius: 20px; background: var(--card); }
+  .panel { min-width: 0; padding: 20px 22px; border-radius: 16px; background: var(--bg); }
+  .label { margin: 0; font-size: 13px; font-weight: 500; color: var(--muted); }
+  @media (max-width: 1100px) {
+    .crumbs > span, .crumbs > svg, .crumbs > a { display: none; }
+  }
+  @media (max-width: 860px) {
+    .site { overflow-x: auto; }
+  }
+  @media (max-width: 640px) {
+    .site { padding: 0 16px; }
+    .surface { margin: 0 8px 8px; }
+  }
+
+  /* Your Videos */
+  .library { flex: 1; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); gap: 8px; min-height: 0; }
+  .gallery { display: flex; flex-direction: column; min-height: 0; padding: 0; overflow: hidden; }
+  .gallery .label { padding: 20px 22px 0; }
+  .grid { flex: 1; display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); align-content: start; gap: 18px 14px; min-height: 0; overflow: auto; padding: 14px 22px 22px; }
+  .card { display: grid; align-content: start; gap: 6px; padding: 0; text-align: left; animation: fade 0.3s ease-out; }
+  .thumb { position: relative; aspect-ratio: 9 / 16; overflow: hidden; border-radius: 12px; background: #110f1a; transition: box-shadow 0.15s; }
+  .card:hover .thumb { box-shadow: 0 0 0 2px var(--border); }
+  .card.selected .thumb { box-shadow: 0 0 0 3px var(--fg); }
+  .thumb video { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .draft { position: absolute; left: 8px; top: 8px; padding: 0 7px; border-radius: 9999px; background: rgb(255 255 255 / 0.9); color: #0a0a0a; font-size: 11px; font-weight: 600; line-height: 18px; }
+  .unfilmed { display: grid; place-items: center; width: 100%; height: 100%; padding: 12px; color: rgb(255 255 255 / 0.6); font-size: 12px; text-align: center; }
+  .length { position: absolute; right: 8px; bottom: 8px; padding: 0 7px; border-radius: 9999px; background: rgb(0 0 0 / 0.6); color: #fff; font-size: 11px; font-weight: 600; line-height: 18px; font-variant-numeric: tabular-nums; }
+  .card .title { display: -webkit-box; margin: 0; overflow: hidden; font-size: 13px; line-height: 18px; font-weight: 500; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  .card .meta { margin: 0; font-size: 12px; line-height: 16px; color: var(--faint); }
+  .empty { margin: 0; padding: 14px 22px; color: var(--muted); }
+
+  .viewer { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; min-height: 0; padding: 12px; }
+  .phone-area { display: grid; place-items: center; min-height: 0; container-type: size; }
+  .phone { width: min(100cqw, 100cqh * 9 / 16); aspect-ratio: 9 / 16; overflow: hidden; border-radius: 28px; background: #110f1a; box-shadow: 0 0 0 6px #0a0a0a; }
+  .phone video { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .details { display: flex; flex-direction: column; gap: 10px; min-height: 0; overflow: auto; padding: 8px 8px 8px 0; }
+  .details h2 { margin: 0; font-size: 18px; line-height: 24px; font-weight: 500; letter-spacing: -0.01em; }
+  .details .meta { margin: 0; font-size: 13px; line-height: 19px; color: var(--muted); }
+  .about { display: -webkit-box; margin: 0; overflow: hidden; font-size: 13px; line-height: 19px; color: var(--muted); overflow-wrap: anywhere; white-space: pre-line; -webkit-line-clamp: 4; -webkit-box-orient: vertical; }
+  .buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+  .transcript { margin: 0; padding: 12px 14px; border-radius: 12px; background: var(--card); color: var(--muted); font: 12px/19px var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; }
+  .folder { margin: 0; color: var(--faint); font: 11px/16px var(--mono); overflow-wrap: anywhere; }
+
+  @media (max-width: 900px) {
+    .surface { height: auto; }
+    .library { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; }
+    .viewer { order: -1; grid-template-columns: minmax(0, 1fr); }
+    .phone-area { height: 70vh; }
+    .grid { max-height: 70vh; }
+  }
+</style>
+</head>
+<body>
+<header class="site">
+  <a class="logo" href="https://x.ai" target="_blank" rel="noopener" aria-label="SpaceXSI"><svg viewBox="0 7.4 24 9.2" aria-hidden="true"><path d="M24 7.417C8.882 8.287 1.89 14.75.321 16.28L0 16.583h2.797C10.356 9.005 21.222 7.663 24 7.417zm-17.046 6.35c-.472.321-.945.68-1.398 1.02l2.457 1.796h2.778zM2.948 10.8H.189l3.25 2.381c.473-.321 1.02-.661 1.512-.945Z"/></svg></a>
+  <nav class="crumbs"><span>Cookbook</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg><a href="/">Grok Shorts</a><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg><h1>Your Videos</h1></nav>
+  <nav class="tabs" aria-label="Pages">
+    <a href="/">Create</a>
+    <a href="/videos" aria-current="page">Your Videos</a>
+    <a href="/library">Library</a>
+    <a href="/apps">Apps</a>
+    <a href="/studio">Presenter Studio</a>
+    <a href="/brand">Brand Kit</a>
+  </nav>
+  <a class="pill pill-secondary pill-sm" href="https://github.com/xai-org/xai-cookbook/tree/main/examples/grok-shorts" target="_blank" rel="noopener">View Code</a>
+</header>
+
+<main class="surface">
+  <div class="library">
+    <section class="panel gallery">
+      <p class="label">Your Videos <span id="count"></span></p>
+      <p class="empty" id="empty" hidden>No videos yet. <a href="/">Make one</a>, and it shows up here.</p>
+      <div class="grid" id="grid"></div>
+    </section>
+
+    <section class="panel viewer" id="viewer" hidden>
+      <div class="phone-area">
+        <div class="phone"><video id="player" controls playsinline></video></div>
+      </div>
+      <div class="details">
+        <p class="label" id="when"></p>
+        <h2 id="title"></h2>
+        <p class="meta" id="meta"></p>
+        <p class="about" id="about"></p>
+        <div class="buttons">
+          <a id="edit" class="pill pill-primary pill-sm" title="Open it with its script and conversation, add notes on the video, and make changes">Keep editing</a>
+          <a id="download" class="pill pill-secondary pill-sm" download>Download video</a>
+          <button type="button" id="copy" class="pill pill-secondary pill-sm">Copy transcript</button>
+        </div>
+        <pre class="transcript" id="transcript"></pre>
+        <p class="folder" id="folder"></p>
+      </div>
+    </section>
+  </div>
+</main>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  let videos = [];
+
+  // Every video in output/, newest first. The one named in the address, if any, plays first.
+  fetch("/api/videos")
+    .then((response) => response.json())
+    .then((list) => {
+      videos = list.map((video) => ({ ...video, card: card(video) }));
+      $("count").textContent = list.length ? `· ${list.length}` : "";
+      $("empty").hidden = list.length > 0;
+      $("grid").replaceChildren(...videos.map((video) => video.card));
+      const named = decodeURIComponent(location.hash.slice(1));
+      if (videos.length) show(videos.find((video) => folderName(video) === named) ?? videos[0]);
+    });
+
+  function card(video) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "card";
+    button.innerHTML = `<div class="thumb"><video muted playsinline preload="metadata"></video><span class="length"></span></div><p class="title"></p><p class="meta"></p>`;
+    // The thumbnail is the video itself, a moment in, and it plays without sound while the pointer is on it. A draft, like
+    // one from a batch, shows its preview, or that it isn't filmed yet.
+    const thumb = button.querySelector("video");
+    if (video.video) thumb.src = `${video.video}#t=1.5`;
+    else thumb.replaceWith(Object.assign(document.createElement("span"), { className: "unfilmed", textContent: "Written, not filmed yet" }));
+    if (video.draft) button.querySelector(".thumb").append(Object.assign(document.createElement("span"), { className: "draft", textContent: video.video ? "Preview" : "Draft" }));
+    button.querySelector(".length").textContent = video.duration ? clock(video.duration) : "";
+    button.querySelector(".length").hidden = !video.duration;
+    button.querySelector(".title").textContent = video.title;
+    button.querySelector(".meta").textContent = [video.presenter, when(video.made)].filter(Boolean).join(" · ");
+    button.onmouseenter = () => thumb.play().catch(() => {});
+    button.onmouseleave = () => {
+      thumb.pause();
+      thumb.currentTime = 1.5;
+    };
+    button.onclick = () => show(videos.find((each) => each.card === button));
+    return button;
+  }
+
+  function show(video) {
+    videos.forEach((each) => each.card.classList.toggle("selected", each === video));
+    $("viewer").hidden = false;
+    if (video.video) $("player").src = video.video;
+    else $("player").removeAttribute("src");
+    $("when").textContent = when(video.made);
+    $("title").textContent = video.title;
+    const state = video.draft ? (video.video ? "A preview, not filmed yet" : "Written, not filmed yet") : "";
+    $("meta").textContent = [state, video.presenter && `Presented by ${video.presenter}`, video.personality, video.duration && clock(video.duration), video.segments && `${video.segments} segments`].filter(Boolean).join(" · ");
+    $("download").hidden = Boolean(video.draft);
+    const link = /^https?:\/\//.test(video.about);
+    $("about").replaceChildren(link ? Object.assign(document.createElement("a"), { href: video.about, target: "_blank", rel: "noopener", textContent: video.about }) : video.about);
+    $("about").hidden = !video.about;
+    $("edit").href = `/?video=${encodeURIComponent(folderName(video))}`;
+    $("download").href = video.video;
+    $("download").download = `${folderName(video)}.mp4`;
+    $("copy").hidden = !video.transcript;
+    $("copy").onclick = async () => {
+      await navigator.clipboard.writeText(video.transcript);
+      $("copy").textContent = "Copied";
+      setTimeout(() => ($("copy").textContent = "Copy transcript"), 1500);
+    };
+    $("transcript").textContent = video.transcript;
+    $("transcript").hidden = !video.transcript;
+    $("folder").textContent = `Saved in ${video.folder}/`;
+    history.replaceState(null, "", `#${encodeURIComponent(folderName(video))}`);
+  }
+
+  function folderName(video) {
+    return video.folder.split("/").pop();
+  }
+
+  function clock(seconds) {
+    const whole = Math.round(seconds);
+    return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, "0")}`;
+  }
+
+  function when(time) {
+    return new Date(time).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+  }
+</script>
+</body>
+</html>
