@@ -4,7 +4,8 @@
   "scripts": {
     "dev": "nodemon --exec 'ts-node src/index.ts' --ext 'ts,js,json' --watch 'src'",
     "start": "ts-node src/index.ts",
-    "outbound": "ts-node src/outbound.ts"
+    "outbound": "ts-node src/outbound.ts",
+    "typecheck": "tsc --noEmit"
   },
   "version": "1.0.0",
   "dependencies": {
