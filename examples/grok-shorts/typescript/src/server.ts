@@ -879,10 +879,13 @@ function pathOf(url: string): string | undefined {
   return files.has(path) ? path : undefined;
 }
 
-// The message for a failure, which also goes in the server's log, where it's still there after the page has moved on.
+// The message for a failure, which also goes in the server's log, where it's still there after the page has moved on. A
+// failure with a cause, like a dropped connection, says only "fetch failed", so it's logged whole: its stack shows which
+// call it was, and its cause shows why.
 function failed(what: string, error: unknown): string {
   const message = error instanceof Error ? error.message : String(error);
   console.error(`${new Date().toLocaleTimeString()} ${what} failed: ${message}`);
+  if (error instanceof Error && error.cause) console.error(error);
   return message;
 }
 
