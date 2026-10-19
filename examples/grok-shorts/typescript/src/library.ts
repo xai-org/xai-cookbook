@@ -2,7 +2,8 @@ import { execFile } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import { createWriteStream, existsSync } from "node:fs";
 import { mkdir, readFile, rm, stat, writeFile } from "node:fs/promises";
-import type { IncomingMessage } from "node:http";
+import { extname } from "node:path";
+import type { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import { promisify } from "node:util";
 
@@ -38,16 +39,22 @@ export async function findAsset(id: string): Promise<Asset | undefined> {
   return (await listAssets()).find((asset) => asset.id === id);
 }
 
-// Saves an upload streamed from the page, up to 300 MB, and measures it: an image's size, or a video's or song's length
-// too. A file that isn't really what its type says is thrown away.
-export async function addAsset(req: IncomingMessage, name: string, type: string): Promise<Asset> {
+// The type of a file on disk, from its extension, for one that isn't streamed from the page with its type.
+export function typeOf(file: string): string {
+  const extension = extname(file).slice(1).toLowerCase().replace("jpeg", "jpg");
+  return Object.entries(TYPES).find(([, known]) => known.extension === extension)?.[0] ?? "";
+}
+
+// Saves an upload, streamed from the page or read from a file, up to 300 MB, and measures it: an image's size, or a video's
+// or song's length too. `size` is how big it says it is. A file that isn't really what its type says is thrown away.
+export async function addAsset(input: Readable, name: string, type: string, size = 0): Promise<Asset> {
   const known = TYPES[type.split(";")[0].trim()];
   if (!known) throw new Error("Upload a PNG, JPEG, or WebP image, an MP4, MOV, or WebM video, or MP3, M4A, or WAV audio.");
-  if (Number(req.headers["content-length"] ?? 0) > LIMIT) throw new Error("That file is too big. It has to be smaller than 300 MB.");
+  if (size > LIMIT) throw new Error("That file is too big. It has to be smaller than 300 MB.");
   await mkdir(DIR, { recursive: true });
   const id = `upload-${randomBytes(4).toString("hex")}`;
   const file = `${DIR}/${id}.${known.extension}`;
-  await pipeline(req, createWriteStream(file));
+  await pipeline(input, createWriteStream(file));
   const measured = await measure(file, known.kind).catch(async (error) => {
     await rm(file, { force: true });
     throw new Error(`That file couldn't be read, because ${error instanceof Error ? error.message : String(error)}.`);

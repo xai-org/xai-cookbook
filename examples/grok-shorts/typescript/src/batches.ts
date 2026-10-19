@@ -24,15 +24,16 @@ const WRITERS = 3;
 const MOST = 12;
 const running = new Map<string, Batch>();
 
-export async function startBatch(sources: string[], presenter: string, personality: string, preview: boolean, avoid: string[], adopt: Adopt): Promise<Batch> {
+// Starts a batch in the background. `done` settles once every script is written and previewed, for a caller that waits.
+export async function startBatch(sources: string[], presenter: string, personality: string, preview: boolean, avoid: string[], adopt: Adopt): Promise<{ batch: Batch; done: Promise<void> }> {
   const lines = sources.map((source) => source.trim()).filter(Boolean);
   if (!lines.length) throw new Error("Write one source on each line: a pull request, an idea, or a link.");
   if (lines.length > MOST) throw new Error(`A batch takes up to ${MOST} sources at a time.`);
   const batch: Batch = { id: randomUUID().slice(0, 8), made: Date.now(), presenter, personality, preview, items: lines.map((source) => ({ source, status: "waiting" })) };
   running.set(batch.id, batch);
   await saveBatch(batch);
-  run(batch, avoid, adopt).finally(() => running.delete(batch.id));
-  return batch;
+  const done = run(batch, avoid, adopt).finally(() => running.delete(batch.id));
+  return { batch, done };
 }
 
 // Every batch, newest first. One that was running when the server stopped says so on what it didn't finish.

@@ -198,7 +198,7 @@ async function batch(sent: Record<string, unknown>, res: ServerResponse): Promis
     return session;
   };
   const presenter = await findPresenter(String(sent.presenter || "maya"));
-  const started = await startBatch(lines, presenter.id, String(sent.personality || personalityOf(presenter)), Boolean(sent.preview), await recentThemes(), adopt);
+  const { batch: started } = await startBatch(lines, presenter.id, String(sent.personality || personalityOf(presenter)), Boolean(sent.preview), await recentThemes(), adopt);
   reply(res, 200, "application/json", JSON.stringify({ id: started.id }));
 }
 
@@ -241,7 +241,7 @@ async function library(res: ServerResponse): Promise<void> {
 }
 
 async function upload(url: URL, req: IncomingMessage, res: ServerResponse): Promise<void> {
-  const asset = await addAsset(req, url.searchParams.get("name") ?? "", req.headers["content-type"] ?? "");
+  const asset = await addAsset(req, url.searchParams.get("name") ?? "", req.headers["content-type"] ?? "", Number(req.headers["content-length"] ?? 0));
   reply(res, 200, "application/json", JSON.stringify({ asset: await shownAsset(asset) }));
 }
 
