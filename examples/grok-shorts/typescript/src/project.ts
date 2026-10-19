@@ -1,7 +1,7 @@
 import { execFile } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { existsSync } from "node:fs";
-import { copyFile, mkdir, readFile, stat, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, readFile, readdir, stat, writeFile } from "node:fs/promises";
 import { basename } from "node:path";
 import { promisify } from "node:util";
 import { createCanvas, loadImage } from "@napi-rs/canvas";
@@ -61,6 +61,22 @@ export async function newProject(draft: Draft, presenter: string): Promise<Proje
   const dir = dirOf(draft.source);
   const before = await loadProject(basename(dir)).catch(() => undefined);
   return { dir, presenter, draft, history: [], notes: [], cut: before?.cut };
+}
+
+// The themes of the last few videos, newest first, so a new one is told to look different from them.
+export async function recentThemes(count = 4): Promise<string[]> {
+  const folders = existsSync("output") ? await readdir("output", { withFileTypes: true }) : [];
+  const found = await Promise.all(
+    folders.map(async (folder) => {
+      const dir = `output/${folder.name}`;
+      const file = [`${dir}/project.json`, `${dir}/script.json`].find((each) => folder.isDirectory() && existsSync(each));
+      if (!file) return [];
+      const saved = JSON.parse(await readFile(file, "utf8"));
+      const theme: string | undefined = saved.draft?.theme ?? saved.theme;
+      return theme && theme !== "brand" ? [{ theme, made: (await stat(file)).mtimeMs }] : [];
+    }),
+  );
+  return [...new Set(found.flat().sort((a, b) => b.made - a.made).map(({ theme }) => theme))].slice(0, count);
 }
 
 // Opens a video in output/ by its folder's name. A video made before the app saved projects is rebuilt from what it

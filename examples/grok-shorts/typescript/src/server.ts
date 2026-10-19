@@ -11,7 +11,7 @@ import { brandFromWebsite } from "./website.ts";
 import { type Asset, addAsset, assetsBrief, findAsset, listAssets, removeAsset, thumbnail } from "./library.ts";
 import { inventPersonality, listPersonalities, parseHandle, personaFromX, sampleLines, savePersonality } from "./persona.ts";
 import { drawPortraits, drawPresenter, findFace, findPresenter, listPresenters, personalityOf, savePresenter } from "./presenter.ts";
-import { type Cut, type Note, type Project, addNote, archiveCurrent, changesSince, cutsOf, filmstrip, keepCut, loadProject, newProject, notesMessage, restoreCut, saveProject } from "./project.ts";
+import { type Cut, type Note, type Project, addNote, archiveCurrent, changesSince, cutsOf, filmstrip, keepCut, loadProject, newProject, notesMessage, recentThemes, restoreCut, saveProject } from "./project.ts";
 import { reviewCut } from "./review.ts";
 import { PRESETS, type Source, listSources, removeSource, saveSource, testSource } from "./sources.ts";
 import { DEFAULT_ON_SCREEN, DEFAULT_SOUND, type Layout, PLATFORMS, type Platform, type Question, hookOptions, moveSegment, publishText, moveSegmentTo, removeSegment, setLayout, setLine, setOnScreen, setSound, setTheme, setTrim, setUpload } from "./script.ts";
@@ -286,22 +286,6 @@ async function uploadVisual({ session: id = "", index = "", asset: assetId = "" 
   project.draft = setUpload(project.draft, Number(index), asset);
   await saveProject(project);
   reply(res, 200, "application/json", JSON.stringify({ segment: project.draft.segments[Number(index)] }));
-}
-
-// The themes of the last few videos, newest first, so a new one is told to look different from them.
-async function recentThemes(count = 4): Promise<string[]> {
-  const folders = existsSync("output") ? await readdir("output", { withFileTypes: true }) : [];
-  const found = await Promise.all(
-    folders.map(async (folder) => {
-      const dir = `output/${folder.name}`;
-      const file = [`${dir}/project.json`, `${dir}/script.json`].find((each) => folder.isDirectory() && existsSync(each));
-      if (!file) return [];
-      const saved = JSON.parse(await readFile(file, "utf8"));
-      const theme: string | undefined = saved.draft?.theme ?? saved.theme;
-      return theme && theme !== "brand" ? [{ theme, made: (await stat(file)).mtimeMs }] : [];
-    }),
-  );
-  return [...new Set(found.flat().sort((a, b) => b.made - a.made).map(({ theme }) => theme))].slice(0, count);
 }
 
 // Every video made so far, newest first, from the folders in output/, so they're still there after the server restarts.

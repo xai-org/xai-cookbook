@@ -8,6 +8,7 @@
   "scripts": {
     "start": "node --env-file-if-exists=../../../.env --experimental-strip-types --no-warnings=ExperimentalWarning src/index.ts",
     "web": "node --env-file-if-exists=../../../.env --experimental-strip-types --no-warnings=ExperimentalWarning src/server.ts",
+    "shorts": "node --env-file-if-exists=../../../.env --experimental-strip-types --no-warnings=ExperimentalWarning src/cli.ts",
     "typecheck": "tsc"
   },
   "dependencies": {

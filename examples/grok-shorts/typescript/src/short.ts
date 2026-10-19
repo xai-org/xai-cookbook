@@ -76,10 +76,11 @@ const GREEN_ROOM = "a studio, in front of a flat, evenly lit green screen that f
 const KEY = { similarity: 0.1, blend: 0.05 };
 
 // Starts a conversation about a video. If the message has a link to a pull request, the video explains it, and the rest
-// of the message says what to make of it. Otherwise the message is the idea for the video. `personality` is the id of a
-// personality, built in or made in Personality Studio, or an X handle with its @ to copy the style of.
-// `uploads` lists the creator's own uploads, for Grok to show where they fit, and `avoid` has the themes of their last
-// few videos, so this one looks different.
+// of the message says what to make of it. A pull request read some other way, like with an agent's own access to a
+// private repository, can come as `pr` instead, and then the whole message says what to make of it. Otherwise the
+// message is the idea for the video. `personality` is the id of a personality, built in or made in Personality Studio,
+// or an X handle with its @ to copy the style of. `uploads` lists the creator's own uploads, for Grok to show where they
+// fit, and `avoid` has the themes of their last few videos, so this one looks different.
 export async function startDraft(
   message: string,
   presenterId: string,
@@ -88,21 +89,23 @@ export async function startDraft(
   signal?: AbortSignal,
   uploads = "",
   avoid: string[] = [],
+  pr?: PullRequest,
 ): Promise<{ draft: Draft; note: string; cost: number }> {
   const presenter = await findPresenter(presenterId);
   const words = message.trim().split(/\s+/);
-  const link = words.find(isPullRequestLink);
+  const link = pr ? undefined : words.find(isPullRequestLink);
   if (link) on.stage?.("read", "active");
+  if (pr) on.pullRequest?.(pr);
   on.stage?.("persona", "active");
   // Grok reads the account's posts for an X handle, at the same time as the app reads the pull request.
   const [source, styled] = await Promise.all([
     link
-      ? readPullRequest(link, signal).then((pr): Source => {
-          on.pullRequest?.(pr);
+      ? readPullRequest(link, signal).then((read): Source => {
+          on.pullRequest?.(read);
           on.stage?.("read", "done");
-          return { pr, ask: words.filter((word) => word !== link).join(" ") };
+          return { pr: read, ask: words.filter((word) => word !== link).join(" ") };
         })
-      : ({ idea: message.trim() } as Source),
+      : ((pr ? { pr, ask: message.trim() } : { idea: message.trim() }) as Source),
     findPersona(personality, signal).then((found) => {
       on.persona?.(found.persona);
       on.stage?.("persona", "done");

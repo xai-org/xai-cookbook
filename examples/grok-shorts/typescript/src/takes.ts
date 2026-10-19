@@ -1,6 +1,8 @@
 import { execFile } from "node:child_process";
 import { existsSync } from "node:fs";
-import { readFile, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
 import { promisify } from "node:util";
 import { APIConnectionError, SpaceXAI, type VideoResponse, stripInvalidSpeechTags } from "@xai-official/sdk";
@@ -60,9 +62,10 @@ type Filmed = { file: string; heard: Array<{ text: string; start: number; end: n
 // Has Grok Imagine film the presenter saying the part's line, starting from the portrait, TAKES_PER_LINE times at once.
 // Each take is transcribed, and the one whose transcript matches the most of the line is kept. If every take cuts the line
 // off, they're all filmed again, longer, and if every take in front of a green screen is doubled, they're filmed again.
-// Every take is saved as <base>-<letter>.mp4, and one an earlier run saved there, like before the server restarted, is
-// heard again instead of filmed again. With `pick`, the take saved in that file is kept instead, as someone chose. With
-// `more`, more takes are filmed after the ones saved, with that direction added, and the best of the new ones is kept.
+// Every take is saved as <base>-<letter>.mp4, with what was heard in it as <base>-<letter>.json, and one an earlier run
+// saved there, like before the server restarted, is used again instead of filmed again. With `pick`, the take saved in
+// that file is kept instead, as someone chose. With `more`, more takes are filmed after the ones saved, with that
+// direction added, and the best of the new ones is kept.
 export async function recordTake(
   part: Part,
   cast: Cast,
@@ -122,7 +125,7 @@ export async function speakTake(part: Part, cast: Cast, base: string, signal?: A
   await Promise.all([rm(`${base}.mp3`), rm(`${base}.jpg`)]);
   const { stdout } = await run("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", `${base}.mp4`]);
   const seconds = Number(stdout.trim());
-  const heard = await hear(await readFile(`${base}.mp4`), signal);
+  const heard = await hear(`${base}.mp4`, signal);
   const start = Math.max(0, (heard[0]?.start ?? 0) - BEFORE);
   const matched = lineUp(words, heard).filter((pair) => pair?.alike).length;
   const take = { file: `${base}.mp4`, prompt: "", start, end: seconds, words: timeWords(words, heard, start, seconds), heard: matched / words.length, seconds, filmed: 0, cost: seconds * TRANSCRIPTION_USD_PER_SECOND };
@@ -171,9 +174,9 @@ async function filmAndHear(
 ): Promise<Filmed> {
   const saved = existsSync(file);
   const result = saved ? undefined : await filmTake(prompt, cast, seconds, onProgress, signal);
-  const video = result ? await download(result, file, signal) : await readFile(file);
+  if (result) await download(result, file, signal);
+  const { heard, transcribed } = await hearTake(file, signal);
   if (saved) onProgress(100);
-  const heard = await hear(video, signal);
   const last = heard.at(-1);
   return {
     file,
@@ -182,7 +185,7 @@ async function filmAndHear(
     // A take whose last word runs into its end, or that's missing a quarter of the line, stopped before the line did.
     cutOff: !last || heard.length < words.length * 0.75 || last.end > seconds - 0.25,
     tinted: cast.green ? await tintedShare(file, cast.green) : 0,
-    cost: (result?.usage?.cost_usd ?? 0) + seconds * TRANSCRIPTION_USD_PER_SECOND,
+    cost: (result?.usage?.cost_usd ?? 0) + (transcribed ? seconds * TRANSCRIPTION_USD_PER_SECOND : 0),
   };
 }
 
@@ -226,14 +229,12 @@ function takePrompt({ line, mood, pointAt, acting }: Part, { room, delivery }: C
 
 // The video's URL is temporary, so it's downloaded right away. The take is made and paid for by now, so a dropped
 // connection, which fetch throws as a TypeError, is tried again, up to twice.
-async function download(result: VideoResponse, file: string, signal?: AbortSignal, tries = 3): Promise<Buffer<ArrayBuffer>> {
+async function download(result: VideoResponse, file: string, signal?: AbortSignal, tries = 3): Promise<void> {
   if (!result.video?.url) throw new Error("A take didn't pass moderation, so there's nothing to download.");
   try {
     const response = await fetch(result.video.url, { signal });
     if (!response.ok) throw new Error(`Couldn't download a take: ${response.status}`);
-    const video = Buffer.from(await response.arrayBuffer());
-    await writeFile(file, video);
-    return video;
+    await writeFile(file, Buffer.from(await response.arrayBuffer()));
   } catch (error) {
     if (!(error instanceof TypeError) || signal?.aborted || tries === 1) throw error;
     await sleep(2000, undefined, { signal });
@@ -241,16 +242,41 @@ async function download(result: VideoResponse, file: string, signal?: AbortSigna
   }
 }
 
-// What's heard in a take, word by word. When the connection drops, the SDK only resends requests that just read
-// something, and transcribing changes nothing, so it's sent again here, up to twice. The API reads the format from the
-// file name.
-async function hear(video: Buffer<ArrayBuffer>, signal?: AbortSignal, tries = 3): Promise<Filmed["heard"]> {
+// What's heard in a take, saved next to it as <take>.json, so a take kept for another cut, even by another run of the
+// app, isn't transcribed again. A file that can't be read is heard again.
+async function hearTake(file: string, signal?: AbortSignal): Promise<{ heard: Filmed["heard"]; transcribed: boolean }> {
+  const saved = file.replace(/\.mp4$/, ".json");
+  const kept = existsSync(saved) ? await readFile(saved, "utf8").then((text) => JSON.parse(text) as Filmed["heard"]).catch(() => undefined) : undefined;
+  if (kept) return { heard: kept, transcribed: false };
+  const heard = await hear(file, signal);
+  await writeFile(saved, JSON.stringify(heard));
+  return { heard, transcribed: true };
+}
+
+// What's heard in a take, word by word. Only its sound is uploaded, copied out of the take as it is: about 80 KB for a
+// 5-second take instead of 3 MB of video, which came back with the same words at the same times. When the connection
+// drops, the SDK only resends requests that just read something, and transcribing changes nothing, so it's sent again
+// here, up to twice.
+async function hear(file: string, signal?: AbortSignal): Promise<Filmed["heard"]> {
+  const sound = await soundOf(file, signal);
+  for (let tries = 3; ; tries--) {
+    try {
+      // The API reads the format from the file name.
+      return (await client.voice.transcribe({ file: new File([sound], "take.m4a"), model: "grok-voice-transcribe-2.0" }, { signal })).words ?? [];
+    } catch (error) {
+      if (!(error instanceof APIConnectionError) || signal?.aborted || tries === 1) throw error;
+      await sleep(2000, undefined, { signal });
+    }
+  }
+}
+
+async function soundOf(file: string, signal?: AbortSignal): Promise<Buffer<ArrayBuffer>> {
+  const dir = await mkdtemp(join(tmpdir(), "take-"));
   try {
-    return (await client.voice.transcribe({ file: new File([video], "take.mp4"), model: "grok-voice-transcribe-2.0" }, { signal })).words ?? [];
-  } catch (error) {
-    if (!(error instanceof APIConnectionError) || signal?.aborted || tries === 1) throw error;
-    await sleep(2000, undefined, { signal });
-    return hear(video, signal, tries - 1);
+    await run("ffmpeg", ["-v", "error", "-y", "-i", file, "-vn", "-c:a", "copy", `${dir}/sound.m4a`], { signal });
+    return await readFile(`${dir}/sound.m4a`);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
   }
 }
 

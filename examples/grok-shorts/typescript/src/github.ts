@@ -33,20 +33,24 @@ export type PullRequest = {
   files: ChangedFile[];
 };
 
+// A pull request the way GitHub's REST API returns it: the pull request, its files, and its commits. A copy read some
+// other way, like through an agent's GitHub app, may leave fields out, so only the pull request's link and the files
+// are required.
+export type GitHubPullRequest = { pull: GitHubPull; files: GitHubFile[]; commits?: GitHubCommit[] };
 type GitHubPull = {
   html_url: string;
-  number: number;
-  title: string;
-  body: string | null;
-  user: { login: string };
-  base: { ref: string; repo: { full_name: string } };
-  head: { ref: string };
-  additions: number;
-  deletions: number;
-  changed_files: number;
+  number?: number;
+  title?: string;
+  body?: string | null;
+  user?: { login?: string };
+  base?: { ref?: string; repo?: { full_name?: string } };
+  head?: { ref?: string };
+  additions?: number;
+  deletions?: number;
+  changed_files?: number;
 };
-type GitHubFile = { filename: string; status: string; additions: number; deletions: number; patch?: string };
-type GitHubCommit = { commit: { message: string } };
+type GitHubFile = { filename: string; status?: string; additions?: number; deletions?: number; patch?: string };
+type GitHubCommit = { commit?: { message?: string } };
 
 export function parsePullRequestUrl(url: string): { owner: string; repo: string; number: number } {
   const match = url.trim().match(/^(?:https?:\/\/)?(?:www\.)?github\.com\/([\w.-]+)\/([\w.-]+)\/pull\/(\d+)/i);
@@ -64,26 +68,36 @@ export async function readPullRequest(url: string, signal?: AbortSignal): Promis
     github<GitHubFile[]>(`${path}/files?per_page=100`, signal),
     github<GitHubCommit[]>(`${path}/commits?per_page=100`, signal),
   ]);
+  return pullRequestFrom({ pull, files, commits });
+}
+
+// Turns GitHub's answers into a pull request, with each file's patch split into rows. Whatever a copy leaves out is
+// worked out from the rest: the repository and number from the link, and the lines added and deleted from the patches.
+export function pullRequestFrom({ pull, files, commits = [] }: GitHubPullRequest): PullRequest {
+  if (typeof pull?.html_url !== "string" || !Array.isArray(files)) {
+    throw new Error("A pull request needs `pull`, with its `html_url`, and `files`, the way GitHub's API returns them.");
+  }
+  const link = parsePullRequestUrl(pull.html_url);
+  const changed = files.map((file) => {
+    const rows = file.patch ? parsePatch(file.patch) : [];
+    const count = (kind: Row["kind"]) => rows.filter((row) => row.kind === kind).length;
+    return { path: file.filename, status: file.status ?? "modified", additions: file.additions ?? count("add"), deletions: file.deletions ?? count("del"), rows };
+  });
+  const total = (key: "additions" | "deletions") => changed.reduce((sum, file) => sum + file[key], 0);
   return {
     url: pull.html_url,
-    repo: pull.base.repo.full_name,
-    number: pull.number,
-    title: pull.title,
+    repo: pull.base?.repo?.full_name ?? `${link.owner}/${link.repo}`,
+    number: pull.number ?? link.number,
+    title: pull.title ?? "",
     description: pull.body?.trim() ?? "",
-    author: pull.user.login,
-    base: pull.base.ref,
-    head: pull.head.ref,
-    commits: commits.map(({ commit }) => commit.message.split("\n")[0]),
-    additions: pull.additions,
-    deletions: pull.deletions,
-    changedFiles: pull.changed_files,
-    files: files.map((file) => ({
-      path: file.filename,
-      status: file.status,
-      additions: file.additions,
-      deletions: file.deletions,
-      rows: file.patch ? parsePatch(file.patch) : [],
-    })),
+    author: pull.user?.login ?? "",
+    base: pull.base?.ref ?? "",
+    head: pull.head?.ref ?? "",
+    commits: commits.map((each) => each.commit?.message?.split("\n")[0] ?? "").filter(Boolean),
+    additions: pull.additions ?? total("additions"),
+    deletions: pull.deletions ?? total("deletions"),
+    changedFiles: pull.changed_files ?? files.length,
+    files: changed,
   };
 }
 
