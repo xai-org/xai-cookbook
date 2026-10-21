@@ -1,0 +1,394 @@
+@import 'tailwindcss';
+@import './bytes-colors.css';
+
+@custom-variant dark (&:is([data-lk-theme="dark"] *));
+
+@theme inline {
+  --breakpoint-*: initial;
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+  --breakpoint-2xl: 1536px;
+
+  --text-*: initial;
+  --text-xxs: 0.63rem;
+  --text-xxs--line-height: 1rem;
+  --text-xxs--font-weight: 400;
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1rem;
+  --text-xs--font-weight: 400;
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.25rem;
+  --text-sm--font-weight: 400;
+  --text-sm--letter-spacing: 0.01em;
+  --text-base: 1rem;
+  --text-base--line-height: 1.7rem;
+  --text-base--font-weight: 400;
+  --text-base--letter-spacing: 0.01em;
+  --text-lg: 1.125rem;
+  --text-lg--line-height: 1.75rem;
+  --text-lg--font-weight: 400;
+  --text-xl: 1.25rem;
+  --text-xl--line-height: 2rem;
+  --text-xl--font-weight: 400;
+  --text-2xl: 1.5rem;
+  --text-2xl--line-height: 2rem;
+  --text-2xl--font-weight: 400;
+  --text-3xl: 1.875rem;
+  --text-3xl--line-height: 2.25rem;
+  --text-3xl--font-weight: 400;
+  --text-4xl: 2.25rem;
+  --text-4xl--line-height: 2.5rem;
+  --text-4xl--font-weight: 400;
+  --text-5xl: 3rem;
+  --text-5xl--line-height: 1;
+  --text-5xl--font-weight: 400;
+  --text-6xl: 3.75rem;
+  --text-6xl--line-height: 1;
+  --text-6xl--font-weight: 400;
+  --text-7xl: 4.5rem;
+  --text-7xl--line-height: 1;
+  --text-7xl--font-weight: 400;
+  --text-8xl: 6rem;
+  --text-8xl--line-height: 1;
+  --text-8xl--font-weight: 400;
+  --text-9xl: 8rem;
+  --text-9xl--line-height: 1;
+  --text-9xl--font-weight: 400;
+
+  --font-weight-*: initial;
+  --font-weight-thin: 150;
+  --font-weight-light: 300;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  --font-*: initial;
+  --font-sans:
+    var(--font-lk-sans), ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
+    'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  --font-mono:
+    var(--font-lk-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono',
+    'Courier New', monospace;
+  --font-display:
+    var(--font-lk-display), ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
+    'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+
+  /* Reset all colors to initial */
+  --color-*: initial;
+
+  --color-black: oklch(var(--lk-color-black));
+  --color-white: oklch(var(--lk-color-white));
+
+  --color-cyan-100: oklch(var(--lk-color-cyan-100));
+  --color-cyan-200: oklch(var(--lk-color-cyan-200));
+  --color-cyan-300: oklch(var(--lk-color-cyan-300));
+  --color-cyan-400: oklch(var(--lk-color-cyan-400));
+  --color-cyan-500: oklch(var(--lk-color-cyan-500));
+  --color-cyan-600: oklch(var(--lk-color-cyan-600));
+  --color-cyan-700: oklch(var(--lk-color-cyan-700));
+  --color-cyan-800: oklch(var(--lk-color-cyan-800));
+  --color-cyan-900: oklch(var(--lk-color-cyan-900));
+
+  --color-gray-100: oklch(var(--lk-color-gray-100));
+  --color-gray-200: oklch(var(--lk-color-gray-200));
+  --color-gray-300: oklch(var(--lk-color-gray-300));
+  --color-gray-400: oklch(var(--lk-color-gray-400));
+  --color-gray-500: oklch(var(--lk-color-gray-500));
+  --color-gray-600: oklch(var(--lk-color-gray-600));
+  --color-gray-700: oklch(var(--lk-color-gray-700));
+  --color-gray-800: oklch(var(--lk-color-gray-800));
+  --color-gray-900: oklch(var(--lk-color-gray-900));
+
+  --color-purple-100: oklch(var(--lk-color-purple-100));
+  --color-purple-200: oklch(var(--lk-color-purple-200));
+  --color-purple-300: oklch(var(--lk-color-purple-300));
+  --color-purple-400: oklch(var(--lk-color-purple-400));
+  --color-purple-500: oklch(var(--lk-color-purple-500));
+  --color-purple-600: oklch(var(--lk-color-purple-600));
+  --color-purple-700: oklch(var(--lk-color-purple-700));
+  --color-purple-800: oklch(var(--lk-color-purple-800));
+  --color-purple-900: oklch(var(--lk-color-purple-900));
+
+  --color-orange-100: oklch(var(--lk-color-orange-100));
+  --color-orange-200: oklch(var(--lk-color-orange-200));
+  --color-orange-300: oklch(var(--lk-color-orange-300));
+  --color-orange-400: oklch(var(--lk-color-orange-400));
+  --color-orange-500: oklch(var(--lk-color-orange-500));
+  --color-orange-600: oklch(var(--lk-color-orange-600));
+  --color-orange-700: oklch(var(--lk-color-orange-700));
+  --color-orange-800: oklch(var(--lk-color-orange-800));
+  --color-orange-900: oklch(var(--lk-color-orange-900));
+
+  --color-green-100: oklch(var(--lk-color-green-100));
+  --color-green-200: oklch(var(--lk-color-green-200));
+  --color-green-300: oklch(var(--lk-color-green-300));
+  --color-green-400: oklch(var(--lk-color-green-400));
+  --color-green-500: oklch(var(--lk-color-green-500));
+  --color-green-600: oklch(var(--lk-color-green-600));
+  --color-green-700: oklch(var(--lk-color-green-700));
+  --color-green-800: oklch(var(--lk-color-green-800));
+  --color-green-900: oklch(var(--lk-color-green-900));
+
+  --color-red-100: oklch(var(--lk-color-red-100));
+  --color-red-200: oklch(var(--lk-color-red-200));
+  --color-red-300: oklch(var(--lk-color-red-300));
+  --color-red-400: oklch(var(--lk-color-red-400));
+  --color-red-500: oklch(var(--lk-color-red-500));
+  --color-red-600: oklch(var(--lk-color-red-600));
+  --color-red-700: oklch(var(--lk-color-red-700));
+  --color-red-800: oklch(var(--lk-color-red-800));
+  --color-red-900: oklch(var(--lk-color-red-900));
+
+  --color-amber-100: oklch(var(--lk-color-amber-100));
+  --color-amber-200: oklch(var(--lk-color-amber-200));
+  --color-amber-300: oklch(var(--lk-color-amber-300));
+  --color-amber-400: oklch(var(--lk-color-amber-400));
+  --color-amber-500: oklch(var(--lk-color-amber-500));
+  --color-amber-600: oklch(var(--lk-color-amber-600));
+  --color-amber-700: oklch(var(--lk-color-amber-700));
+  --color-amber-800: oklch(var(--lk-color-amber-800));
+  --color-amber-900: oklch(var(--lk-color-amber-900));
+
+  --color-yellow-100: oklch(var(--lk-color-yellow-100));
+  --color-yellow-200: oklch(var(--lk-color-yellow-200));
+  --color-yellow-300: oklch(var(--lk-color-yellow-300));
+  --color-yellow-400: oklch(var(--lk-color-yellow-400));
+  --color-yellow-500: oklch(var(--lk-color-yellow-500));
+  --color-yellow-600: oklch(var(--lk-color-yellow-600));
+  --color-yellow-700: oklch(var(--lk-color-yellow-700));
+  --color-yellow-800: oklch(var(--lk-color-yellow-800));
+  --color-yellow-900: oklch(var(--lk-color-yellow-900));
+
+  --color-blue-100: oklch(var(--lk-color-blue-100));
+  --color-blue-200: oklch(var(--lk-color-blue-200));
+  --color-blue-300: oklch(var(--lk-color-blue-300));
+  --color-blue-400: oklch(var(--lk-color-blue-400));
+  --color-blue-500: oklch(var(--lk-color-blue-500));
+  --color-blue-600: oklch(var(--lk-color-blue-600));
+  --color-blue-700: oklch(var(--lk-color-blue-700));
+  --color-blue-800: oklch(var(--lk-color-blue-800));
+  --color-blue-900: oklch(var(--lk-color-blue-900));
+
+  --color-lime-100: oklch(var(--lk-color-lime-100));
+  --color-lime-200: oklch(var(--lk-color-lime-200));
+  --color-lime-300: oklch(var(--lk-color-lime-300));
+  --color-lime-400: oklch(var(--lk-color-lime-400));
+  --color-lime-500: oklch(var(--lk-color-lime-500));
+  --color-lime-600: oklch(var(--lk-color-lime-600));
+  --color-lime-700: oklch(var(--lk-color-lime-700));
+  --color-lime-800: oklch(var(--lk-color-lime-800));
+  --color-lime-900: oklch(var(--lk-color-lime-900));
+
+  --color-teal-100: oklch(var(--lk-color-teal-100));
+  --color-teal-200: oklch(var(--lk-color-teal-200));
+  --color-teal-300: oklch(var(--lk-color-teal-300));
+  --color-teal-400: oklch(var(--lk-color-teal-400));
+  --color-teal-500: oklch(var(--lk-color-teal-500));
+  --color-teal-600: oklch(var(--lk-color-teal-600));
+  --color-teal-700: oklch(var(--lk-color-teal-700));
+  --color-teal-800: oklch(var(--lk-color-teal-800));
+  --color-teal-900: oklch(var(--lk-color-teal-900));
+
+  --color-indigo-100: oklch(var(--lk-color-indigo-100));
+  --color-indigo-200: oklch(var(--lk-color-indigo-200));
+  --color-indigo-300: oklch(var(--lk-color-indigo-300));
+  --color-indigo-400: oklch(var(--lk-color-indigo-400));
+  --color-indigo-500: oklch(var(--lk-color-indigo-500));
+  --color-indigo-600: oklch(var(--lk-color-indigo-600));
+  --color-indigo-700: oklch(var(--lk-color-indigo-700));
+  --color-indigo-800: oklch(var(--lk-color-indigo-800));
+  --color-indigo-900: oklch(var(--lk-color-indigo-900));
+
+  --color-violet-100: oklch(var(--lk-color-violet-100));
+  --color-violet-200: oklch(var(--lk-color-violet-200));
+  --color-violet-300: oklch(var(--lk-color-violet-300));
+  --color-violet-400: oklch(var(--lk-color-violet-400));
+  --color-violet-500: oklch(var(--lk-color-violet-500));
+  --color-violet-600: oklch(var(--lk-color-violet-600));
+  --color-violet-700: oklch(var(--lk-color-violet-700));
+  --color-violet-800: oklch(var(--lk-color-violet-800));
+  --color-violet-900: oklch(var(--lk-color-violet-900));
+
+  --color-pink-100: oklch(var(--lk-color-pink-100));
+  --color-pink-200: oklch(var(--lk-color-pink-200));
+  --color-pink-300: oklch(var(--lk-color-pink-300));
+  --color-pink-400: oklch(var(--lk-color-pink-400));
+  --color-pink-500: oklch(var(--lk-color-pink-500));
+  --color-pink-600: oklch(var(--lk-color-pink-600));
+  --color-pink-700: oklch(var(--lk-color-pink-700));
+  --color-pink-800: oklch(var(--lk-color-pink-800));
+  --color-pink-900: oklch(var(--lk-color-pink-900));
+
+  --color-codeAccent: oklch(var(--lk-color-codeAccent));
+  --color-codeAccent2: oklch(var(--lk-color-codeAccent2));
+  --color-codePurple: oklch(var(--lk-color-codePurple));
+  --color-codePurple2: oklch(var(--lk-color-codePurple2));
+  --color-codeAmber: oklch(var(--lk-color-codeAmber));
+  --color-codeAmber2: oklch(var(--lk-color-codeAmber2));
+  --color-codeGreen: oklch(var(--lk-color-codeGreen));
+  --color-codeGreen2: oklch(var(--lk-color-codeGreen2));
+  --color-codeRed: oklch(var(--lk-color-codeRed));
+  --color-codeRed2: oklch(var(--lk-color-codeRed2));
+  --color-chart1: oklch(var(--lk-color-chart1));
+  --color-chart2: oklch(var(--lk-color-chart2));
+  --color-chart3: oklch(var(--lk-color-chart3));
+  --color-chart4: oklch(var(--lk-color-chart4));
+  --color-chart5: oklch(var(--lk-color-chart5));
+  --color-chart6: oklch(var(--lk-color-chart6));
+  --color-chart7: oklch(var(--lk-color-chart7));
+  --color-chart8: oklch(var(--lk-color-chart8));
+  --color-chartSerious: oklch(var(--lk-color-chartSerious));
+  --color-fg0: oklch(var(--lk-color-fg0));
+  --color-fg1: oklch(var(--lk-color-fg1));
+  --color-fg2: oklch(var(--lk-color-fg2));
+  --color-fg3: oklch(var(--lk-color-fg3));
+  --color-fg4: oklch(var(--lk-color-fg4));
+  --color-fgAccentPrimary1: oklch(var(--lk-color-fgAccentPrimary1));
+  --color-fgAccentPrimary2: oklch(var(--lk-color-fgAccentPrimary2));
+  --color-fgAccentSecondary1: oklch(var(--lk-color-fgAccentSecondary1));
+  --color-fgAccentSecondary2: oklch(var(--lk-color-fgAccentSecondary2));
+  --color-fgSuccess: oklch(var(--lk-color-fgSuccess));
+  --color-fgModerate: oklch(var(--lk-color-fgModerate));
+  --color-fgSerious1: oklch(var(--lk-color-fgSerious1));
+  --color-fgSerious2: oklch(var(--lk-color-fgSerious2));
+  --color-fgLLM: oklch(var(--lk-color-fgLLM));
+  --color-fgSTT: oklch(var(--lk-color-fgSTT));
+  --color-fgTTS: oklch(var(--lk-color-fgTTS));
+  --color-bg0: oklch(var(--lk-color-bg0));
+  --color-bg1: oklch(var(--lk-color-bg1));
+  --color-bg2: oklch(var(--lk-color-bg2));
+  --color-bg3: oklch(var(--lk-color-bg3));
+  --color-bgAccentPrimary1: oklch(var(--lk-color-bgAccentPrimary1));
+  --color-bgAccentPrimary2: oklch(var(--lk-color-bgAccentPrimary2));
+  --color-bgAccentSecondary1: oklch(var(--lk-color-bgAccentSecondary1));
+  --color-bgAccentSecondary2: oklch(var(--lk-color-bgAccentSecondary2));
+  --color-bgSuccess1: oklch(var(--lk-color-bgSuccess1));
+  --color-bgSuccess2: oklch(var(--lk-color-bgSuccess2));
+  --color-bgModerate1: oklch(var(--lk-color-bgModerate1));
+  --color-bgModerate2: oklch(var(--lk-color-bgModerate2));
+  --color-bgSerious1: oklch(var(--lk-color-bgSerious1));
+  --color-bgSerious2: oklch(var(--lk-color-bgSerious2));
+  --color-bgLLM: oklch(var(--lk-color-bgLLM));
+  --color-bgSTT: oklch(var(--lk-color-bgSTT));
+  --color-bgTTS: oklch(var(--lk-color-bgTTS));
+  --color-separator1: oklch(var(--lk-color-separator1));
+  --color-separator2: oklch(var(--lk-color-separator2));
+  --color-separatorAccentPrimary: oklch(var(--lk-color-separatorAccentPrimary));
+  --color-separatorAccentSecondary1: oklch(var(--lk-color-separatorAccentSecondary1));
+  --color-separatorAccentSecondary2: oklch(var(--lk-color-separatorAccentSecondary2));
+  --color-separatorSuccess: oklch(var(--lk-color-separatorSuccess));
+  --color-separatorModerate: oklch(var(--lk-color-separatorModerate));
+  --color-separatorSerious1: oklch(var(--lk-color-separatorSerious1));
+  --color-separatorSerious2: oklch(var(--lk-color-separatorSerious2));
+  --color-separatorLLM: oklch(var(--lk-color-separatorLLM));
+  --color-separatorSTT: oklch(var(--lk-color-separatorSTT));
+  --color-separatorTTS: oklch(var(--lk-color-separatorTTS));
+  --color-transparent: transparent;
+  --color-current: currentColor;
+
+  --radius-*: initial;
+  --radius-none: 0px;
+  --radius-sm: 0.125rem;
+  --radius: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-2xl: 1rem;
+  --radius-3xl: 1.5rem;
+  --radius-full: 9999px;
+  --radius-px: 1px;
+
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -2px rgba(0, 0, 0, 0.5);
+  --shadow-accent1:
+    0 0 0 1px rgba(var(--lk-color-bg1)), 0 0 0 2px rgba(var(--lk-color-fgAccentPrimary1));
+}
+
+@utility transform-iso {
+  @apply scale-y-86 -rotate-30 skew-x-[27.25deg];
+}
+
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    @apply border-separator1;
+  }
+
+  body {
+    @apply bg-bg1 text-fg1;
+    font-feature-settings:
+      'rlig' 1,
+      'calt' 1;
+  }
+
+  button,
+  [role='button'] {
+    cursor: pointer;
+  }
+
+  dialog {
+    margin: auto;
+  }
+}
+
+@layer utilities {
+  .scroll-area {
+    /* Scrollbar is hidden until overflow container is hovered. */
+    scrollbar-width: thin;
+    scrollbar-gutter: stable both-edges;
+    scrollbar-color: transparent transparent;
+
+    &:hover {
+      scrollbar-color: oklch(var(--lk-color-separator2)) transparent;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: transparent;
+    }
+
+    &:hover::-webkit-scrollbar-thumb {
+      background: oklch(var(--lk-color-separator2));
+    }
+  }
+
+  .border-corners {
+    --corner-size: 0.75rem;
+    --corner-color: var(--color-separator1);
+    --corner-width: 1px;
+    position: relative;
+    border-color: transparent !important;
+  }
+
+  .border-corners::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border: var(--corner-width) solid var(--corner-color);
+    border-radius: inherit;
+    pointer-events: none;
+    z-index: 1;
+    mask:
+      linear-gradient(#fff 0 0) 0 0 / var(--corner-size) var(--corner-size) no-repeat,
+      linear-gradient(#fff 0 0) 100% 0 / var(--corner-size) var(--corner-size) no-repeat,
+      linear-gradient(#fff 0 0) 0 100% / var(--corner-size) var(--corner-size) no-repeat,
+      linear-gradient(#fff 0 0) 100% 100% / var(--corner-size) var(--corner-size) no-repeat;
+  }
+
+  .bg-dot-pattern-1 {
+    background-image: url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMyIgaGVpZ2h0PSIzIiB2aWV3Qm94PSIwIDAgMyAzIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHg9IjEiIHk9IjEiIHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9InJnYigyMTksIDIxOSwgMjE2KSIvPjwvc3ZnPg==);
+
+    :root.dark &,
+    :root[data-lk-theme='dark'] & {
+      background-image: url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMyIgaGVpZ2h0PSIzIiB2aWV3Qm94PSIwIDAgMyAzIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHg9IjEiIHk9IjEiIHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9InJnYigzMiwgMzIsIDMyKSIvPjwvc3ZnPg==);
+    }
+  }
+}

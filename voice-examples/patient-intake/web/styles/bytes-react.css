@@ -1,0 +1,201 @@
+@import 'tailwindcss';
+@import './bytes-core.css';
+
+@plugin 'tailwindcss-animate';
+
+@source '../components/**/*.{ts,tsx}';
+
+@property --border-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+
+@theme {
+  --animate-float: float 3s ease-in-out infinite;
+  --animate-rotate-border: rotate-border 4s linear infinite;
+
+  @keyframes float {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-8px);
+    }
+  }
+
+  @keyframes rotate-border {
+    to {
+      --border-angle: 360deg;
+    }
+  }
+
+  @keyframes slide-in-from-top {
+    from {
+      transform: translateY(-100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+  @keyframes slide-in-from-bottom {
+    from {
+      transform: translateY(100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+  @keyframes slide-in-from-left {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
+  @keyframes slide-in-from-right {
+    from {
+      transform: translateX(100%);
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
+  @keyframes slide-out-to-top {
+    from {
+      transform: translateY(0);
+    }
+    to {
+      transform: translateY(-100%);
+    }
+  }
+  @keyframes slide-out-to-bottom {
+    from {
+      transform: translateY(0);
+    }
+    to {
+      transform: translateY(100%);
+    }
+  }
+  @keyframes slide-out-to-left {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-100%);
+    }
+  }
+  @keyframes slide-out-to-right {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(100%);
+    }
+  }
+}
+
+/* Utilities — document any changes in the CssUtilities story. If a utility here might conflict
+   with a component's own classes (position, rounded, etc.), register it in `customTwMerge`
+   (lib/utils.ts) so `cn()` resolves it. */
+
+@utility text-mono-caps {
+  @apply font-mono tracking-wider uppercase;
+}
+
+@utility dropdown-chevron {
+  @apply size-3 shrink-0 transition-transform group-data-[state=open]:rotate-180;
+}
+
+@utility dialog-overlay {
+  @apply bg-bg2/70 dark:bg-bg0/70 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 fixed inset-0 z-[9999] backdrop-blur-xs data-[state=closed]:duration-300 data-[state=open]:duration-300;
+}
+
+@utility dialog-close-button {
+  /* `col-[full]!` escapes `.dialog-layout`'s default `grid-column: main` on direct children. Without it, `absolute` positions relative to the narrower inner column instead of the full panel. */
+  @apply absolute top-4 right-4 col-[full]! rounded-sm opacity-70 transition-opacity hover:opacity-100 focus:outline-hidden active:outline-hidden disabled:pointer-events-none;
+}
+
+.text-group-heading {
+  @apply text-fg3 text-mono-caps text-xs;
+}
+
+.dialog-layout {
+  /* |    |                    |    | */
+  /* |    | grid-column: main; |    | */
+  /* |    |<------ main ------>|    | */
+  /* |    |                    |    | */
+  /* |    |                    |    | */
+  /* |    | grid-column: full; |    | */
+  /* |<---|------- full -------|--->| */
+  /* |    |                    |    | */
+  --outer-col: minmax(0px, theme('spacing.6'));
+
+  width: 100%;
+  display: grid;
+  grid-template-columns:
+    [full-start]
+    var(--outer-col)
+    [main-start]
+    minmax(0px, 1fr)
+    [main-end]
+    var(--outer-col)
+    [full-end];
+}
+
+.dialog-layout > * {
+  /*
+    By default all direct children are placed into the main column.
+    This can be overridden by setting the grid-column property to `full` or `limit`.
+  */
+  grid-column: main;
+}
+
+/*
+ * Branded loading skeleton: a repeating square-dot mask reveals the resting
+ * dot color (separator1) plus a brighter sheen (separator2) that sweeps across
+ * via a compositor-only transform. One DOM node per skeleton instead of one
+ * element per dot.
+ */
+.dot-matrix-shimmer {
+  position: relative;
+  overflow: hidden;
+  /* Resting dot color, shown wherever the sheen isn't. */
+  background: var(--color-separator1);
+}
+
+.dot-matrix-shimmer::before {
+  content: '';
+  position: absolute;
+  /* Broad diagonal sheen that travels from off-right to off-left. */
+  inset: 0;
+  background-image: linear-gradient(
+    100deg,
+    var(--color-separator1) 0%,
+    var(--color-separator1) 34%,
+    var(--color-fg4) 50%,
+    var(--color-separator1) 66%,
+    var(--color-separator1) 100%
+  );
+  background-repeat: no-repeat;
+  background-size: 240% 100%;
+  will-change: background-position;
+  animation: dot-matrix-sweep 3s ease-in infinite;
+}
+
+@keyframes dot-matrix-sweep {
+  from {
+    background-position: 140% 0;
+  }
+  to {
+    background-position: -40% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dot-matrix-shimmer::before {
+    animation: none;
+  }
+}
