@@ -27,7 +27,6 @@ Every example is a folder under [`examples/`](examples/) with a README that expl
 | [Live Interpreter](examples/live-interpreter/) | Speak one language and hear Grok say it in another a moment later, from a page that connects straight to the realtime voice API with a short-lived token. | Beginner | [TypeScript](examples/live-interpreter/typescript/) |
 | [Photo to Talking Character](examples/photo-to-talking-character/) | Make a drawing, a mascot, or a pet photo talk in a voice you pick, and have a second character answer, with Grok Imagine reference-to-video. | Beginner | [TypeScript](examples/photo-to-talking-character/typescript/) |
 | [Database over MCP](examples/database-over-mcp/) | Serve a SQLite database as a small MCP server that only reads, and watch Grok list its tables, read their schemas, and run SQL through it to answer a question. | Intermediate | [TypeScript](examples/database-over-mcp/typescript/) |
-| [Progressive Tool Disclosure](examples/progressive-tool-disclosure/) | Give Grok 203 tools from a made-up company's eight work apps, show it only their names, and let it load the few each question needs with tool search. | Intermediate | [TypeScript](examples/progressive-tool-disclosure/typescript/) |
 
 ### Guides
 

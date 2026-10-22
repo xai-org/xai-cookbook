@@ -226,23 +226,6 @@
   level: intermediate
   languages:
   - typescript
-- title: Progressive Tool Disclosure
-  seo_title: 'Tool Search for AI Agents: Load Tools on Demand with the Grok API'
-  path: examples/progressive-tool-disclosure/README.md
-  video: https://media.x.ai/v1/docs/progressive-tool-disclosure-676f2989.mp4
-  icon: toolbox
-  description: Give Grok 203 tools from a made-up company's eight work apps, show it only their names, and let it load the few each question needs with tool search.
-  date: 2026-10-05
-  authors:
-  - Eric Zakariasson
-  tags:
-  - function-calling
-  - tool-search
-  - streaming
-  type: recipe
-  level: intermediate
-  languages:
-  - typescript
 - title: Prompt Caching
   seo_title: 'Prompt Caching: Cut the Cost of Long Chats with the Grok API'
   path: examples/prompt-caching/README.md
