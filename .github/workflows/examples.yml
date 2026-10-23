@@ -1,0 +1,94 @@
+name: Examples
+
+on:
+  pull_request:
+    paths:
+      - "examples/**"
+      - ".github/workflows/examples.yml"
+  push:
+    branches: [main]
+    paths:
+      - "examples/**"
+      - ".github/workflows/examples.yml"
+  schedule:
+    # Weekly: typecheck every example against the latest published @xai-official/sdk
+    # so SDK releases that break an example are noticed before a reader does.
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  discover:
+    name: Find TypeScript examples
+    runs-on: ubuntu-latest
+    outputs:
+      dirs: ${{ steps.list.outputs.dirs }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: list
+        name: List example dirs with a typecheck script and a lockfile
+        run: |
+          dirs=$(find examples -name package.json -not -path '*/node_modules/*' | node -e '
+            const fs = require("fs"), path = require("path");
+            const files = fs.readFileSync(0, "utf8").split("\n").filter(Boolean);
+            const dirs = files
+              .map((f) => path.dirname(f))
+              .filter((d) => fs.existsSync(path.join(d, "package-lock.json")))
+              .filter((d) => (JSON.parse(fs.readFileSync(path.join(d, "package.json"), "utf8")).scripts || {}).typecheck)
+              .sort();
+            process.stdout.write(JSON.stringify(dirs));
+          ')
+          echo "dirs=$dirs" >> "$GITHUB_OUTPUT"
+          echo "$dirs" | jq -r '.[]'
+
+  typecheck:
+    name: typecheck (${{ matrix.dir }})
+    needs: discover
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        dir: ${{ fromJson(needs.discover.outputs.dirs) }}
+    defaults:
+      run:
+        working-directory: ${{ matrix.dir }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: ${{ matrix.dir }}/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+
+  sdk-latest:
+    # Not a PR gate: this job fails when the SDK moves, not when a PR is wrong.
+    name: typecheck against latest @xai-official/sdk (${{ matrix.dir }})
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    needs: discover
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        dir: ${{ fromJson(needs.discover.outputs.dirs) }}
+    defaults:
+      run:
+        working-directory: ${{ matrix.dir }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm ci
+      - name: Upgrade the SDK to the latest release
+        run: |
+          if node -e "process.exit(require('./package.json').dependencies?.['@xai-official/sdk'] ? 0 : 1)"; then
+            npm install --no-save @xai-official/sdk@latest
+            npm ls @xai-official/sdk
+          else
+            echo "example does not depend on @xai-official/sdk, skipping upgrade"
+          fi
+      - run: npm run typecheck
