@@ -44,9 +44,10 @@ export function personalityOf(presenter: Presenter): string {
 }
 
 // Every take starts from the portrait, which keeps the presenter, the room, and the framing the same from cut to cut. The
-// framing leaves room above their head, where the video puts the code.
+// framing leaves room above their head, where the video puts the code. It asks for what a phone's front camera actually
+// gets, flaws and all: soft, flattering light and a blurred background are what people now read as AI.
 export function portraitPrompt(look: string, room: string): string {
-  return `A photorealistic vertical phone video frame of ${look}, filming a TikTok in ${room}. Looking straight into the camera with a friendly, expressive face, mouth closed. Framed from the chest up in the lower half of the frame, with plenty of empty space above the head. Soft, flattering light, shallow depth of field, natural skin texture.`;
+  return `An unedited still from a vertical video someone is filming of themselves on their phone's front camera: ${look}, filming a TikTok in ${room}. Looking into the lens mid-thought, with a relaxed, natural face, mouth closed. Framed from the chest up in the lower half of the frame, a little off-center, with plenty of empty space above the head. A real phone camera: everything in focus, ordinary light from the room's own lamps and screens, slightly uneven exposure, and a little noise. Real skin with pores, small blemishes, and faint under-eye shadows, a few stray hairs, slightly wrinkled clothes, and a lived-in room with everyday clutter. Not a studio portrait: no retouching, no beauty lighting, no blurred background.`;
 }
 
 // The built-in presenters, then everyone saved from the studio. A built-in presenter saved with their face found, or

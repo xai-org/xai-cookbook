@@ -27,7 +27,7 @@ In the commands below, `shorts` means the path in the `shorts` field it prints, 
 
 - **Ask Grok:** `shorts revise <project> "<what to change>"`. Grok writes the script again, changing only what's asked and keeping every other line word for word.
 - **Notes on the video:** `shorts note <project> "<what should change>" --at <seconds> [--x <0 to 1>] [--y <0 to 1>]` pins a note on the latest version, at a spot on the frame given as shares of its width and height from the top left. Notes go with the next `revise`, each with a picture of its moment, and `revise` with no message sends just the notes. `shorts notes <project>` lists them, and `shorts remove-note <project> <id>` takes one away.
-- **Grok's review:** `shorts review <project>` has Grok watch the latest version and pin a note on each problem a viewer would notice, like a sticker over a screenshot's headline, for a few cents. Tell the person what it found, remove the notes they disagree with, and `revise` to fix the rest.
+- **Grok's review:** `shorts review <project>` has Grok watch the latest version and pin a note on each problem a viewer would notice, like a caption over the presenter's mouth, for a few cents. Tell the person what it found, remove the notes they disagree with, and `revise` to fix the rest.
 - **The hook lab:** `shorts hooks <project>` scores the hook from 1 to 10 for how likely it is to stop someone scrolling, and writes four others, each scored. `shorts speak "<hook>" --presenter <id>` says one in the presenter's voice. Use one with `shorts line <project> 1 "<hook>"`.
 
 ## Change it by hand
@@ -41,8 +41,6 @@ Grok hears about each of these with the next message, and keeps them.
 - `shorts trim <project> <segment> [--head <seconds>] [--tail <seconds>]`: cut more from the start or end of its take, up to 3 seconds, or keep up to a second more with a negative number. It films nothing new.
 - `shorts use-upload <project> <segment> <upload>`: show an image or video from the library. The grok-shorts-brand skill adds uploads.
 - `shorts sound <project> [--music <upload>|none] [--volume <0 to 1>] [--effects on|off]`: music from the library under the voice, and sound effects. It films nothing new.
-- `shorts on-screen <project> [--title on|off] [--labels on|off]`: the title at the top, and the labels on the stickers. It films nothing new.
-
 ## Film the changes
 
 `shorts changes <project>` lists what changed since the current version and which changes need new takes, and `shorts estimate <project>` what filming them costs. A new line, mood, or presenter, or a layout to or from a green screen, needs new takes. Everything else only cuts the video again, for nothing. Then `shorts preview <project>`, or, after a yes for the cost, `shorts film <project> --max-usd <cap>`. Filming keeps the take each unchanged segment used.

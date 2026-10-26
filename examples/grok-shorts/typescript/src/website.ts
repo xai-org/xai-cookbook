@@ -30,7 +30,7 @@ Return:
 - name: the brand's name the way it writes it, short, without a tagline.
 - colors: one to three hex colors that are most recognizably theirs, the main brand or accent color first, taken from the logo, buttons, links, and headings, not from photos, product screenshots, or illustrations on the page. Leave out white, black, and grays, unless the brand is only black and white, and then return white.
 - font: the one of these closest in feel to the site's type: ${FONTS.map((font) => `${font.id} (${font.feel})`).join(", ")}. When the fonts the site uses are listed, go by their names before the screenshot.
-- look: the drawing style for stickers and captions that suits the brand: ${THEME_IDS.map((id) => `${id} (${THEMES[id].summary})`).join(" ")}
+- look: the drawing style for captions that suits the brand: ${THEME_IDS.map((id) => `${id} (${THEMES[id].summary})`).join(" ")}
 - glow: true only if the site itself uses glowing, neon colors.
 - line: a call to action for the end card, under 40 characters, like "Follow @handle for more" with their X account if there is one, or "Try it at example.com" with their domain.
 - logo: the number of the image that is their logo and reads well small on a dark video, a wordmark or mark with a transparent background, or 0 if none does.

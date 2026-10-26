@@ -3,10 +3,10 @@ import { existsSync } from "node:fs";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { setTimeout as sleep } from "node:timers/promises";
 import { promisify } from "node:util";
 import { createCanvas, loadImage } from "@napi-rs/canvas";
 import { SpaceXAI } from "@xai-official/sdk";
+import { filmVideo } from "./takes.ts";
 
 const client = new SpaceXAI({ maxRetries: 5 });
 const run = promisify(execFile);
@@ -47,14 +47,8 @@ export async function drawPicture(prompt: string, aspect: "4:3" | "9:16", file: 
 // Films a short clip from a prompt with Grok Imagine, for a beat with nothing real to show. Without a picture to start
 // from, the video model films whatever the prompt describes.
 export async function filmBroll(prompt: string, seconds: number, aspect: "4:3" | "9:16", file: string, signal?: AbortSignal): Promise<{ file: string; cost: number }> {
-  const { request_id } = await client.videos.generate(
-    { model: "grok-imagine-video-1.5", prompt: `${prompt} ${NO_TEXT}`, duration: seconds, aspect_ratio: aspect, resolution: "720p" },
-    { signal },
-  );
-  const result = await client.videos.wait(request_id, { signal });
-  if (!result.video?.url) throw new Error("Grok Imagine didn't film the clip.");
-  await download(result.video.url, file, signal);
-  return { file, cost: result.usage?.cost_usd ?? 0 };
+  const body = { model: "grok-imagine-video-1.5", prompt: `${prompt} ${NO_TEXT}`, duration: seconds, aspect_ratio: aspect, resolution: "720p" } as const;
+  return { file, cost: await filmVideo(body, file, undefined, signal) };
 }
 
 // A screenshot of a web page, 1080 pixels wide and tall enough to scroll through while it's on screen. Docs sites often
@@ -135,6 +129,12 @@ export async function videoSize(file: string): Promise<{ width: number; height: 
   return { width, height };
 }
 
+// Whether a video has any sound to play.
+export async function hasSound(file: string): Promise<boolean> {
+  const { stdout } = await run("ffprobe", ["-v", "error", "-select_streams", "a", "-show_entries", "stream=index", "-of", "csv=p=0", file]).catch(() => ({ stdout: "" }));
+  return String(stdout).trim().length > 0;
+}
+
 // Where something real on screen came from, to credit it: the account for an X post, or the site's name.
 export function sourceLabel(url: string): string {
   const { hostname, pathname } = new URL(url);
@@ -187,17 +187,4 @@ async function cropToContent(file: string): Promise<number> {
   cropped.getContext("2d").drawImage(image, 0, 0);
   await writeFile(file, await cropped.encode("png"));
   return height;
-}
-
-// A dropped connection, which fetch throws as a TypeError, is tried again, up to twice.
-async function download(url: string, file: string, signal?: AbortSignal, tries = 3): Promise<void> {
-  try {
-    const response = await fetch(url, { signal });
-    if (!response.ok) throw new Error(`Couldn't download ${url}: ${response.status}`);
-    await writeFile(file, Buffer.from(await response.arrayBuffer()));
-  } catch (error) {
-    if (!(error instanceof TypeError) || signal?.aborted || tries === 1) throw error;
-    await sleep(2000, undefined, { signal });
-    return download(url, file, signal, tries - 1);
-  }
 }

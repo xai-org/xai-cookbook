@@ -1,6 +1,7 @@
 import { NotFoundError, type ResponseStream, type ServerToolCall, SpaceXAI, type Tool } from "@xai-official/sdk";
 import { webSearch, xSearch } from "@xai-official/sdk/tools";
 import type { ChangedFile, PullRequest, Row } from "./github.ts";
+import { sourceLabel } from "./media.ts";
 import type { Persona } from "./persona.ts";
 import { sourceTools, sourcesBrief } from "./sources.ts";
 import { THEMES, THEME_IDS, type ThemeId, freshTheme } from "./themes.ts";
@@ -22,21 +23,28 @@ const IDEA_WORDS = 110;
 
 export const MOODS = ["chill", "shocked", "smug", "facepalm"] as const;
 export type Mood = (typeof MOODS)[number];
+// Something small the presenter does while saying a line, so no two takes move the same way. "point" is pointing up at
+// what's shown above them, which only a split or a visual laid over their video has.
+export const GESTURES = ["none", "count", "lean", "remember", "laugh", "shrug", "nod", "hands", "sigh", "squint", "headshake", "glance", "point"] as const;
+export type Gesture = (typeof GESTURES)[number];
 // How a segment is framed: the visual above the presenter, the presenter filling the screen, the presenter filling the
-// screen with the visual laid over their video, the presenter in front of the visual like a green screen, the visual
-// filling the screen with the presenter in a bubble, or the visual alone.
-export const LAYOUTS = ["split", "full", "overlay", "green", "bubble", "visual"] as const;
+// screen with the visual laid over their video, the presenter in front of the visual like a green screen, or the visual
+// alone.
+export const LAYOUTS = ["split", "full", "overlay", "green", "visual"] as const;
 export type Layout = (typeof LAYOUTS)[number];
 
 // One segment of the video: the presenter says `line` in one take, while `screen` is shown the way `layout` frames it.
-// `acting` says how the take is acted when it isn't in the presenter's personality, and is empty otherwise.
+// `acting` says how the take is acted when it isn't in the presenter's personality, and is empty otherwise. `gesture` is
+// the small thing they do as they say it; scripts written before gestures have none.
 // `trim` is how many seconds more to cut from the start and end of the segment's take than the app would, set on the
 // timeline: less than 0 keeps more of it.
-export type Segment = { kind: "hook" | "why" | "beat" | "ending"; label: string; emoji: string; mood: Mood; line: string; screen: Screen; layout: Layout; acting: string; trim?: Trim };
+export type Segment = { kind: "hook" | "why" | "beat" | "ending"; label: string; emoji: string; mood: Mood; gesture?: Gesture; line: string; screen: Screen; layout: Layout; acting: string; trim?: Trim };
 export type Trim = { head: number; tail: number };
 // What's shown: the hook in huge letters, the pull request, rows of a file's diff, a picture or a short clip that Grok
-// Imagine makes from `prompt`, a screenshot of a page, an X post, a few seconds of a video, or words stamped on at the
-// end. A page, post, or clip that can't be fetched is replaced by a picture drawn from its `prompt`.
+// Imagine makes from `prompt`, a screenshot of a page, an X post, a few seconds of a video, a motion graphic, or words
+// stamped on at the end. A page, post, or clip that can't be fetched is replaced by a picture drawn from its `prompt`.
+// A video with `play` plays that many seconds with its own sound before the line, the way a creator stitches someone
+// else's video, and the line answers it.
 export type Screen =
   | { kind: "headline" }
   | { kind: "pull-request" }
@@ -45,9 +53,15 @@ export type Screen =
   | { kind: "broll"; prompt: string }
   | { kind: "page"; url: string; prompt: string }
   | { kind: "post"; url: string; prompt: string }
-  | { kind: "clip"; url: string; start: number; prompt: string }
+  | { kind: "clip"; url: string; start: number; prompt: string; play?: number }
   | { kind: "upload"; asset: string; prompt: string }
+  | { kind: "motion"; motion: Motion }
   | { kind: "stamp"; text: string };
+// A motion graphic, animated from what Grok writes: a flow of steps with arrows between them, a hub with what connects to
+// it around it, bars comparing numbers, a list of steps, or one big number. Each item comes on screen as the presenter
+// says its `cue`, a word of the line. `value` is for bars and the number, which show `unit` after it.
+export const MOTION_STYLES = ["flow", "hub", "bars", "steps", "stat"] as const;
+export type Motion = { style: (typeof MOTION_STYLES)[number]; title: string; unit: string; items: Array<{ label: string; detail: string; value: number; cue: string }> };
 // What the video is about: a pull request, with anything else the person asked for, or an idea in their own words.
 export type Source = { pr: PullRequest; ask?: string } | { idea: string };
 // A question Grok asks before it writes, with a few likely answers to pick from.
@@ -69,16 +83,11 @@ export type Draft = {
   sources: string[];
   edits: string[];
   sound?: Sound;
-  onScreen?: OnScreen;
 };
 // What a video sounds like besides the presenter: music from the library under all of it, how loud from 0 to 1, and
 // whether the sound effects play.
 export type Sound = { music?: string; volume: number; effects: boolean };
 export const DEFAULT_SOUND: Sound = { volume: 0.5, effects: true };
-// Whether the video's title is written at the top of every frame and under the hook, and each segment's label on its
-// sticker.
-export type OnScreen = { title: boolean; labels: boolean };
-export const DEFAULT_ON_SCREEN: OnScreen = { title: true, labels: true };
 export type ScriptEvents = {
   reasoning?: (text: string) => void;
   // `where` is "web", "x", or the name of a connected source Grok read from, with the tool it used.
@@ -95,37 +104,41 @@ The presenter says about three words a second. When the person asks for a length
 A real person says the lines on camera, so write every line the way it's said out loud:
 - Code names become plain words: "on error" for onError, "parse args" for parse_args, and "the compose module" for compose.ts. Numbers and symbols are words too, like "four oh four" or "two hundred".
 - No emoji, symbols, paths, URLs, or code in a line.
+- Sound unscripted, the way people talk when they film themselves: now and then start mid-thought, like "Okay so" or "Look,", correct yourself once, like "it's three, no, four steps", or let a sentence trail off. At most one of these in a line, in about half the lines, and never in the hook's first words. No "um" or "uh".
 
 Every part has a layout, for how it's framed:
-- overlay: the presenter fills the screen, the way they filmed themselves on their phone, with the visual laid over their video above their head, the way a creator drops a screenshot or a clip onto what they filmed.
+- overlay: the presenter fills the screen, the way they filmed themselves on their phone, with the visual laid over their video, the way a creator drops a screenshot, a clip, or a window of code onto what they filmed.
 - full: the presenter fills the screen.
-- split: a card with the visual on the top half of the screen, and the presenter on the bottom half. Only for the diff's rows, the pull request, or words on screen.
-- green: the visual fills the screen, and the presenter, cut out like on a green screen, stands in front of it and covers the bottom of it. Only for a picture or a video that can lose its bottom, never for a screenshot, page, or post that needs reading.
+- split: the visual fills the top half of the screen, edge to edge, and the presenter the bottom half.
+- green: the visual fills the screen, and the presenter, cut out like on a green screen, stands in front of it and covers the bottom of it. Only for a picture, a video, or the diff, which stays above them, never for a screenshot, page, or post that needs reading.
 - visual: the visual fills the screen while the presenter talks over it.
-The hook and the ending are words on screen, so they can only be split or full. Mix layouts the way a creator edits: open on the presenter, lay screenshots, pages, posts, and clips over their video, and give only the best visual the whole screen.
+The hook and the ending are words on screen, so they're full screen, or split for a change of pace. Mix layouts the way a creator edits: open on the presenter, lay screenshots, pages, posts, clips, and code over their video, use each layout only for a part or two, and give only the best visual the whole screen.
 
 Every part also has acting. Leave it empty to act the part in the presenter's personality, or describe how this part is acted when the person wants a different style for it, like a burst of Gen Z energy on the hook before a calm teacher takes over. A part acted in another style is written in that style too.
 
 After you write the script, the person may ask for changes. Then write the whole script again with just those changes, and keep every other line word for word, since every changed line is filmed again. Keep anything they say they changed by hand.`;
 
 const NOTE = "- note: one or two sentences to the person you're making the video with, about what you wrote or changed, the way a collaborator would say it. It isn't part of the video.";
-const THEME = `- theme: the colors and letters of the words and stickers on screen, to suit the video and the personality. One of: ${THEME_IDS.map((id) => `${id}, ${THEMES[id].summary.charAt(0).toLowerCase()}${THEMES[id].summary.slice(1, -1)}`).join("; ")}.`;
+const THEME = `- theme: the colors and letters of the words on screen, to suit the video and the personality. One of: ${THEME_IDS.map((id) => `${id}, ${THEMES[id].summary.charAt(0).toLowerCase()}${THEMES[id].summary.slice(1, -1)}`).join("; ")}.`;
 const MOOD = "how the presenter reacts while saying it. chill is relaxed, shocked is a jaw-drop, smug is pleased with how it turned out, facepalm is disappointed.";
+const GRAPHIC_RULES = `a motion graphic the app animates in the video's colors, for a beat that's clearer drawn out than shown: how something works, how pieces connect, numbers to compare, steps, or one number that matters. Its style: flow (two to five steps with arrows between them, for how something works or a process), hub (one thing at the center, first, and two to five around it, for what connects to it), bars (two to five numbers to compare, each with a value, in the unit they share), steps (two to five short steps or points, in order), or stat (one number that matters, with its value, unit, and label). A short title, or empty. Each item has a label of one to four words, a detail of at most six words or empty, a value for bars and stat or else 0, and a cue: the one word of the line that brings it on screen as the presenter says it, in the order they say them. Laid over the presenter's video, a graphic only has room for a stat or up to three items, so a hub or a longer one goes in a split or fills the screen. Keep to numbers you found or I gave you.`;
+const GESTURE = `one small thing the presenter does while saying it, so no two takes move the same way: none, count (counts the points off on their fingers, for a list), lean (leans into the lens, like sharing a secret), remember (eyes flick up, like remembering), laugh (a short half-laugh), shrug, nod (nods along), hands (talks with their hands), sigh (a quick, exasperated exhale), squint (skeptical), headshake (a slow shake of the head), glance (looks away for a second, then back), or point (points up at what's shown above them, only in a split or an overlay, and at most twice in the video). Never the same one in two parts in a row, and none for about a third of the parts.`;
 
 const PULL_REQUEST_PROMPT = `You write a short vertical video that explains a pull request like a viral TikTok, together with the person who asked for it. A developer films it talking straight into the phone camera, with the pull request and its diff on screen. Each part is its own take, with a jump cut between them, and the words pop up as captions.
 
 Reply with:
 ${NOTE}
 ${THEME}
-- hook: the opening line, said in the first three seconds. It decides whether anyone keeps watching, so make it a great one. In one or two short sentences, say what this is about and why a developer should care: name the project or the feature, and lead with the stakes, like a concrete symptom, a surprising number, or a bold claim the video goes on to back up. Leave a question that the rest of the video answers. Use plain words, so a developer who has never seen this code gets it on first listen. Two examples of the shape: "If you use ky, your retry limit might be lying to you." and "Express could never cache a QUERY request. One line fixed it." At most 20 words. emoji: one emoji shown with it. mood: ${MOOD} layout: as below.
-- why: the context, right after the hook, said over a card showing the pull request. Who runs into this and when, what it costs them, and why the pull request exists, from its description, its commits, and the code. One to three sentences. emoji, mood, and layout, as for the hook.
+- hook: the opening line, said in the first three seconds. It decides whether anyone keeps watching, so make it a great one. In one or two short sentences, say what this is about and why a developer should care: name the project or the feature, and lead with the stakes, like a concrete symptom, a surprising number, or a bold claim the video goes on to back up. Leave a question that the rest of the video answers. Use plain words, so a developer who has never seen this code gets it on first listen. Two examples of the shape: "If you use ky, your retry limit might be lying to you." and "Express could never cache a QUERY request. One line fixed it." At most 20 words. emoji: one emoji shown with it. mood: ${MOOD} gesture: ${GESTURE} layout: as below.
+- why: the context, right after the hook, said over a card showing the pull request. Who runs into this and when, what it costs them, and why the pull request exists, from its description, its commits, and the code. One to three sentences. emoji, mood, gesture, and layout, as for the hook.
 - beats: two or three quick moments that show the change, usually the cause, the fix, and the proof.
-  - label: two or three words for a sticker on the code, like "the bug", "the fix", "the receipts", or "plot twist".
-  - emoji: one emoji for the sticker.
+  - label: two or three words naming the beat, like "the bug", "the fix", "the receipts", or "plot twist".
+  - emoji: one emoji for the beat.
   - file, from, to: the file, exactly as listed, and the range of rows in its diff to highlight: the rows the line is about, at most eight.
-  - mood and layout: as for the hook.
+  - graphic: style none, with an empty title, unit, and items, so the beat shows its rows. At most one beat can show a graphic instead, when it's about how pieces connect or how something flows: ${GRAPHIC_RULES}
+  - mood, gesture, and layout: as for the hook.
   - line: what the presenter says, one or two short, punchy sentences.
-- verdict: the closer. text: at most four words for the screen, like "ship it" or "check the cache". emoji, mood, layout, and line: a punchline that also tells the reviewer whether it's safe to approve and what to check.
+- verdict: the closer. text: at most four words for the screen, like "ship it" or "check the cache". emoji, mood, gesture, layout, and line: a punchline that also tells the reviewer whether it's safe to approve and what to check.
 
 Make it entertaining, but every technical claim has to be true to the pull request: don't invent problems, users, or numbers it doesn't show.
 
@@ -137,59 +150,82 @@ Research it with web search and X search, so every fact is right and the beats c
 
 Reply with:
 ${NOTE}
-- title: a few words naming the video, shown under the hook.
+- title: a few words naming the video.
 ${THEME}
-- hook: the opening line, said in the first three seconds. It decides whether anyone keeps watching, so make it a great one: a surprising fact, a bold claim, or a question the video answers, in plain words. At most 20 words. emoji: one emoji shown with it. mood: ${MOOD} layout: as below.
+- hook: the opening line, said in the first three seconds. It decides whether anyone keeps watching, so make it a great one: a surprising fact, a bold claim, or a question the video answers, in plain words. At most 20 words. emoji: one emoji shown with it. mood: ${MOOD} gesture: ${GESTURE} layout: as below.
 - beats: two to four quick moments that deliver the video, like the points of a list, the steps of a how-to, or the turns of a story.
-  - label: two or three words for a sticker on the visual, like "step one", "the catch", or "plot twist".
-  - emoji: one emoji for the sticker.
+  - label: two or three words naming the beat, like "step one", "the catch", or "plot twist".
+  - emoji: one emoji for the beat.
   - visual: what's shown during the beat.
-    - kind: page, for a screenshot of a web page you found, like an article, a product page, or docs. post, for an X post you found. clip, for a few seconds of a video on X or YouTube you found. broll, for a short clip that Grok Imagine films from your prompt. picture, for an image that Grok Imagine draws. upload, for one of the creator's own uploads, if the request lists any. Real pages, posts, and clips are best when they show the very thing the line is about, and the creator's uploads are best of all when they fit.
+    - kind: page, for a screenshot of a web page you found, like an article, a product page, or docs. post, for an X post you found. clip, for a few seconds of a video on X or YouTube you found. broll, for a short clip that Grok Imagine films from your prompt. picture, for an image that Grok Imagine draws. upload, for one of the creator's own uploads, if the request lists any. graphic, for a motion graphic you describe in graphic. Real pages, posts, and clips are best when they show the very thing the line is about, and the creator's uploads are best of all when they fit.
     - url: for a page, post, or clip, its exact URL from your searches. For an upload, its id. Otherwise empty.
     - start: for a clip, the second the part worth showing starts at. Otherwise 0.
+    - play: for a clip whose sound is the point, like what someone says in it, a reaction, or a sound, how many seconds of it play with their own sound before the presenter says the line, from 3 to 8, like a stitch on TikTok. While it plays, the presenter watches and reacts without a word: in a green layout, cut out in front of it, the way X's React with Video does, and in any other, under it. The line then answers it. Otherwise 0, and at most two in a video.
     - prompt: for a picture or broll, what it shows, as a prompt for an image or video model: the subject, the setting, and the style. For a page, post, or clip, a picture to draw instead if it can't be fetched. It can't have any words in it.
-  - mood and layout: as for the hook.
+    - graphic: for a graphic, ${GRAPHIC_RULES} For any other visual, style none, with an empty title, unit, and items.
+  - mood, gesture, and layout: as for the hook.
   - line: what the presenter says, one to three short, punchy sentences.
-- closer: the last part. text: at most four words for the screen, like "try it tonight" or "you're welcome". emoji, mood, layout, and line: a punchline, a takeaway, or a call to action that ends the video.
+- closer: the last part. text: at most four words for the screen, like "try it tonight" or "you're welcome". emoji, mood, gesture, layout, and line: a punchline, a takeaway, or a call to action that ends the video.
 
 Make it entertaining, and keep facts true: don't make up numbers, quotes, or events, unless the person asks for something made up, like a story. The presenter speaks as themselves: never have them claim to be someone else, or put words in a real person's mouth. Each line is one take of at most 15 seconds, so keep every line under 35 words.
 
 ${SPOKEN_RULES}`;
 
 const MOOD_FIELD = { type: "string", enum: MOODS };
-// Grok doesn't put the presenter in a bubble, which only looks right picked by hand: green keeps them on screen better.
-const LAYOUT_FIELD = { type: "string", enum: LAYOUTS.filter((layout) => layout !== "bubble") };
+const GESTURE_FIELD = { type: "string", enum: GESTURES };
+const LAYOUT_FIELD = { type: "string", enum: LAYOUTS };
 const ACTING_FIELD = { type: "string" };
 const SPOKEN_PART = {
   type: "object",
-  properties: { line: { type: "string" }, emoji: { type: "string" }, mood: MOOD_FIELD, layout: LAYOUT_FIELD, acting: ACTING_FIELD },
-  required: ["line", "emoji", "mood", "layout", "acting"],
+  properties: { line: { type: "string" }, emoji: { type: "string" }, mood: MOOD_FIELD, gesture: GESTURE_FIELD, layout: LAYOUT_FIELD, acting: ACTING_FIELD },
+  required: ["line", "emoji", "mood", "gesture", "layout", "acting"],
   additionalProperties: false,
 };
 const STAMP_PART = {
   type: "object",
-  properties: { text: { type: "string" }, emoji: { type: "string" }, mood: MOOD_FIELD, layout: LAYOUT_FIELD, acting: ACTING_FIELD, line: { type: "string" } },
-  required: ["text", "emoji", "mood", "layout", "acting", "line"],
+  properties: { text: { type: "string" }, emoji: { type: "string" }, mood: MOOD_FIELD, gesture: GESTURE_FIELD, layout: LAYOUT_FIELD, acting: ACTING_FIELD, line: { type: "string" } },
+  required: ["text", "emoji", "mood", "gesture", "layout", "acting", "line"],
   additionalProperties: false,
 };
 const beatsOf = (fields: Record<string, object>) => ({
   type: "array",
   items: {
     type: "object",
-    properties: { label: { type: "string" }, emoji: { type: "string" }, ...fields, mood: MOOD_FIELD, layout: LAYOUT_FIELD, acting: ACTING_FIELD, line: { type: "string" } },
-    required: ["label", "emoji", ...Object.keys(fields), "mood", "layout", "acting", "line"],
+    properties: { label: { type: "string" }, emoji: { type: "string" }, ...fields, mood: MOOD_FIELD, gesture: GESTURE_FIELD, layout: LAYOUT_FIELD, acting: ACTING_FIELD, line: { type: "string" } },
+    required: ["label", "emoji", ...Object.keys(fields), "mood", "gesture", "layout", "acting", "line"],
     additionalProperties: false,
   },
 });
+const GRAPHIC = {
+  type: "object",
+  properties: {
+    style: { type: "string", enum: ["none", ...MOTION_STYLES] },
+    title: { type: "string" },
+    unit: { type: "string" },
+    items: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: { label: { type: "string" }, detail: { type: "string" }, value: { type: "number" }, cue: { type: "string" } },
+        required: ["label", "detail", "value", "cue"],
+        additionalProperties: false,
+      },
+    },
+  },
+  required: ["style", "title", "unit", "items"],
+  additionalProperties: false,
+};
 const VISUAL = {
   type: "object",
   properties: {
-    kind: { type: "string", enum: ["page", "post", "clip", "broll", "picture", "upload"] },
+    kind: { type: "string", enum: ["page", "post", "clip", "broll", "picture", "upload", "graphic"] },
     url: { type: "string" },
     start: { type: "number" },
+    play: { type: "number" },
     prompt: { type: "string" },
+    graphic: GRAPHIC,
   },
-  required: ["kind", "url", "start", "prompt"],
+  required: ["kind", "url", "start", "play", "prompt", "graphic"],
   additionalProperties: false,
 };
 
@@ -220,7 +256,7 @@ const PULL_REQUEST_SCHEMA = {
     theme: THEME_FIELD,
     hook: SPOKEN_PART,
     why: SPOKEN_PART,
-    beats: beatsOf({ file: { type: "string" }, from: { type: "integer" }, to: { type: "integer" } }),
+    beats: beatsOf({ file: { type: "string" }, from: { type: "integer" }, to: { type: "integer" }, graphic: GRAPHIC }),
     verdict: STAMP_PART,
   },
   required: ["note", "theme", "hook", "why", "beats", "verdict"],
@@ -235,10 +271,11 @@ const IDEA_SCHEMA = {
 
 // A message to Grok: text, or text with pictures.
 type Message = { role: "system" | "user"; content: string | Array<{ type: "input_text"; text: string } | { type: "input_image"; image: Blob; detail: "high" }> };
-type Spoken = { line: string; emoji: string; mood: Mood; layout: Layout; acting?: string };
+type Spoken = { line: string; emoji: string; mood: Mood; gesture?: Gesture; layout: Layout; acting?: string };
 type Stamp = Spoken & { text: string };
-type Visual = { kind: "page" | "post" | "clip" | "broll" | "picture" | "upload"; url: string; start: number; prompt: string };
-type PullRequestScript = { note: string; hook: Spoken; why: Spoken; beats: Array<Spoken & { label: string; file: string; from: number; to: number }>; verdict: Stamp };
+type Graphic = { style: "none" | Motion["style"]; title: string; unit: string; items: Motion["items"] };
+type Visual = { kind: "page" | "post" | "clip" | "broll" | "picture" | "upload" | "graphic"; url: string; start: number; play?: number; prompt: string; graphic?: Graphic };
+type PullRequestScript = { note: string; hook: Spoken; why: Spoken; beats: Array<Spoken & { label: string; file: string; from: number; to: number; graphic?: Graphic }>; verdict: Stamp };
 type IdeaScript = { note: string; title: string; hook: Spoken; beats: Array<Spoken & { label: string; visual: Visual }>; closer: Stamp };
 // How Grok writes one kind of video: its instructions, the shape of its reply, the order it writes the fields in, the
 // tools it can research with, and how a reply becomes segments. `found` has the sources Grok's searches turned up,
@@ -353,8 +390,9 @@ export function moveSegmentTo(draft: Draft, from: number, to: number): Draft {
 export function setLayout(draft: Draft, index: number, layout: Layout): Draft {
   const segment = draft.segments[index];
   if (!segment || !LAYOUTS.includes(layout)) throw new Error("There's no such segment or layout.");
-  const segments = draft.segments.with(index, { ...segment, layout: layoutFor(layout, segment.screen) });
-  const edits = [...draft.edits.filter((edit) => !edit.startsWith(`Segment ${index + 1} `)), `Segment ${index + 1} ("${segment.label}") uses the ${layout} layout.`];
+  const framed = layoutFor(layout, segment.screen);
+  const segments = draft.segments.with(index, { ...segment, layout: framed });
+  const edits = [...draft.edits.filter((edit) => !edit.startsWith(`Segment ${index + 1} `)), `Segment ${index + 1} ("${segment.label}") uses the ${framed} layout.`];
   return { ...draft, segments, edits };
 }
 
@@ -432,7 +470,10 @@ export async function publishText(draft: Draft, platform: Platform, signal?: Abo
   );
   const reply = response.toJson() as { title: string; description: string; hashtags: string[] };
   const hashtags = reply.hashtags.map((tag) => tag.trim().replace(/^#+/, "").replace(/\s+/g, "")).filter(Boolean).slice(0, 6);
-  return { title: reply.title.trim(), description: reply.description.trim(), hashtags, cost: response.usage.cost_usd ?? 0 };
+  // A clip that plays with its own sound is someone else's video, so the description credits where it came from.
+  const credits = [...new Set(draft.segments.flatMap(({ screen }) => (screen.kind === "clip" && screen.play ? [sourceLabel(screen.url)] : [])))];
+  const credit = credits.length ? `\n\n${credits.length > 1 ? "Clips" : "Clip"} from ${credits.join(", ")}` : "";
+  return { title: reply.title.trim(), description: `${reply.description.trim()}${credit}`, hashtags, cost: response.usage.cost_usd ?? 0 };
 }
 
 // Changes what a segment says by hand, without asking Grok, and notes the change for Grok's next reply, which keeps it.
@@ -460,13 +501,6 @@ export function setUpload(draft: Draft, index: number, asset: { id: string; name
 export function setSound(draft: Draft, { music, volume, effects }: Partial<Sound>): Draft {
   const sound = { ...DEFAULT_SOUND, ...draft.sound };
   return { ...draft, sound: { music: music === undefined ? sound.music : music || undefined, volume: Math.min(Math.max(volume ?? sound.volume, 0), 1), effects: effects ?? sound.effects } };
-}
-
-// Shows or hides the title at the top and the segments' labels by hand. Grok doesn't hear about it either: they're drawn
-// on after filming, so changing them costs nothing.
-export function setOnScreen(draft: Draft, { title, labels }: Partial<OnScreen>): Draft {
-  const shown = { ...DEFAULT_ON_SCREEN, ...draft.onScreen };
-  return { ...draft, onScreen: { title: title ?? shown.title, labels: labels ?? shown.labels } };
 }
 
 // Cuts a beat, or the why of a pull request, by hand. The hook and the ending stay.
@@ -509,24 +543,30 @@ function resumeBrief(draft: Draft): string {
 }
 
 function toScript(draft: Draft): Record<string, unknown> {
-  const spoken = ({ emoji, mood, layout, acting, line }: Segment) => ({ emoji, mood, layout, acting, line });
+  const spoken = ({ emoji, mood, gesture, layout, acting, line }: Segment) => ({ emoji, mood, gesture: gesture ?? "none", layout, acting, line });
   const find = (kind: Segment["kind"]) => draft.segments.find((segment) => segment.kind === kind);
   const [hook, why, ending] = [find("hook"), find("why"), find("ending")];
   const beats = draft.segments.filter((segment) => segment.kind === "beat");
   const stamp = ending && { text: ending.screen.kind === "stamp" ? ending.screen.text : ending.label, ...spoken(ending) };
   if ("pr" in draft.source) {
-    const rows = (screen: Screen) => (screen.kind === "code" ? { file: screen.file, from: screen.from, to: screen.to } : {});
-    return { theme: draft.theme, hook: hook && spoken(hook), why: why && spoken(why), beats: beats.map((beat) => ({ label: beat.label, ...rows(beat.screen), ...spoken(beat) })), verdict: stamp };
+    const rows = (screen: Screen) => (screen.kind === "code" ? { file: screen.file, from: screen.from, to: screen.to } : { file: "", from: 0, to: 0 });
+    return { theme: draft.theme, hook: hook && spoken(hook), why: why && spoken(why), beats: beats.map((beat) => ({ label: beat.label, ...rows(beat.screen), graphic: graphicFor(beat.screen), ...spoken(beat) })), verdict: stamp };
   }
   return { title: draft.title, theme: draft.theme, hook: hook && spoken(hook), beats: beats.map((beat) => ({ label: beat.label, visual: visualOf(beat.screen), ...spoken(beat) })), closer: stamp };
 }
 
 function visualOf(screen: Screen): Visual {
-  if (screen.kind === "page" || screen.kind === "post") return { kind: screen.kind, url: screen.url, start: 0, prompt: screen.prompt };
-  if (screen.kind === "clip") return { kind: "clip", url: screen.url, start: screen.start, prompt: screen.prompt };
-  if (screen.kind === "picture" || screen.kind === "broll") return { kind: screen.kind, url: "", start: 0, prompt: screen.prompt };
-  if (screen.kind === "upload") return { kind: "upload", url: screen.asset, start: 0, prompt: screen.prompt };
-  return { kind: "picture", url: "", start: 0, prompt: "" };
+  const graphic = graphicFor(screen);
+  if (screen.kind === "page" || screen.kind === "post") return { kind: screen.kind, url: screen.url, start: 0, play: 0, prompt: screen.prompt, graphic };
+  if (screen.kind === "clip") return { kind: "clip", url: screen.url, start: screen.start, play: screen.play ?? 0, prompt: screen.prompt, graphic };
+  if (screen.kind === "picture" || screen.kind === "broll") return { kind: screen.kind, url: "", start: 0, play: 0, prompt: screen.prompt, graphic };
+  if (screen.kind === "upload") return { kind: "upload", url: screen.asset, start: 0, play: 0, prompt: screen.prompt, graphic };
+  if (screen.kind === "motion") return { kind: "graphic", url: "", start: 0, play: 0, prompt: "", graphic };
+  return { kind: "picture", url: "", start: 0, play: 0, prompt: "", graphic };
+}
+
+function graphicFor(screen: Screen): Graphic {
+  return screen.kind === "motion" ? screen.motion : NO_GRAPHIC;
 }
 
 // Streams Grok's reply as structured output, and reports the note and each segment as soon as they're complete, so the
@@ -709,53 +749,98 @@ function pullRequestSegments(script: Partial<PullRequestScript>, shown: Map<stri
   if (script.hook) segments.push(segment("hook", "Hook", script.hook, { kind: "headline" }));
   if (script.why) segments.push(segment("why", "Why it matters", script.why, { kind: "pull-request" }));
   for (const beat of script.beats ?? []) {
+    const motion = graphicOf(beat.graphic);
+    if (motion && beat.line.trim()) segments.push(segment("beat", beat.label, beat, { kind: "motion", motion }));
     const file = shown.get(beat.file);
-    if (!file || !beat.line.trim()) continue;
+    if (motion || !file || !beat.line.trim()) continue;
     const clamp = (row: number) => Math.min(Math.max(Math.round(row), 1), file.rows.length);
     const [from, to] = [clamp(Math.min(beat.from, beat.to)), clamp(Math.max(beat.from, beat.to))];
     segments.push(segment("beat", beat.label, beat, { kind: "code", file: beat.file, from, to }));
   }
   const { verdict } = script;
   if (verdict) segments.push(segment("ending", `Verdict: ${verdict.text}`, verdict, { kind: "stamp", text: verdict.text }));
-  return segments;
+  return varied(segments);
 }
 
 function ideaSegments(script: Partial<IdeaScript>, found?: Set<string>): Segment[] {
   const segments: Segment[] = [];
   if (script.hook) segments.push(segment("hook", "Hook", script.hook, { kind: "headline" }));
-  for (const beat of script.beats ?? []) if (beat.line.trim()) segments.push(segment("beat", beat.label, beat, visualScreen(beat.visual, found)));
+  let stitches = 0;
+  for (const beat of script.beats ?? []) {
+    if (!beat.line.trim()) continue;
+    const screen = visualScreen(beat.visual, found);
+    // Two clips playing with their own sound is plenty for a short, so any more play under the line, like the rest.
+    const played = screen.kind === "clip" && screen.play && ++stitches > 2 ? { ...screen, play: undefined } : screen;
+    segments.push(segment("beat", beat.label, beat, played));
+  }
   const { closer } = script;
   if (closer) segments.push(segment("ending", closer.text, closer, { kind: "stamp", text: closer.text }));
-  return segments;
+  return varied(segments);
 }
 
-function segment(kind: Segment["kind"], label: string, { line, emoji, mood, layout, acting }: Spoken, screen: Screen): Segment {
-  return { kind, label, emoji, mood, line: line.trim(), screen, layout: layoutFor(layout, screen), acting: acting?.trim() ?? "" };
+function segment(kind: Segment["kind"], label: string, { line, emoji, mood, gesture, layout, acting }: Spoken, screen: Screen): Segment {
+  const framed = layoutFor(layout, screen);
+  const picked = GESTURES.includes(gesture as Gesture) ? (gesture as Gesture) : "none";
+  return { kind, label, emoji, mood, gesture: picked === "point" && !showsAbove(framed) ? "none" : picked, line: line.trim(), screen, layout: framed, acting: acting?.trim() ?? "" };
 }
 
-// The hook and the ending are words on screen, with nothing to put the presenter in front of.
-// Words on screen go in a split or full screen, and the diff's rows or the pull request's card in a split, where there's
-// room to read them, rather than laid over the presenter or with them keyed out, which are for visuals.
+// Real people don't make the same move twice in a row, and pointing at the screen gets old fast, so a gesture that repeats
+// the one before it, or a third point, becomes none.
+function varied(segments: Segment[]): Segment[] {
+  let points = 0;
+  return segments.map((each, index) => {
+    const repeat = each.gesture !== "none" && each.gesture === segments[index - 1]?.gesture;
+    const pointed = each.gesture === "point" && ++points > 2;
+    return repeat || pointed ? { ...each, gesture: "none" } : each;
+  });
+}
+
+// Whether the presenter has something shown above them to point at: the card in a split, or a visual laid over their video.
+export function showsAbove(layout: Layout): boolean {
+  return layout === "split" || layout === "overlay";
+}
+
+// The hook and the ending are words on screen, with nothing to put the presenter in front of, so they go in a split or
+// full screen. Above the presenter's head there's only room for a graphic of a few items, so a bigger one goes in a split.
 function layoutFor(layout: Layout, screen: Screen): Layout {
   const chosen = LAYOUTS.includes(layout) ? layout : "split";
   if (screen.kind === "headline" || screen.kind === "stamp") return chosen === "split" ? "split" : "full";
-  return (chosen === "green" || chosen === "overlay") && (screen.kind === "code" || screen.kind === "pull-request") ? "split" : chosen;
+  if (screen.kind === "motion" && chosen === "overlay" && (screen.motion.style === "hub" || screen.motion.items.length > 3)) return "split";
+  return chosen;
 }
 
 // A beat can only show a page, post, or video that Grok's searches turned up, never a URL it made up. Once the reply is
 // complete and `found` is known, anything else becomes the picture Grok described in its place. A YouTube video always
 // plays as a clip, since a screenshot of its page only catches the page loading, and an X post is shown as a post unless
 // it's asked for as a clip.
-function visualScreen({ kind, url, start, prompt }: Visual, found?: Set<string>): Screen {
+function visualScreen({ kind, url, start, play, prompt, graphic }: Visual, found?: Set<string>): Screen {
   const picture = { kind: "picture" as const, prompt: prompt.trim() };
-  if (kind === "picture") return picture;
+  const motion = kind === "graphic" ? graphicOf(graphic) : undefined;
+  if (motion) return { kind: "motion", motion };
+  if (kind === "picture" || kind === "graphic") return picture;
   if (kind === "broll") return { kind: "broll", prompt: prompt.trim() };
   if (kind === "upload") return /^upload-[0-9a-f]+$/.test(url.trim()) ? { kind: "upload", asset: url.trim(), prompt: prompt.trim() } : picture;
   const key = sourceKey(url);
   if (!url.trim() || (found && !found.has(key))) return picture;
-  if (kind === "clip" || key.startsWith("youtube:")) return { kind: "clip", url, start: kind === "clip" ? Math.max(0, start || 0) : 0, prompt: picture.prompt };
+  const stitch = kind === "clip" ? Math.round(Math.min(8, Math.max(0, play || 0))) : 0;
+  if (kind === "clip" || key.startsWith("youtube:")) return { kind: "clip", url, start: kind === "clip" ? Math.max(0, start || 0) : 0, prompt: picture.prompt, ...(stitch >= 3 ? { play: stitch } : {}) };
   return { kind: key.startsWith("x:") ? "post" : "page", url, prompt: picture.prompt };
 }
+
+// The graphic Grok wrote, or nothing if it's none or has too few items to draw. A number takes only its first item, and
+// the rest five at most, or six for a hub with its center.
+function graphicOf(graphic: Graphic | undefined): Motion | undefined {
+  const style = MOTION_STYLES.find((each) => each === graphic?.style);
+  if (!graphic || !style) return undefined;
+  const items = (graphic.items ?? [])
+    .filter((item) => item.label?.trim())
+    .slice(0, style === "stat" ? 1 : style === "hub" ? 6 : 5)
+    .map((item) => ({ label: item.label.trim(), detail: item.detail?.trim() ?? "", value: Number.isFinite(item.value) ? item.value : 0, cue: item.cue?.trim() ?? "" }));
+  if (items.length < (style === "stat" ? 1 : 2)) return undefined;
+  return { style, title: graphic.title?.trim() ?? "", unit: graphic.unit?.trim() ?? "", items };
+}
+
+const NO_GRAPHIC: Graphic = { style: "none", title: "", unit: "", items: [] };
 
 function personaLines(persona: Persona): string {
   return `Their personality is "${persona.name}": ${persona.summary}

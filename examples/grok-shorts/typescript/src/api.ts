@@ -14,7 +14,6 @@ import { type Cut, type Note, type Project, type Turn, addNote, archiveCurrent, 
 import { reviewCut } from "./review.ts";
 import { PRESETS, type Source, listSources, removeSource, saveSource, testSource } from "./sources.ts";
 import {
-  DEFAULT_ON_SCREEN,
   DEFAULT_SOUND,
   LAYOUTS,
   type Layout,
@@ -28,7 +27,6 @@ import {
   removeSegment,
   setLayout,
   setLine,
-  setOnScreen,
   setSound,
   setTheme,
   setTrim,
@@ -65,10 +63,9 @@ export type Video = {
   theme: string;
   note?: string;
   questions?: Question[];
-  segments: Array<Pick<Segment, "kind" | "label" | "emoji" | "line" | "mood" | "layout" | "screen"> & { segment: number; acting?: string; trim?: Segment["trim"]; seconds?: number; filmed?: boolean }>;
+  segments: Array<Pick<Segment, "kind" | "label" | "emoji" | "line" | "mood" | "gesture" | "layout" | "screen"> & { segment: number; acting?: string; trim?: Segment["trim"]; seconds?: number; filmed?: boolean }>;
   estimate?: Estimate;
   sound: { music?: string; volume: number; effects: boolean };
-  onScreen: { title: boolean; labels: boolean };
   pendingNotes: number;
   versions: Version[];
   transcript?: string;
@@ -100,7 +97,6 @@ const LAYOUT_NAMES: Record<Layout, string> = {
   full: "the presenter filling the screen",
   overlay: "the presenter filling the screen, with the visual laid over their video",
   green: "the presenter in front of the visual, like a green screen",
-  bubble: "the visual filling the screen, with the presenter in a bubble",
   visual: "the visual alone",
 };
 // Folders in output/ that hold something other than videos.
@@ -266,7 +262,8 @@ export function preview(name: string, options: Steps & { presenter?: string } = 
 
 // Films the latest script and cuts it together. Takes of segments that haven't changed since an earlier cut are kept, so
 // filming again only pays for what changed. With `maxUsd`, nothing is filmed when the estimate is over it. Takes that
-// have started rendering are billed even if the step is stopped, since the API can't cancel a video.
+// have started rendering are billed even if the step is stopped, since the API can't cancel a video, so filming again
+// picks them up instead of paying for them again.
 export function film(name: string, { maxUsd, ...options }: Steps & { presenter?: string; maxUsd?: number } = {}): Promise<NewCut> {
   return makeCut(name, false, options, maxUsd);
 }
@@ -328,7 +325,7 @@ export function layout(name: string, segment: number, framed: string): Promise<V
   return edited(name, (project) => (project.draft = setLayout(project.draft, indexOf(project, segment), framed as Layout)));
 }
 
-// Changes the theme the words and stickers are drawn in, by hand. Filming again draws the video again in it without
+// Changes the theme the words are drawn in, by hand. Filming again draws the video again in it without
 // filming anything new. "brand" is the brand kit's.
 export async function theme(name: string, picked: string): Promise<Video> {
   if (picked === "brand" ? !(await loadBrand()) : !THEME_IDS.includes(picked as (typeof THEME_IDS)[number])) {
@@ -369,12 +366,6 @@ export async function useUpload(name: string, segment: number, upload: string): 
 export async function sound(name: string, { music, volume, effects }: { music?: string; volume?: number; effects?: boolean }): Promise<Video> {
   if (music && music !== "none" && (await findAsset(music))?.kind !== "audio") throw new Error(`There's no music called ${music} in the library.`);
   return edited(name, (project) => (project.draft = setSound(project.draft, { music: music === "none" ? "" : music, volume, effects })));
-}
-
-// Shows or hides the title at the top of every frame, and each segment's label on its sticker. They're drawn after
-// filming, so the next cut costs nothing more for it.
-export function onScreen(name: string, shown: { title?: boolean; labels?: boolean }): Promise<Video> {
-  return edited(name, (project) => (project.draft = setOnScreen(project.draft, shown)));
 }
 
 // Every take saved for each segment of the latest script, lettered in the order they were filmed, with the one the next
@@ -469,7 +460,7 @@ export async function removeNote(name: string, id: string) {
 }
 
 // Grok watches a version, the latest unless it's another, from three frames of every segment, and pins a note on each
-// problem a viewer would notice, like a sticker covering a screenshot's headline. The notes go with the next revise().
+// problem a viewer would notice, like a caption over the presenter's mouth. The notes go with the next revise().
 export async function review(name: string, { version, signal }: { version?: number; signal?: AbortSignal } = {}) {
   const project = await loadProject(name);
   const cut = versionOf(project, version);
@@ -688,7 +679,7 @@ async function makeCut(name: string, preview: boolean, { presenter, onProgress =
   project.presenter = who;
   const made = Date.now();
   const takes = short.takes.map((take) => take.file);
-  const kept = await keepCut(project, { id: made, video: short.video, made, parts: short.parts, words: short.words, segments: draft.segments, title: draft.title, theme: draft.theme, onScreen: draft.onScreen, sound: draft.sound, cost, takes, ...(preview ? { kind: "preview" as const } : {}) });
+  const kept = await keepCut(project, { id: made, video: short.video, made, parts: short.parts, words: short.words, segments: draft.segments, title: draft.title, theme: draft.theme, sound: draft.sound, cost, takes, ...(preview ? { kind: "preview" as const } : {}) });
   await saveProject(project);
   return { project: basename(project.dir), version: cutsOf(project).length, preview, video: resolve(kept.video), duration: tenths(short.duration), cost: money(cost), transcript: short.transcript };
 }
@@ -728,13 +719,14 @@ async function videoOf(project: Project): Promise<Video> {
     theme: draft.theme,
     note: last?.note,
     questions: draft.segments.length ? undefined : last?.questions,
-    segments: draft.segments.map(({ kind, label, emoji, line: said, mood, layout: framed, screen, acting, trim: trimmed }, index) => ({
+    segments: draft.segments.map(({ kind, label, emoji, line: said, mood, gesture, layout: framed, screen, acting, trim: trimmed }, index) => ({
       segment: index + 1,
       kind,
       label,
       emoji,
       line: said,
       mood,
+      ...(gesture ? { gesture } : {}),
       layout: framed,
       screen,
       ...(acting ? { acting } : {}),
@@ -744,7 +736,6 @@ async function videoOf(project: Project): Promise<Video> {
     })),
     estimate: estimated && draft.segments.length ? totals(estimated.segments, estimated.cost) : undefined,
     sound: { ...DEFAULT_SOUND, ...draft.sound },
-    onScreen: { ...DEFAULT_ON_SCREEN, ...draft.onScreen },
     pendingNotes: project.notes.filter((each) => !each.sent).length,
     versions: cutsOf(project).map((cut, index) => ({
       version: index + 1,

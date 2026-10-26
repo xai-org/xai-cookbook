@@ -167,8 +167,8 @@
   .personality .handle:focus { border-color: var(--fg); }
   .personality .pill-sm { height: 24px; padding: 0 10px; font-size: 12px; }
   .sound input[type="range"] { width: 96px; accent-color: var(--fg); }
-  .sound .effects, .on-screen .effects { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); cursor: pointer; }
-  .sound .effects input, .on-screen .effects input { margin: 0; accent-color: var(--fg); }
+  .sound .effects { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); cursor: pointer; }
+  .sound .effects input { margin: 0; accent-color: var(--fg); }
   .research { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; font-size: 12px; line-height: 18px; color: var(--faint); }
   .notice { margin: 0; font-size: 12px; line-height: 18px; color: var(--removed); }
   .questions { display: grid; gap: 12px; margin: 0; padding: 12px 14px; border-radius: 12px; background: var(--accent-soft); }
@@ -703,14 +703,14 @@
 <script>
   const $ = (id) => document.getElementById(id);
   const MOODS = { chill: "😌 chill", shocked: "😱 shocked", smug: "😏 smug", facepalm: "🤦 facepalm" };
+  const GESTURES = { count: "counts on fingers", lean: "leans in", remember: "remembers", laugh: "laughs", shrug: "shrugs", nod: "nods", hands: "talks with hands", sigh: "sighs", squint: "squints", headshake: "shakes head", glance: "glances away", point: "points up" };
   const SHORT_NAMES = { hook: "Hook", why: "Why", ending: "Ending" };
-  const LAYOUTS = { overlay: "Overlay", split: "Split", full: "Full screen", green: "Green screen", bubble: "Bubble", visual: "Visual only" };
+  const LAYOUTS = { overlay: "Overlay", split: "Split", full: "Full screen", green: "Green screen", visual: "Visual only" };
   const LAYOUT_ABOUT = {
     overlay: "The visual floats over the presenter's video",
     split: "The visual on top, the presenter below",
     full: "The presenter fills the screen",
     green: "The presenter stands in front of the visual",
-    bubble: "The presenter in a circle over the visual",
     visual: "Just the visual, with the presenter's voice",
   };
   const video = $("video");
@@ -721,7 +721,6 @@
   let segments = [];
   let theme = "classic";
   let sound = { volume: 0.5, effects: true };
-  let onScreen = { title: true, labels: true };
   // Each presenter's voice, to hear a line in before it's filmed, and the name of each connected app, by its id.
   let presenterVoices = {};
   let sourceNames = {};
@@ -910,10 +909,9 @@
         addSegment(reply.parts, segment);
         scrollDown();
       },
-      done: ({ title, theme: picked, segments: written, sound: mixed, onScreen: shown, personality: spoken, folder }) => {
+      done: ({ title, theme: picked, segments: written, sound: mixed, personality: spoken, folder }) => {
         $("restart").hidden = false;
         sound = mixed ?? sound;
-        onScreen = shown ?? onScreen;
         speaking = spoken ?? speaking;
         // The video is saved from its first reply, so this address opens it again, even after the server restarts.
         history.replaceState(null, "", `/?video=${encodeURIComponent(folder)}`);
@@ -1153,24 +1151,29 @@
     return { about: find(".about"), persona: find(".persona"), research: find(".research"), thinking: find(".thinking"), thinkingLabel: find(".thinking span"), reasoning: find(".reasoning"), note: find(".note"), parts: find(".parts") };
   }
 
-  // A segment of the script: its sticker, how it's framed, how the presenter reacts, what it shows, and its line. Given
+  // A segment of the script: its label, how it's framed, how the presenter reacts, what it shows, and its line. Given
   // its `index` in the latest script, its layout can be changed by hand.
-  function addSegment(list, { kind, label, emoji, mood, line, screen, layout, acting }, index) {
+  function addSegment(list, { kind, label, emoji, mood, gesture, line, screen, layout, acting }, index) {
     const item = document.createElement("li");
     item.className = kind;
     item.innerHTML = `<div class="top"><span class="sticker"></span><span class="mood"></span></div><p class="where"></p><p class="line"></p>`;
     item.querySelector(".sticker").textContent = `${sentence(label)} ${emoji}`;
-    item.querySelector(".mood").textContent = MOODS[mood] ?? mood;
+    item.querySelector(".mood").textContent = [MOODS[mood] ?? mood, GESTURES[gesture]].filter(Boolean).join(" · ");
     if (layout) item.querySelector(".mood").before(layoutPicker(screen, layout, index));
     const where = item.querySelector(".where");
     const prompted = screen.kind === "picture" || screen.kind === "broll";
     if (screen.kind === "code") where.textContent = `${screen.file} · rows ${screen.from}–${screen.to}`;
     if (prompted) where.textContent = `${screen.kind === "broll" ? "B-roll" : "Picture"}: ${screen.prompt}`;
     if (screen.kind === "upload") where.textContent = `Your upload · ${screen.prompt}`;
+    if (screen.kind === "motion") {
+      const name = { flow: "Diagram", hub: "Diagram", bars: "Chart", steps: "Steps", stat: "Number" }[screen.motion.style];
+      where.textContent = `${name} · ${screen.motion.items.map((each) => each.label).join(screen.motion.style === "flow" ? " → " : " · ")}`;
+    }
     if (screen.url) {
       const name = { page: "Screenshot", post: "X post", clip: "Clip" }[screen.kind];
       const from = screen.kind === "clip" && screen.start ? ` from ${Math.floor(screen.start / 60)}:${String(Math.floor(screen.start % 60)).padStart(2, "0")}` : "";
-      where.append(`${name} · `, Object.assign(document.createElement("a"), { href: screen.url, target: "_blank", rel: "noopener", textContent: shortUrl(screen.url) }), from);
+      const played = screen.kind === "clip" && screen.play ? ` · plays ${screen.play}s with its sound first` : "";
+      where.append(`${name} · `, Object.assign(document.createElement("a"), { href: screen.url, target: "_blank", rel: "noopener", textContent: shortUrl(screen.url) }), from, played);
     }
     where.classList.toggle("prompt", prompted);
     where.hidden = !where.textContent;
@@ -1639,20 +1642,20 @@
     return dropdown(select, { about: (id) => LAYOUT_ABOUT[id] });
   }
 
-  // How the latest script's video looks and sounds, folded into one menu: its personality, theme, what's drawn on screen,
-  // and its music and sound effects. Closed, it says the personality and theme picked.
+  // How the latest script's video looks and sounds, folded into one menu: its personality, theme, and its music and sound
+  // effects. Closed, it says the personality and theme picked.
   function styleMenu(...rows) {
     const menu = Object.assign(document.createElement("details"), { className: "style-menu" });
     menu.innerHTML = `<summary><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5a6.5 6.5 0 1 0 0 13c.9 0 1.3-.6 1.3-1.2 0-.8-.6-1.1-.6-1.8 0-.7.6-1.2 1.3-1.2h1.4a3.1 3.1 0 0 0 3.1-3.1C14.5 4 11.6 1.5 8 1.5Z"/><circle cx="4.8" cy="7.4" r=".7"/><circle cx="7.2" cy="4.6" r=".7"/><circle cx="10.4" cy="5" r=".7"/></svg>Style<span class="style-now"></span><svg class="chevron" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 6.5 8 10l3.5-3.5"/></svg></summary><div class="style-panel"></div>`;
     menu.querySelector(".style-panel").append(...rows);
     const picked = (row, prefix) => menu.querySelector(`${row} select`)?.selectedOptions[0]?.text.replace(prefix, "").replace(/ \(.*\)$/, "");
-    const now = () => (menu.querySelector(".style-now").textContent = [picked(".personality", "Personality: "), picked(".theme:not(.personality, .on-screen, .sound)", "Theme: ")].filter(Boolean).join(" · "));
+    const now = () => (menu.querySelector(".style-now").textContent = [picked(".personality", "Personality: "), picked(".theme:not(.personality, .sound)", "Theme: ")].filter(Boolean).join(" · "));
     menu.addEventListener("change", now);
     now();
     return menu;
   }
 
-  // The theme of the latest script: the colors and letters of the words and stickers on screen. Grok picks it, and
+  // The theme of the latest script: the colors and letters of the words on screen. Grok picks it, and
   // changing it here redraws the video the next time it's filmed, without filming anything new.
   function themePicker() {
     const row = Object.assign(document.createElement("div"), { className: "theme" });
@@ -1676,32 +1679,6 @@
     };
     show();
     row.append(dropdown(select, { label: "Theme", about: (id) => themes[id]?.summary, colors: (id) => themes[id]?.colors }), about);
-    return row;
-  }
-
-  // Whether the latest script's video has its title at the top of every frame, and each segment's label on its sticker.
-  // They're drawn on after filming, so changing them costs nothing.
-  function onScreenPicker() {
-    const row = Object.assign(document.createElement("div"), { className: "theme on-screen" });
-    const toggle = (key, text, title) => {
-      const label = Object.assign(document.createElement("label"), { className: "effects", title });
-      const box = Object.assign(document.createElement("input"), { type: "checkbox", checked: onScreen[key] });
-      box.onchange = async () => {
-        const response = await fetch("/api/on-screen", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ session, [key]: box.checked }) });
-        const result = await response.json();
-        if (!response.ok) {
-          alert(result.error);
-          box.checked = onScreen[key];
-          return;
-        }
-        onScreen = result.onScreen;
-        refreshChanges();
-      };
-      label.append(box, text);
-      return label;
-    };
-    const about = Object.assign(document.createElement("span"), { className: "about-theme", textContent: "On screen" });
-    row.append(about, toggle("title", "Title", "The video's title at the top of every frame and under the hook"), toggle("labels", "Labels", "Each segment's label on a sticker"));
     return row;
   }
 
@@ -1786,7 +1763,6 @@
     showTitle(opened.title);
     reply.note.textContent = last?.note ?? "Opened from Your Videos. Ask Grok for changes here, or pause the video, add notes on what you see, and send them.";
     sound = opened.sound ?? sound;
-    onScreen = opened.onScreen ?? onScreen;
     if (opened.segments.length) showScript(reply, opened.theme, opened.segments);
     else if (last?.questions) {
       reply.note.after(askQuestions(last.questions));
@@ -1835,7 +1811,7 @@
   function showScript(reply, picked, written) {
     segments = written;
     theme = picked;
-    $("style-slot").replaceChildren(styleMenu(personalityPicker(), themePicker(), onScreenPicker(), soundPicker()));
+    $("style-slot").replaceChildren(styleMenu(personalityPicker(), themePicker(), soundPicker()));
     $("segment-list").replaceChildren();
     latest = written.map((segment, index) => addSegment($("segment-list"), segment, index));
     for (const card of document.querySelectorAll(".version-card.latest")) {
@@ -2636,7 +2612,7 @@
     $("film").disabled = chatting || filming === "preview" || (!filming && !segments.length);
     $("preview").disabled = chatting || filming === "film" || (!filming && !segments.length);
     $("film").textContent = filming === "film" ? "Stop filming" : timing.length ? "Film again" : "Film video";
-    $("film").title = filming === "film" ? "Stop filming. Takes that are done are kept for next time, and ones already started are still billed." : unfilmed === null ? "" : unfilmed ? `Films ${plural(unfilmed, "new take")}, and keeps every other take` : "Nothing new to film, so this only cuts the video again";
+    $("film").title = filming === "film" ? "Stop filming. Takes that are done are kept for next time, and ones already started are still billed, so filming again picks them up." : unfilmed === null ? "" : unfilmed ? `Films ${plural(unfilmed, "new take")}, and keeps every other take` : "Nothing new to film, so this only cuts the video again";
     $("preview").textContent = filming === "preview" ? "Stop preview" : "Preview";
     $("preview").title = filming === "preview" ? "Stop making the preview" : "Watch the whole video with the portrait and the presenter's voice from text to speech, before filming it";
     $("changes-preview").disabled = $("preview").disabled;
@@ -2881,7 +2857,6 @@
     unfilmed = null;
     versions = [];
     sound = { volume: 0.5, effects: true };
-    onScreen = { title: true, labels: true };
     override = null;
     speaking = "";
     selected = 0;

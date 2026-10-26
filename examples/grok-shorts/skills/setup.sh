@@ -83,11 +83,15 @@ if [ -z "$chrome" ]; then
 fi
 [ -n "$chrome" ] || say "No Chrome found, so pages and posts will show pictures instead."
 
-# The app's two packages, installed again whenever the lockfile changes.
+# The app's packages, installed again whenever the lockfile changes.
 if [ ! -f "$app/node_modules/.package-lock.json" ] || [ "$app/package-lock.json" -nt "$app/node_modules/.package-lock.json" ]; then
   say "Installing the app's packages"
   (cd "$app" && npm ci --no-audit --no-fund --no-update-notifier --loglevel=error >&2)
 fi
+
+# HyperFrames renders the motion graphics in a headless Chrome of its own, downloaded here once, not in the middle of a
+# video.
+(cd "$app" && HYPERFRAMES_NO_TELEMETRY=1 node node_modules/hyperframes/bin/hyperframes.mjs browser ensure >&2) || say "Couldn't get the Chrome HyperFrames renders in, so graphics will show the beat's emoji instead."
 
 # One command for every step, from any folder, without npm's own lines in front of the JSON. It reads the key from .env
 # at the root of the cookbook when there's one there, or else from the environment, like a Grok Bot secret.

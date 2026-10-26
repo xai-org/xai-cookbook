@@ -36,7 +36,7 @@ It prints JSON. In the commands below, `shorts` means the path in its `shorts` f
    ```
 
    It returns `project`, the name every other command takes. For an idea, Grok may come back with `questions` and no `segments`: ask the person, then send their answers with `shorts revise <project> "<answers>"`. When nobody can answer, add `--go-ahead` to draft.
-4. **Show the script.** Share the title, Grok's `note`, and each segment's line. Ask for changes with `shorts revise <project> "<what to change>"` until it's right. The grok-shorts-edit skill has everything else that can change.
+4. **Show the script.** Share the title, Grok's `note`, and each segment's line. Ask for changes with `shorts revise <project> "<what to change>"` until it's right, like "show how it works as a diagram" for a motion graphic, or "play the clip of what she said first" for a clip that plays with its own sound before the line. The grok-shorts-edit skill has everything else that can change.
 5. **Preview it.** `shorts preview <project>` makes the whole video with the presenter's portrait saying each line in their voice, for a fraction of a cent. Attach the file in `video`, and say it's a preview.
 6. **Get a yes for the cost.** `estimate.usd`, in what draft, revise, and show return, is what filming costs, nearly all of it. Say it plainly, like "Filming this costs about $12", and film only after the person who asked says yes.
 7. **Film it.**

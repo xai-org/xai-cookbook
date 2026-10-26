@@ -10,11 +10,12 @@ import { END_CARD_SECONDS, loadBrand, themeFor } from "./brand.ts";
 import { type Card, FPS, HEIGHT, type Marks, TAKE_HEIGHT, TAKE_WIDTH, type Timeline, WIDTH, frameDrawer } from "./frames.ts";
 import { type PullRequest, parsePullRequestUrl, readPullRequest } from "./github.ts";
 import { findAsset } from "./library.ts";
-import { downloadClip, drawPicture, filmBroll, screenshotPage, screenshotPost, sourceLabel, videoSize } from "./media.ts";
+import { downloadClip, drawPicture, filmBroll, hasSound, screenshotPage, screenshotPost, sourceLabel, videoSize } from "./media.ts";
+import { cueTimes, renderMotion } from "./motion.ts";
 import { type Persona, findPersonality, listPersonalities, parseHandle, personaFromX } from "./persona.ts";
 import { type Presenter, drawGreenPortrait, drawPresenter, findPresenter } from "./presenter.ts";
-import { DEFAULT_ON_SCREEN, DEFAULT_SOUND, type Draft, type OnScreen, type ScriptEvents, type Screen, type Segment, type Source, type Trim, reviseScript, writeScript } from "./script.ts";
-import { type Part, TAKES_PER_LINE, TAKE_USD_PER_SECOND, type Take, lineSeconds, recordTake, savedTakes, speakTake } from "./takes.ts";
+import { DEFAULT_SOUND, type Draft, type ScriptEvents, type Screen, type Segment, type Source, type Trim, reviseScript, showsAbove, writeScript } from "./script.ts";
+import { type Part, TAKES_PER_LINE, TAKE_USD_PER_SECOND, type Take, hearClip, lineSeconds, recordReaction, recordTake, savedTakes, speakTake } from "./takes.ts";
 import type { Theme } from "./themes.ts";
 
 const run = promisify(execFile);
@@ -58,7 +59,11 @@ export type FilmEvents = {
   progress?: (frame: number, frames: number) => void;
 };
 
-// What the presenter points at while saying a segment's line.
+// A clip that plays with its own sound before a segment's line: for how many seconds, a whole number of frames, the clip,
+// whether it has any sound, what's said in it, and the presenter's take reacting to it, if there is one.
+type Lead = { seconds: number; clip: string; sound: boolean; heard: Array<{ text: string; start: number }>; reaction?: string };
+
+// What the presenter points at when they point up at what a segment shows above them.
 const POINT_AT: Partial<Record<Screen["kind"], string>> = {
   "pull-request": "the pull request",
   code: "the code",
@@ -68,6 +73,7 @@ const POINT_AT: Partial<Record<Screen["kind"], string>> = {
   page: "the screenshot",
   post: "the post",
   clip: "the clip",
+  motion: "the graphic",
 };
 const GREEN_ROOM = "a studio, in front of a flat, evenly lit green screen that fills the whole background";
 // How close to the green screen's color a pixel has to be to be keyed out, and how far past that the edges fade. Gray,
@@ -210,26 +216,59 @@ export async function filmDraft(
     on.take?.(index, { status: "done", take, reused: false });
     return { take, reused: false };
   });
-  const [drawn, recorded, { media: shownMedia, cost: mediaCost }, greenScreen] = await Promise.all([drawing, Promise.all(takes), media, greening]);
+  // While a clip plays with its own sound before a line, the presenter watches it and reacts without a word, in a take of
+  // its own, in front of a green screen if the segment is keyed. A preview has no reactions.
+  const reactions = draft.segments.map(async (segment) => {
+    const file = reactionOf(segment, presenter, dir);
+    if (!file || preview) return undefined;
+    const green = segment.layout === "green";
+    const picture = green ? await greening!.then((drawn) => ({ portrait: drawn.portrait, green: drawn.green })) : await drawing.then((drawn) => ({ portrait: drawn.portrait }));
+    const cast = { ...picture, voice: presenter.voice, room: green ? GREEN_ROOM : presenter.room, delivery };
+    return recordReaction(segment.mood, cast, playOf(segment), file, () => {}, signal).catch((error) => {
+      if (signal?.aborted) throw error;
+      on.notice?.(`${segment.label}: the presenter's reaction to the clip couldn't be filmed, so the clip plays on its own.`);
+      return undefined;
+    });
+  });
+  for (const reaction of reactions) reaction.catch(() => {});
+  const [drawn, recorded, { media: shownMedia, cost: mediaCost }, greenScreen, reacted] = await Promise.all([drawing, Promise.all(takes), media, greening, Promise.all(reactions)]);
   on.stage?.("film", "done");
 
   on.stage?.("edit", "active");
   // A segment trimmed on the timeline uses less of its take, or more.
   const kept = recorded.map(({ take }, index) => trimmed(take, draft.segments[index].trim));
-  const timeline = toTimeline(draft.segments, kept);
+  // A clip that plays with its own sound before its line is heard, so what's said in it is captioned too.
+  const leads = await Promise.all(
+    draft.segments.map(async (segment, index): Promise<Lead | undefined> => {
+      const got = shownMedia[index];
+      if (!playOf(segment) || !got?.video) return undefined;
+      const seconds = Math.round(playOf(segment) * FPS) / FPS;
+      const sound = await hasSound(got.file);
+      const heard = sound
+        ? await hearClip(got.file, seconds, signal).catch((error) => {
+            if (signal?.aborted) throw error;
+            return [];
+          })
+        : [];
+      return { seconds, clip: got.file, sound, heard, reaction: reacted[index]?.file };
+    }),
+  );
+  const timeline = toTimeline(draft.segments, kept, leads);
   const cut = `${dir}/${preview ? "preview-cut" : "cut"}.mp4`;
   // The brand kit's end card plays after the last line, for a few seconds more.
   const tail = brand?.endCard.on ? END_CARD_SECONDS : 0;
-  await cutTakes(kept, cut, signal, tail);
+  await cutTakes(kept, cut, signal, tail, leads);
   timeline.duration += tail;
   const video = `${dir}/${preview ? "preview" : "short"}.mp4`;
-  const clips = await Promise.all(shownMedia.map(async (got) => (got?.video ? { file: got.file, size: fitWithin(await videoSize(got.file), 1080) } : undefined)));
+  const theme = themeFor(draft.theme, brand);
+  const timedMedia = await Promise.all(shownMedia.map((got, index) => timeGraphic(draft.segments[index], got, timeline, index, theme, dir, signal)));
+  const clips = await Promise.all(timedMedia.map(async (got) => (got?.video ? { file: got.file, size: fitWithin(await videoSize(got.file), 1080) } : undefined)));
   const marks = brand && { logo: brand.logo ? await loadImage(brand.logo) : undefined, watermark: brand.watermark, endCard: brand.endCard.on ? { name: brand.name, line: brand.endCard.line } : undefined };
   const sound = { ...DEFAULT_SOUND, ...draft.sound };
   const song = sound.music ? await findAsset(sound.music) : undefined;
   const music = song?.kind === "audio" ? { file: song.file, volume: sound.volume } : undefined;
-  const onScreen = { ...DEFAULT_ON_SCREEN, ...draft.onScreen };
-  await compose(tagOf(draft), await toCards(draft, shownMedia), timeline, drawn.face, themeFor(draft.theme, brand), onScreen, greenScreen?.green, clips, cut, video, on.progress, signal, marks, { effects: sound.effects, music });
+  const stitches = leads.flatMap((lead, index) => (lead?.sound ? [{ file: lead.clip, at: timeline.parts[index].start, seconds: lead.seconds }] : []));
+  await compose(await toCards(draft, timedMedia), timeline, drawn.face, theme, greenScreen?.green, clips, cut, video, on.progress, signal, marks, { effects: sound.effects, music, stitches });
   const text = transcriptOf(draft);
   if (!preview) {
     const takeInfo = kept.map(({ file, prompt, seconds, filmed, heard, cost }) => ({ kept: file, prompt, seconds, filmed, heard, cost }));
@@ -240,7 +279,7 @@ export async function filmDraft(
   }
   on.stage?.("edit", "done");
 
-  const takeCost = recorded.reduce((sum, { take, reused }) => sum + (reused ? 0 : take.cost), 0);
+  const takeCost = recorded.reduce((sum, { take, reused }) => sum + (reused ? 0 : take.cost), 0) + reacted.reduce((sum, reaction) => sum + (reaction?.cost ?? 0), 0);
   const cost = { presenter: drawn.cost + (greenScreen?.cost ?? 0), media: mediaCost, takes: takeCost };
   return { dir, video, transcript: text, takes: kept, duration: timeline.duration, parts: timeline.parts, words: timeline.words, cost };
 }
@@ -262,19 +301,26 @@ async function getVisuals(draft: Draft, cache: Cache, dir: string, broll: boolea
   let cost = 0;
   const wanted = draft.segments.some((segment) => isMedia(segment.screen) && (broll || segment.screen.kind !== "broll"));
   if (wanted) on.stage?.("visuals", "active");
+  const theme = themeFor(draft.theme, await loadBrand());
   const media = await Promise.all(
     draft.segments.map(async (segment, index) => {
       if (!isMedia(segment.screen) || (!broll && segment.screen.kind === "broll")) return undefined;
       // Pictures and clips that Grok Imagine makes are made in the shape of the space they fill. A page, post, or clip is the
-      // same whichever beat shows it, so it's fetched once.
+      // same whichever beat shows it, so it's fetched once. A graphic is drawn for its layout, line, and theme.
       const { screen } = segment;
       const aspect = segment.layout === "split" || segment.layout === "overlay" ? "4:3" : "9:16";
       const key = JSON.stringify(
-        screen.kind === "picture" || screen.kind === "broll" ? [screen, aspect] : screen.kind === "upload" ? [screen.kind, screen.asset] : [screen.kind, screen.url, screen.kind === "clip" ? screen.start : 0],
+        screen.kind === "picture" || screen.kind === "broll"
+          ? [screen, aspect]
+          : screen.kind === "upload"
+            ? [screen.kind, screen.asset]
+            : screen.kind === "motion"
+              ? [screen, segment.layout, segment.line, theme]
+              : [screen.kind, screen.url, screen.kind === "clip" ? screen.start : 0, ...(screen.kind === "clip" && screen.play ? [screen.play] : [])],
       );
       let fetching = cache.media.get(key);
       if (!fetching) {
-        fetching = fetchMedia(segment, aspect, `${dir}/${screen.kind}-${fingerprint(key)}`, on, signal).then((fetched) => {
+        fetching = fetchMedia(segment, aspect, `${dir}/${screen.kind}-${fingerprint(key)}`, on, theme, signal).then((fetched) => {
           cost += fetched.cost;
           return fetched.media;
         });
@@ -291,15 +337,26 @@ async function getVisuals(draft: Draft, cache: Cache, dir: string, broll: boolea
   return { media, cost };
 }
 
-function isMedia(screen: Screen): screen is Extract<Screen, { kind: "picture" | "broll" | "page" | "post" | "clip" | "upload" }> {
-  return ["picture", "broll", "page", "post", "clip", "upload"].includes(screen.kind);
+function isMedia(screen: Screen): screen is Extract<Screen, { kind: "picture" | "broll" | "page" | "post" | "clip" | "upload" | "motion" }> {
+  return ["picture", "broll", "page", "post", "clip", "upload", "motion"].includes(screen.kind);
 }
 
-// Gets what a segment shows: a picture or a clip that Grok Imagine makes, a screenshot of a page or an X post, or a few
-// seconds of a video, sized for about as long as the line takes to say. Anything real that can't be fetched, like a page
-// behind a login, becomes the picture Grok described in its place, and a picture that can't be drawn, like one that
-// doesn't pass moderation, leaves the beat's emoji.
-async function fetchMedia(segment: Segment, aspect: "4:3" | "9:16", name: string, on: FilmEvents, signal?: AbortSignal): Promise<{ media?: Media; cost: number }> {
+// Gets what a segment shows: a picture or a clip that Grok Imagine makes, a screenshot of a page or an X post, a few
+// seconds of a video, or a graphic in `theme`, sized for about as long as the line takes to say. Anything real that can't
+// be fetched, like a page behind a login, becomes the picture Grok described in its place, and a picture that can't be
+// drawn, like one that doesn't pass moderation, or a graphic that can't be rendered, leaves the beat's emoji.
+async function fetchMedia(segment: Segment, aspect: "4:3" | "9:16", name: string, on: FilmEvents, theme: Theme, signal?: AbortSignal): Promise<{ media?: Media; cost: number }> {
+  // Until there's a take to time it to, a graphic's items come on about when they'd be said.
+  if (segment.screen.kind === "motion") {
+    const seconds = lineSeconds(segment.line);
+    const words = segment.line.split(/\s+/).filter(Boolean).map((text, index) => ({ text, start: 0.3 + index / 2.8 }));
+    const file = await renderMotion(segment.screen.motion, segment.layout, seconds, cueTimes(segment.screen.motion, words, seconds), theme, `${name}.mp4`, signal).catch((error) => {
+      if (signal?.aborted) throw error;
+      on.notice?.(`${segment.label}: ${error instanceof Error ? error.message : String(error)}`);
+      return undefined;
+    });
+    return { media: file ? { file, video: true, fit: "cover", source: "" } : undefined, cost: 0 };
+  }
   const screen = segment.screen as Extract<Screen, { prompt: string }>;
   // The creator's own upload is shown as it is, whole if it's an image. One that's gone from the library becomes a
   // picture of what it was called.
@@ -320,7 +377,7 @@ async function fetchMedia(segment: Segment, aspect: "4:3" | "9:16", name: string
   try {
     if (screen.kind === "page") return { media: { file: await screenshotPage(screen.url, `${name}.png`, signal), video: false, fit: "scroll", source: sourceLabel(screen.url) }, cost: 0 };
     if (screen.kind === "post") return { media: { file: await screenshotPost(screen.url, `${name}.png`, signal), video: false, fit: "contain", source: sourceLabel(screen.url) }, cost: 0 };
-    if (screen.kind === "clip") return { media: { file: await downloadClip(screen.url, screen.start, seconds + 1, name, signal), video: true, fit: "cover", source: sourceLabel(screen.url) }, cost: 0 };
+    if (screen.kind === "clip") return { media: { file: await downloadClip(screen.url, screen.start, seconds + 1 + (screen.play ?? 0), name, signal), video: true, fit: "cover", source: sourceLabel(screen.url) }, cost: 0 };
     if (screen.kind === "broll") {
       const filmed = await filmBroll(screen.prompt, seconds, aspect, `${name}.mp4`, signal);
       return { media: { file: filmed.file, video: true, fit: "cover", source: "" }, cost: filmed.cost };
@@ -332,6 +389,24 @@ async function fetchMedia(segment: Segment, aspect: "4:3" | "9:16", name: string
     on.notice?.(`${segment.label}: ${error instanceof Error ? error.message : String(error)} It shows a picture instead.`);
   }
   return picture();
+}
+
+// A segment's graphic drawn again for its take, with each item coming on as its cue word is said, or what it showed before
+// if it isn't a graphic or can't be drawn again.
+async function timeGraphic(segment: Segment, got: Media | undefined, timeline: Timeline, index: number, theme: Theme, dir: string, signal?: AbortSignal): Promise<Media | undefined> {
+  if (segment.screen.kind !== "motion" || !got) return got;
+  const part = timeline.parts[index];
+  const seconds = Math.round((part.end - part.start + 0.2) * 100) / 100;
+  const words = timeline.words.filter((word) => word.part === index).map((word) => ({ text: word.text, start: word.start - part.start }));
+  const times = cueTimes(segment.screen.motion, words, seconds);
+  const file = `${dir}/motion-${fingerprint(JSON.stringify([segment.screen.motion, segment.layout, seconds, times, theme]))}.mp4`;
+  return renderMotion(segment.screen.motion, segment.layout, seconds, times, theme, file, signal).then(
+    (rendered) => ({ ...got, file: rendered }),
+    (error) => {
+      if (signal?.aborted) throw error;
+      return got;
+    },
+  );
 }
 
 // What an earlier fetch saved as `name`: the screenshot, clip, or B-roll it got, or for a page, post, or clip it couldn't
@@ -388,7 +463,10 @@ export async function estimateDraft(draft: Draft, presenterId: string, cache: Ca
     const { key } = takeOf(segment, presenter, draft.persona.delivery);
     const seconds = lineSeconds(segment.line);
     const filmed = cache.takes.has(key) || existsSync(`${dir}/take-${fingerprint(key)}-a.mp4`);
-    return { seconds, filmed, cost: filmed ? 0 : seconds * TAKES_PER_LINE * TAKE_USD_PER_SECOND };
+    // A clip that plays before the line adds its seconds, and the presenter's one take reacting to it.
+    const reaction = reactionOf(segment, presenter, dir);
+    const reacting = reaction && !existsSync(reaction) ? Math.max(3, Math.ceil(playOf(segment))) * TAKE_USD_PER_SECOND : 0;
+    return { seconds: seconds + playOf(segment), filmed, cost: (filmed ? 0 : seconds * TAKES_PER_LINE * TAKE_USD_PER_SECOND) + reacting };
   });
   return { segments, cost: segments.reduce((sum, { cost }) => sum + cost, 0) };
 }
@@ -445,13 +523,26 @@ export async function retakeSegment(
   return take;
 }
 
-function toPart({ line, mood, screen, acting }: Segment): Part {
-  return { line, mood, pointAt: POINT_AT[screen.kind], acting: acting || undefined };
+// How many seconds of a segment's clip play with their own sound before the line.
+function playOf({ screen }: Segment): number {
+  return screen.kind === "clip" && screen.play ? screen.play : 0;
 }
 
-// The pill at the top of the video: the repository and number of a pull request, or the title of a video about an idea.
-function tagOf({ source, title }: Draft): string {
-  return "pr" in source ? `${source.pr.repo}  #${source.pr.number}` : title;
+// Where the presenter's reaction to a segment's clip is saved. It's kept for as long as the presenter, where they're
+// filmed, the clip, how long it plays, and the mood of the line that answers it stay the same.
+function reactionOf(segment: Segment, presenter: Presenter, dir: string): string | undefined {
+  const play = playOf(segment);
+  if (!play || segment.screen.kind !== "clip") return undefined;
+  const room = segment.layout === "green" ? GREEN_ROOM : presenter.room;
+  return `${dir}/reaction-${fingerprint(JSON.stringify([presenter.id, room, segment.screen.url, segment.screen.start, play, segment.mood]))}.mp4`;
+}
+
+// Scripts from before gestures pointed at whatever their segment showed, so they still do, but only when it's above the
+// presenter. A segment only points when its layout puts something above them, even if it was framed another way by hand.
+function toPart({ line, mood, gesture, screen, layout, acting }: Segment): Part {
+  const above = showsAbove(layout) && (gesture === undefined || gesture === "point");
+  const pointAt = above ? (POINT_AT[screen.kind] ?? (gesture ? "the words" : undefined)) : undefined;
+  return { line, mood, gesture: gesture === "none" || gesture === "point" ? undefined : gesture, pointAt, acting: acting || undefined };
 }
 
 // A folder for each pull request, or for each idea, named after its first words.
@@ -468,39 +559,43 @@ function folderOf(source: Source): string {
 
 // What's drawn for each segment, with the rows of the pull request's diff and the pictures and screenshots filled in.
 // A video is read frame by frame while the video is put together.
-async function toCards({ source, title, segments }: Draft, media: Array<Media | undefined>): Promise<Card[]> {
+async function toCards({ source, segments }: Draft, media: Array<Media | undefined>): Promise<Card[]> {
   const pr = "pr" in source ? source.pr : undefined;
   return Promise.all(
-    segments.map(async ({ label, emoji, screen }, index): Promise<Card> => {
+    segments.map(async ({ emoji, screen }, index): Promise<Card> => {
       if (isMedia(screen)) {
         const got = media[index];
         const image = got && !got.video ? await loadImage(await readFile(got.file)) : undefined;
-        return { kind: "media", label, emoji, source: got?.source ?? "", fit: got?.fit ?? "cover", image };
+        return { kind: "media", emoji, fit: got?.fit ?? "cover", image, graphic: screen.kind === "motion" };
       }
       if (screen.kind === "stamp") {
         const note = pr ? `+${pr.additions} −${pr.deletions} · ${pr.changedFiles} file${pr.changedFiles === 1 ? "" : "s"}` : "";
         return { kind: "stamp", text: screen.text, emoji, note };
       }
-      if (screen.kind === "headline" || !pr) return { kind: "headline", emoji, title };
-      if (screen.kind === "pull-request") return { kind: "pull-request", emoji, pr };
+      if (screen.kind === "headline" || !pr) return { kind: "headline", emoji };
+      if (screen.kind === "pull-request") return { kind: "pull-request", pr };
       const rows = pr.files.find((file) => file.path === screen.file)?.rows ?? [];
-      return { kind: "code", label, emoji, file: screen.file, rows, from: screen.from, to: screen.to };
+      return { kind: "code", file: screen.file, rows, from: screen.from, to: screen.to };
     }),
   );
 }
 
-// The takes are cut to their words and played one after another, so each segment starts where the one before it ends.
-// Each cut is a whole number of frames long, for the sound as well as the picture, so the lips stay in sync to the end.
-function toTimeline(segments: Segment[], takes: Take[]): Timeline {
+// The takes are cut to their words and played one after another, so each segment starts where the one before it ends, and
+// a segment with a lead plays its clip first. Each cut is a whole number of frames long, for the sound as well as the
+// picture, so the lips stay in sync to the end.
+function toTimeline(segments: Segment[], takes: Take[], leads: Array<Lead | undefined> = []): Timeline {
   const timeline: Timeline = { duration: 0, parts: [], words: [] };
   takes.forEach((take, index) => {
     const { kind, line, mood, layout } = segments[index];
+    const lead = leads[index];
     const start = timeline.duration;
+    for (const word of lead?.heard ?? []) if (word.start < lead!.seconds) timeline.words.push({ text: word.text, start: start + word.start, part: index, clip: true });
+    const said = start + (lead?.seconds ?? 0);
     line.split(/\s+/).filter(Boolean).forEach((text, each) => {
-      timeline.words.push({ text, start: start + Math.max(0, take.words[each] - take.start), part: index });
+      timeline.words.push({ text, start: said + Math.max(0, take.words[each] - take.start), part: index });
     });
-    timeline.duration += cutLength(take);
-    timeline.parts.push({ kind, start, end: timeline.duration, mood, layout });
+    timeline.duration = said + cutLength(take);
+    timeline.parts.push({ kind, start, end: timeline.duration, mood, layout, ...(lead ? { lead: lead.seconds, react: Boolean(lead.reaction) } : {}) });
   });
   return timeline;
 }
@@ -518,23 +613,39 @@ function cutLength(take: Take): number {
 }
 
 // Joins the takes into one video at the frame rate of the finished video, keeping only the part of each take with its words,
-// with `tail` seconds of black and silence after, for an end card.
-async function cutTakes(takes: Take[], out: string, signal?: AbortSignal, tail = 0): Promise<void> {
-  const trims = takes.map((take, index) => {
+// with `tail` seconds of black and silence after, for an end card. Before a take with a lead, while its clip plays, the cut
+// has the presenter's reaction to the clip, or holds still on the take's first frame, with no sound of its own: the clip's
+// sound is mixed in when the video is put together.
+async function cutTakes(takes: Take[], out: string, signal?: AbortSignal, tail = 0, leads: Array<Lead | undefined> = []): Promise<void> {
+  const inputs: string[] = [];
+  const chains: string[] = [];
+  const pieces: string[] = [];
+  const input = (file: string) => inputs.push("-i", file) / 2 - 1;
+  const framed = `fps=${FPS},scale=${TAKE_WIDTH}:${TAKE_HEIGHT},setsar=1`;
+  takes.forEach((take, index) => {
+    const lead = leads[index];
+    if (lead) {
+      const seconds = lead.seconds.toFixed(3);
+      const held = lead.reaction ? `[${input(lead.reaction)}:v]setpts=PTS-STARTPTS` : `[${input(take.file)}:v]trim=start=${take.start}:duration=${(1 / FPS).toFixed(4)},setpts=PTS-STARTPTS`;
+      chains.push(`${held},${framed},tpad=stop_mode=clone:stop_duration=${seconds},trim=duration=${seconds}[lv${index}]`, `anullsrc=r=48000:cl=stereo,atrim=duration=${seconds}[la${index}]`);
+      pieces.push(`[lv${index}][la${index}]`);
+    }
+    const at = input(take.file);
     const end = take.start + cutLength(take);
-    return [
-      `[${index}:v]trim=start=${take.start}:end=${end},setpts=PTS-STARTPTS,fps=${FPS},scale=${TAKE_WIDTH}:${TAKE_HEIGHT},setsar=1[v${index}]`,
-      `[${index}:a]atrim=start=${take.start}:end=${end},asetpts=PTS-STARTPTS,aresample=48000[a${index}]`,
-    ].join(";");
+    chains.push(
+      `[${at}:v]trim=start=${take.start}:end=${end},setpts=PTS-STARTPTS,${framed}[v${index}]`,
+      `[${at}:a]atrim=start=${take.start}:end=${end},asetpts=PTS-STARTPTS,aresample=48000,aformat=channel_layouts=stereo[a${index}]`,
+    );
+    pieces.push(`[v${index}][a${index}]`);
   });
   const padded = tail ? `[joined]tpad=stop_mode=add:stop_duration=${tail}:color=black[v];[heard]apad=pad_dur=${tail}[a]` : "[joined]null[v];[heard]anull[a]";
-  const concat = `${takes.map((_, index) => `[v${index}][a${index}]`).join("")}concat=n=${takes.length}:v=1:a=1[joined][heard];${padded}`;
+  const concat = `${pieces.join("")}concat=n=${pieces.length}:v=1:a=1[joined][heard];${padded}`;
   await run(
     "ffmpeg",
     [
       "-y", "-v", "error",
-      ...takes.flatMap((take) => ["-i", take.file]),
-      "-filter_complex", [...trims, concat].join(";"),
+      ...inputs,
+      "-filter_complex", [...chains, concat].join(";"),
       "-map", "[v]", "-map", "[a]",
       "-c:v", "libx264", "-preset", "veryfast", "-crf", "16", "-pix_fmt", "yuv420p",
       "-c:a", "aac", "-b:a", "192k", out,
@@ -543,18 +654,15 @@ async function cutTakes(takes: Take[], out: string, signal?: AbortSignal, tail =
   );
 }
 
-// Reads the cut one frame at a time from one ffmpeg, draws the finished frame over it in `theme`, with the title and the
-// labels only if `onScreen` says so, and pipes that to another ffmpeg, which encodes it with the cut's sound and the
-// sound effects. During green screen segments, the decoder
+// Reads the cut one frame at a time from one ffmpeg, draws the finished frame over it in `theme`, and pipes that to
+// another ffmpeg, which encodes it with the cut's sound and the sound effects. During green screen segments, the decoder
 // keys out the green, `green` as hex, so the presenter comes out over a transparent background. `clips` has the video, if
 // any, that each segment shows.
 async function compose(
-  tag: string,
   cards: Card[],
   timeline: Timeline,
   face: { x: number; y: number },
   theme: Theme,
-  onScreen: OnScreen,
   green: string | undefined,
   clips: Array<{ file: string; size: { width: number; height: number } } | undefined>,
   cut: string,
@@ -562,9 +670,9 @@ async function compose(
   onProgress: FilmEvents["progress"],
   signal?: AbortSignal,
   marks?: Marks,
-  sound: { effects: boolean; music?: { file: string; volume: number } } = { effects: true },
+  sound: { effects: boolean; music?: { file: string; volume: number }; stitches?: Stitch[] } = { effects: true },
 ): Promise<void> {
-  const effects = mixSound(timeline, sound.effects, sound.music);
+  const effects = mixSound(timeline, sound.effects, sound.music, sound.stitches);
   const keyed = timeline.parts.filter((part) => part.layout === "green").map((part) => `between(t,${part.start.toFixed(3)},${part.end.toFixed(3)})`);
   const key = green && keyed.length ? ["-vf", `chromakey=0x${green}:${KEY.similarity}:${KEY.blend}:enable='${keyed.join("+")}',despill=type=green:enable='${keyed.join("+")}'`] : [];
   const decoder = spawn("ffmpeg", ["-v", "error", "-i", cut, ...key, "-f", "rawvideo", "-pix_fmt", "rgba", "pipe:1"], { signal, stdio: ["ignore", "pipe", "pipe"] });
@@ -598,7 +706,7 @@ async function compose(
   const players = new Map<number, ReturnType<typeof clipPlayer>>();
 
   try {
-    const draw = frameDrawer(tag, cards, timeline, face, theme, onScreen, marks);
+    const draw = frameDrawer(cards, timeline, face, theme, marks);
     const frames = Math.round(timeline.duration * FPS);
     let frame = 0;
     for await (const pixels of readFrames(decoder.stdout, TAKE_WIDTH * TAKE_HEIGHT * 4)) {
@@ -666,54 +774,79 @@ async function* readFrames(stream: Readable, size: number): AsyncGenerator<Uint8
   }
 }
 
-// The sound of the finished video: the presenter, over the sound effects, if they're on, and the music, if there is any,
-// all evened out to the loudness short video apps play at, -14 LUFS.
+// A clip's own sound, played `seconds` long from `at` seconds into the video.
+type Stitch = { file: string; at: number; seconds: number };
+
+// The sound of the finished video: the presenter, any clip playing with its own sound before a line, the sound effects, if
+// they're on, the music, if there is any, and a low room tone under all of it, evened out to the loudness short video
+// apps play at, -14 LUFS.
 //
-// The effects are a boom whenever the presenter is shocked, a whoosh on every cut, and a bell for the last segment. ffmpeg
-// makes them from formulas and from noise, so the app needs no sound files. Each one is delayed to its moment. The music
-// loops for as long as the video runs, fades in and out, and dips whenever the presenter speaks, so it never covers them.
-function mixSound(timeline: Timeline, effects: boolean, music?: { file: string; volume: number }): { inputs: string[]; filter: string } {
+// The presenter gets the faint reflections of a room, since a voice with none sounds recorded somewhere else, and the
+// room tone keeps the cuts between takes from dropping to digital silence, which sounds edited. The voice and each clip
+// are evened out to the same loudness first, since takes come out quieter than most videos, and a clip that plays louder
+// than the presenter sounds like an ad. The effects are a boom
+// whenever the presenter is shocked, a whoosh on every cut, and a bell for the last segment. ffmpeg makes them from
+// formulas and from noise, so the app needs no sound files. Each one is delayed to its moment. The music loops for as
+// long as the video runs, fades in and out, and dips whenever the presenter speaks or a clip plays, so it never covers
+// them.
+function mixSound(timeline: Timeline, effects: boolean, music?: { file: string; volume: number }, stitches: Stitch[] = []): { inputs: string[]; filter: string } {
   const inputs: string[] = [];
-  const chains: string[] = [];
-  const mix = [music ? "[voice]" : "[1:a]"];
+  const chains: string[] = ["[1:a]aecho=0.85:0.9:19|37:0.06|0.035,loudnorm=I=-16:TP=-2,aresample=48000[voice]"];
+  let next = 2;
+  const input = (...args: string[]) => {
+    inputs.push(...args);
+    return next++;
+  };
+  const voices = ["[voice]"];
+  stitches.forEach(({ file, at, seconds }, index) => {
+    const clip = input("-t", (seconds + 0.5).toFixed(3), "-i", file);
+    const fade = Math.max(0, seconds - 0.25).toFixed(3);
+    chains.push(`[${clip}:a]atrim=0:${seconds.toFixed(3)},asetpts=PTS-STARTPTS,aformat=channel_layouts=stereo,loudnorm=I=-16:TP=-2,aresample=48000,afade=t=in:d=0.05,afade=t=out:st=${fade}:d=0.25,adelay=${Math.round(at * 1000)}:all=1[clip${index}]`);
+    voices.push(`[clip${index}]`);
+  });
+  const sounds: string[] = [];
   const add = (source: string, times: number[], volume: number) => {
     if (!times.length || !effects) return;
-    const input = 2 + inputs.length / 4;
-    inputs.push("-f", "lavfi", "-i", source);
-    const copies = times.map((_, index) => `[fx${input}c${index}]`);
-    chains.push(`[${input}:a]volume=${volume},asplit=${times.length}${copies.join("")}`);
+    const fx = input("-f", "lavfi", "-i", source);
+    const copies = times.map((_, index) => `[fx${fx}c${index}]`);
+    chains.push(`[${fx}:a]volume=${volume},asplit=${times.length}${copies.join("")}`);
     times.forEach((time, index) => {
-      chains.push(`${copies[index]}adelay=${Math.round(time * 1000)}:all=1[fx${input}d${index}]`);
-      mix.push(`[fx${input}d${index}]`);
+      chains.push(`${copies[index]}adelay=${Math.round(time * 1000)}:all=1[fx${fx}d${index}]`);
+      sounds.push(`[fx${fx}d${index}]`);
     });
   };
   add(
     "aevalsrc=(sin(2*PI*55*t)+0.5*sin(2*PI*110*t)+0.4*(2*random(0)-1)*exp(-40*t))*exp(-3.5*t):s=48000:d=1.2",
-    timeline.parts.filter((part) => part.mood === "shocked").map((part) => part.start),
+    timeline.parts.filter((part) => part.mood === "shocked").map((part) => part.start + (part.lead ?? 0)),
     0.4,
   );
+  // A whoosh on every cut, from one segment to the next and from a clip to the presenter answering it.
   add(
     "anoisesrc=d=0.45:c=pink:r=48000:a=0.5,bandpass=f=1500:width_type=o:w=2,afade=t=in:d=0.18,afade=t=out:st=0.2:d=0.25",
-    timeline.parts.slice(1).map((part) => Math.max(0, part.start - 0.15)),
+    [...timeline.parts.slice(1).map((part) => part.start), ...timeline.parts.flatMap((part) => (part.lead ? [part.start + part.lead] : []))].map((time) => Math.max(0, time - 0.15)).sort((a, b) => a - b),
     0.35,
   );
   // A bell as the last segment is stamped on.
   add("aevalsrc=(sin(2*PI*1318.5*t)+0.6*sin(2*PI*1975.5*t))*exp(-5*t):s=48000:d=1.2", [timeline.parts.at(-1)!.start], 0.2);
-  if (music) {
-    const input = 2 + inputs.length / 4;
-    // The music is evened out first, so a quiet song and a loud one sit at the same level: about 11 dB under the voice at
-    // the middle volume, and twice that while the presenter speaks.
-    const gain = 0.1 + 0.5 * music.volume;
-    inputs.push("-stream_loop", "-1", "-i", music.file);
-    chains.push(
-      "[1:a]asplit=2[voice][key]",
-      `[${input}:a]atrim=0:${timeline.duration.toFixed(3)},asetpts=PTS-STARTPTS,loudnorm=I=-16:TP=-2,aresample=48000,volume=${gain.toFixed(3)},afade=t=in:d=1,afade=t=out:st=${Math.max(0, timeline.duration - 2).toFixed(3)}:d=2[bed]`,
-      "[bed][key]sidechaincompress=threshold=0.02:ratio=8:attack=20:release=400[ducked]",
-    );
-    mix.push("[ducked]");
-  }
-  chains.push(`${mix.join("")}amix=inputs=${mix.length}:duration=first:normalize=0,loudnorm=I=-14:TP=-1.5:LRA=11,aresample=48000[audio]`);
+  const mix = music ? duckUnder(voices, music, input("-stream_loop", "-1", "-i", music.file), timeline.duration, chains) : voices;
+  const tone = input("-f", "lavfi", "-i", `anoisesrc=d=${timeline.duration.toFixed(3)}:c=brown:r=48000:a=0.003`);
+  chains.push(`[${tone}:a]lowpass=f=1000,aformat=channel_layouts=stereo[tone]`);
+  chains.push(`${[...mix, ...sounds, "[tone]"].join("")}amix=inputs=${mix.length + sounds.length + 1}:duration=first:normalize=0,loudnorm=I=-14:TP=-1.5:LRA=11,aresample=48000[audio]`);
   return { inputs, filter: chains.join(";") };
+}
+
+// The music from input `song`, looped for `duration` seconds, dipping under the `voices`, with the voices and the music to
+// mix, as labels in `chains`. The music is evened out first, so a quiet song and a loud one sit at the same level: about
+// 11 dB under the voice at the middle volume, and twice that while the presenter speaks or a clip plays.
+function duckUnder(voices: string[], music: { file: string; volume: number }, song: number, duration: number, chains: string[]): string[] {
+  const gain = 0.1 + 0.5 * music.volume;
+  voices.forEach((voice, index) => chains.push(`${voice}asplit=2[heard${index}][key${index}]`));
+  chains.push(
+    voices.length > 1 ? `${voices.map((_, index) => `[key${index}]`).join("")}amix=inputs=${voices.length}:normalize=0[key]` : "[key0]anull[key]",
+    `[${song}:a]atrim=0:${duration.toFixed(3)},asetpts=PTS-STARTPTS,loudnorm=I=-16:TP=-2,aresample=48000,volume=${gain.toFixed(3)},afade=t=in:d=1,afade=t=out:st=${Math.max(0, duration - 2).toFixed(3)}:d=2[bed]`,
+    "[bed][key]sidechaincompress=threshold=0.02:ratio=8:attack=20:release=400[ducked]",
+  );
+  return [...voices.map((_, index) => `[heard${index}]`), "[ducked]"];
 }
 
 // The script as Markdown, to paste under the video, like into the pull request it explains.

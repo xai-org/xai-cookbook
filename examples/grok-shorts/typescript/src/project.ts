@@ -5,10 +5,10 @@ import { copyFile, mkdir, readFile, readdir, stat, writeFile } from "node:fs/pro
 import { basename } from "node:path";
 import { promisify } from "node:util";
 import { createCanvas, loadImage } from "@napi-rs/canvas";
-import { type Timeline, spotAt } from "./frames.ts";
+import { type Timeline, entranceOf, placementOf, spotAt } from "./frames.ts";
 import { parsePullRequestUrl, readPullRequest } from "./github.ts";
 import { findPresenter } from "./presenter.ts";
-import { DEFAULT_ON_SCREEN, DEFAULT_SOUND, type Draft, type Layout, type OnScreen, type Question, type Screen, type Segment, type Sound, type Source, segmentsOf, sourceKey } from "./script.ts";
+import { DEFAULT_SOUND, type Draft, LAYOUTS, type Layout, type Question, type Screen, type Segment, type Sound, type Source, segmentsOf, sourceKey } from "./script.ts";
 import { dirOf } from "./short.ts";
 import { THEMES, THEME_IDS, type ThemeId, freshTheme } from "./themes.ts";
 
@@ -22,7 +22,7 @@ export type Note = { id: string; time: number; x: number; y: number; text: strin
 // A cut of the video: its file, when each segment and word is in it, the script, title, theme, and sound it was made from,
 // and the take each segment used. `id` is when it was made, in milliseconds. A preview was made from the portrait and
 // text to speech, without filming, to watch before filming. Cuts made before the title and sound were kept don't have them.
-export type Cut = { id: number; video: string; made: number; parts: Timeline["parts"]; words: Timeline["words"]; segments: Segment[]; title?: string; theme: ThemeId; onScreen?: OnScreen; sound?: Sound; cost: number; takes?: string[]; kind?: "preview" };
+export type Cut = { id: number; video: string; made: number; parts: Timeline["parts"]; words: Timeline["words"]; segments: Segment[]; title?: string; theme: ThemeId; sound?: Sound; cost: number; takes?: string[]; kind?: "preview" };
 // The conversation, to show it again: your messages, with the notes sent with them, and Grok's notes and questions.
 export type Turn = { role: "user"; text: string; notes?: Note[] } | { role: "grok"; note: string; questions?: Question[] };
 // A video to keep working on: the folder it's saved in, who presents it, the conversation with Grok and its latest
@@ -44,7 +44,7 @@ export type Project = {
 // What a segment shows, named for a note about it.
 const SHOWN: Record<Screen["kind"], string> = {
   headline: "the hook's words",
-  "pull-request": "the pull request card",
+  "pull-request": "the pull request's page",
   code: "the code",
   picture: "the picture",
   broll: "the B-roll",
@@ -52,6 +52,7 @@ const SHOWN: Record<Screen["kind"], string> = {
   post: "the X post",
   clip: "the video clip",
   upload: "your upload",
+  motion: "the graphic",
   stamp: "the stamp at the end",
 };
 
@@ -166,11 +167,11 @@ export async function restoreCut(project: Project, id: number): Promise<Cut> {
 // for it, or only cuts the video again.
 export type Change = { text: string; film: boolean };
 
-const LAYOUT_NAMES: Record<Layout, string> = { overlay: "Overlay", split: "Split", full: "Full screen", green: "Green screen", bubble: "Bubble", visual: "Visual only" };
+const LAYOUT_NAMES: Record<Layout, string> = { overlay: "Overlay", split: "Split", full: "Full screen", green: "Green screen", visual: "Visual only" };
 
 // What changed in the latest script since `cut` was made: who presents it, which segments were added, taken out,
 // renamed, or moved, what each one says, how it's acted, framed, shown, and trimmed, and which take it uses, and the
-// video's title, theme, words on screen, and sound. `takes` says, for each segment of the draft, whether its take is
+// video's theme and sound. `takes` says, for each segment of the draft, whether its take is
 // filmed already and which take the next cut uses, and `presenter` names who presented the cut and who'd film it now,
 // when they're different. A segment is the same one in both when it has the same label, or it's renamed when the
 // segment of the same kind in its place has a label that's gone.
@@ -192,9 +193,10 @@ export function changesSince(cut: Cut, draft: Draft, takes: Array<{ filmed: bool
     if (before < 0) return changes.push({ text: `Added ${name}`, film });
     matched.push(before);
     const old = cut.segments[before];
-    const acted = old.line !== segment.line || old.mood !== segment.mood || old.acting !== segment.acting || old.layout !== segment.layout;
+    const actedOtherwise = old.mood !== segment.mood || old.gesture !== segment.gesture || old.acting !== segment.acting;
+    const acted = old.line !== segment.line || actedOtherwise || old.layout !== segment.layout;
     if (old.line !== segment.line) changes.push({ text: `New line for ${name}`, film });
-    if (old.mood !== segment.mood || old.acting !== segment.acting) changes.push({ text: `${name} is acted differently`, film });
+    if (actedOtherwise) changes.push({ text: `${name} is acted differently`, film });
     if (old.layout !== segment.layout) changes.push({ text: `${name}: ${LAYOUT_NAMES[old.layout]} → ${LAYOUT_NAMES[segment.layout]}`, film });
     if (film && !acted && !presenter) changes.push({ text: `New take of ${name}`, film });
     if (JSON.stringify(old.screen) !== JSON.stringify(segment.screen)) changes.push({ text: `${name} shows something else`, film: false });
@@ -205,13 +207,8 @@ export function changesSince(cut: Cut, draft: Draft, takes: Array<{ filmed: bool
   for (const [index, old] of cut.segments.entries()) if (!matched.includes(index)) changes.push({ text: `Took out ${quoted(old.label)}`, film: false });
   if (matched.some((before, at) => at > 0 && before < matched[at - 1])) changes.push({ text: "The segments are in a new order", film: false });
 
-  const shown = { ...DEFAULT_ON_SCREEN, ...draft.onScreen };
-  const wasShown = { ...DEFAULT_ON_SCREEN, ...cut.onScreen };
-  if (cut.title !== undefined && cut.title !== draft.title && shown.title) changes.push({ text: `Renamed the video to “${draft.title}”`, film: false });
   const themeName = (theme: ThemeId) => (theme === "brand" ? "Your brand" : (THEMES[theme]?.name ?? theme));
   if (cut.theme !== draft.theme) changes.push({ text: `Theme: ${themeName(cut.theme)} → ${themeName(draft.theme)}`, film: false });
-  if (wasShown.title !== shown.title) changes.push({ text: shown.title ? "The title shows on screen" : "The title is off the screen", film: false });
-  if (wasShown.labels !== shown.labels) changes.push({ text: shown.labels ? "The labels show on their stickers" : "The labels are off the stickers", film: false });
   if (cut.sound) {
     const sound = { ...DEFAULT_SOUND, ...draft.sound };
     const was = { ...DEFAULT_SOUND, ...cut.sound };
@@ -243,7 +240,9 @@ export async function addNote(project: Project, at: number, atX: number, atY: nu
   const picture = `${project.dir}/notes/${id}.jpg`;
   await writeFile(picture, await ringedFrame(cut.video, time, x, y));
   const shows = segment ? SHOWN[segment.screen.kind] : "the video";
-  const note: Note = { id, time, x, y, text: text.trim(), segment: index, label: segment?.label ?? part.kind, line: segment?.line ?? "", word, spot: spotAt(part.kind, part.layout, shows, x, y, { ...DEFAULT_ON_SCREEN, ...cut.onScreen }), picture, sent: false, cut: cut.id, ...(by ? { by } : {}) };
+  const small = segment?.screen.kind === "picture" || segment?.screen.kind === "broll" || segment?.screen.kind === "clip";
+  const framed = { since: time - part.start, lead: part.lead, react: part.react, entrance: entranceOf(cut, index), spot: placementOf(cut.parts, index, small).box };
+  const note: Note = { id, time, x, y, text: text.trim(), segment: index, label: segment?.label ?? part.kind, line: segment?.line ?? "", word, spot: spotAt(part.kind, part.layout, shows, x, y, framed), picture, sent: false, cut: cut.id, ...(by ? { by } : {}) };
   project.notes.push(note);
   return note;
 }
@@ -288,10 +287,10 @@ async function ringedFrame(video: string, time: number, x: number, y: number): P
   return canvas.toBuffer("image/jpeg", 88);
 }
 
-// A segment saved by an earlier version of the app, before segments had layouts and acting. Every segment was filmed in
-// a split then.
+// A segment saved by an earlier version of the app: before segments had layouts and acting, when every segment was filmed
+// in a split, or with a layout the app doesn't have anymore, the presenter in a bubble, which becomes a split too.
 function upgrade(segment: Segment): Segment {
-  return { ...segment, layout: segment.layout ?? "split", acting: segment.acting ?? "" };
+  return { ...segment, layout: LAYOUTS.includes(segment.layout) ? segment.layout : "split", acting: segment.acting ?? "" };
 }
 
 function isPullRequestLink(text: string): boolean {

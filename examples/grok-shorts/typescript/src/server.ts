@@ -14,7 +14,7 @@ import { drawPortraits, drawPresenter, findFace, findPresenter, listPresenters, 
 import { type Cut, type Note, type Project, addNote, archiveCurrent, changesSince, cutsOf, filmstrip, keepCut, loadProject, newProject, notesMessage, recentThemes, restoreCut, saveProject } from "./project.ts";
 import { reviewCut } from "./review.ts";
 import { PRESETS, type Source, listSources, removeSource, saveSource, testSource } from "./sources.ts";
-import { DEFAULT_ON_SCREEN, DEFAULT_SOUND, type Layout, PLATFORMS, type Platform, type Question, hookOptions, moveSegment, publishText, moveSegmentTo, removeSegment, setLayout, setLine, setOnScreen, setSound, setTheme, setTrim, setUpload } from "./script.ts";
+import { DEFAULT_SOUND, type Layout, PLATFORMS, type Platform, type Question, hookOptions, moveSegment, publishText, moveSegmentTo, removeSegment, setLayout, setLine, setSound, setTheme, setTrim, setUpload } from "./script.ts";
 import { type Cache, type WriteEvents, chooseTake, estimateDraft, filmDraft, newCache, previewVisuals, retakeSegment, reviseDraft, startDraft, takesOf, transcriptOf } from "./short.ts";
 import { cloneVoice, inventPresenter, listVoices, newPresenterId, previewVoice, readVideo } from "./studio.ts";
 import { TAKES_PER_LINE, TAKE_USD_PER_SECOND, filmLine, lineSeconds } from "./takes.ts";
@@ -78,7 +78,6 @@ createServer(async (req, res) => {
     if (url.pathname === "/api/library/remove" && req.method === "POST") return await unload(await readJson(req), res);
     if (url.pathname === "/api/upload-visual" && req.method === "POST") return await uploadVisual(await readJson(req), res);
     if (url.pathname === "/api/sound" && req.method === "POST") return await sound(await readJson(req), res);
-    if (url.pathname === "/api/on-screen" && req.method === "POST") return await onScreen(await readJson(req), res);
     if (url.pathname === "/api/videos") return await videos(res);
     if (url.pathname === "/api/chat" && req.method === "POST") return await chat(await readJson(req), res);
     if (url.pathname === "/api/film" && req.method === "POST") return await film(await readJson(req), res);
@@ -266,17 +265,6 @@ async function sound(sent: Record<string, unknown>, res: ServerResponse): Promis
   reply(res, 200, "application/json", JSON.stringify({ sound: project.draft.sound }));
 }
 
-// Shows or hides the title at the top and the segments' labels. They're drawn on after filming, so the next cut costs
-// nothing more for it.
-async function onScreen(sent: Record<string, unknown>, res: ServerResponse): Promise<void> {
-  const project = sessions.get(String(sent.session ?? ""))?.project;
-  if (!project) return reply(res, 400, "application/json", JSON.stringify({ error: GONE }));
-  const shown = (key: string) => (typeof sent[key] === "boolean" ? (sent[key] as boolean) : undefined);
-  project.draft = setOnScreen(project.draft, { title: shown("title"), labels: shown("labels") });
-  await saveProject(project);
-  reply(res, 200, "application/json", JSON.stringify({ onScreen: project.draft.onScreen }));
-}
-
 // Shows an upload on a segment of the latest script, by hand. Grok hears about it with the next message.
 async function uploadVisual({ session: id = "", index = "", asset: assetId = "" }: Record<string, string>, res: ServerResponse): Promise<void> {
   const project = sessions.get(id)?.project;
@@ -386,7 +374,7 @@ async function chat({ session: id = "", message = "", presenter = "", personalit
     for (const note of sending) note.sent = true;
     session.project = saved;
     await saveProject(saved);
-    emit("done", { title: written.draft.title, segments: written.draft.segments, theme: written.draft.theme, sound: { ...DEFAULT_SOUND, ...written.draft.sound }, onScreen: { ...DEFAULT_ON_SCREEN, ...written.draft.onScreen }, personality: written.draft.personality, folder: basename(saved.dir) });
+    emit("done", { title: written.draft.title, segments: written.draft.segments, theme: written.draft.theme, sound: { ...DEFAULT_SOUND, ...written.draft.sound }, personality: written.draft.personality, folder: basename(saved.dir) });
   } catch (error) {
     if (!signal.aborted) emit("failure", { message: failed("Writing the script", error) });
   }
@@ -433,7 +421,7 @@ async function film({ session: id = "", presenter = "", preview = "" }: Record<s
     project.presenter = presenter;
     const made = Date.now();
     const takes = short.takes.map((take) => take.file);
-    const cut = await keepCut(project, { id: made, video: short.video, made, parts: short.parts, words: short.words, segments: draft.segments, title: draft.title, theme: draft.theme, onScreen: draft.onScreen, sound: draft.sound, cost, takes, ...(preview ? { kind: "preview" as const } : {}) });
+    const cut = await keepCut(project, { id: made, video: short.video, made, parts: short.parts, words: short.words, segments: draft.segments, title: draft.title, theme: draft.theme, sound: draft.sound, cost, takes, ...(preview ? { kind: "preview" as const } : {}) });
     await saveProject(project);
     emit("done", { ...(await cutView(project, cut)), versions: versionsOf(project) });
   } catch (error) {
@@ -628,7 +616,6 @@ async function open({ video = "" }: Record<string, string>, res: ServerResponse)
     pull: pr && { url: pr.url, repo: pr.repo, number: pr.number, title: pr.title, author: pr.author, additions: pr.additions, deletions: pr.deletions, changedFiles: pr.changedFiles },
     theme: draft.theme,
     sound: { ...DEFAULT_SOUND, ...draft.sound },
-    onScreen: { ...DEFAULT_ON_SCREEN, ...draft.onScreen },
     segments: draft.segments,
     history: project.history.map((turn) => (turn.role === "user" && turn.notes ? { ...turn, notes: turn.notes.map(shownNote) } : turn)),
     notes: project.notes.filter((note) => !note.sent).map(shownNote),
@@ -874,7 +861,8 @@ function failed(what: string, error: unknown): string {
 }
 
 // Starts a stream of server-sent events. The signal aborts when the page closes the stream, which stops the API calls and
-// rendering. Videos that have already started still finish rendering and are billed, because the API can't cancel one.
+// rendering. Videos that have already started still finish rendering and are billed, because the API can't cancel one, and
+// filming again picks them up.
 function openEvents(res: ServerResponse) {
   res.writeHead(200, { "content-type": "text/event-stream", "cache-control": "no-cache" });
   const abort = new AbortController();

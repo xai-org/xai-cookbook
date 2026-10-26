@@ -5,8 +5,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
 import { promisify } from "node:util";
-import { APIConnectionError, SpaceXAI, type VideoResponse, stripInvalidSpeechTags } from "@xai-official/sdk";
-import type { Mood } from "./script.ts";
+import { APIConnectionError, APIError, SpaceXAI, TimeoutError, type VideoGenerateParams, type VideoResponse, stripInvalidSpeechTags } from "@xai-official/sdk";
+import type { Gesture, Mood } from "./script.ts";
 
 // A video starts every take at once, so a rate limit is retried a few more times than the SDK's default of two.
 const client = new SpaceXAI({ maxRetries: 5 });
@@ -31,16 +31,31 @@ const AFTER = 0.3;
 // out. Clean takes have under 2% of their pixels tinted that way, and a doubled one had 8.5%.
 const DOUBLED = 0.04;
 
+// How the presenter reacts, by the part's mood. The reactions are kept small: big ones in every take read as acting.
 const DIRECTIONS: Record<Mood, string> = {
-  chill: "Relaxed and conversational, with a small smile.",
-  shocked: "Their eyebrows shoot up and their jaw drops in disbelief on the first words.",
-  smug: "A smug, knowing smirk, very pleased with how this turned out.",
-  facepalm: "They shake their head and cover their face with one hand for a moment, disappointed, then say the line.",
+  chill: "Relaxed and conversational.",
+  shocked: "Genuinely surprised on the first words: eyebrows up and eyes wide for a moment, then they settle and go on.",
+  smug: "Quietly pleased with how this turned out, with a small smirk that comes and goes.",
+  facepalm: "Disappointed: a hand goes to their forehead for a moment, then they drop it and say the line.",
+};
+// The one small thing the presenter does in a take, by the gesture Grok picked for it.
+const GESTURE_DIRECTIONS: Record<Exclude<Gesture, "none" | "point">, string> = {
+  count: "They count the points off on their fingers as they say them.",
+  lean: "Partway through, they lean in toward the lens, as if letting the viewer in on a secret.",
+  remember: "Their eyes flick up and to the side for a moment, as if remembering, before they go on.",
+  laugh: "A short, real half-laugh before the line, at how absurd it is.",
+  shrug: "A small shrug, palms up, partway through.",
+  nod: "They nod slightly along with what they're saying.",
+  hands: "They talk with their hands: small, natural movements, not big gestures.",
+  sigh: "A quick exhale through the nose first, a little exasperated.",
+  squint: "They squint at the lens for a moment, skeptical.",
+  headshake: "A small, slow shake of the head, in disbelief.",
+  glance: "They glance away from the lens for a second, as if checking something, then back.",
 };
 
-// What the presenter says and how, and what's on screen above them that they point at, if anything. `acting` is how this
-// one take is acted, in place of the personality's delivery.
-export type Part = { line: string; mood: Mood; pointAt?: string; acting?: string };
+// What the presenter says and how, the small thing they do as they say it, and what's on screen above them that they
+// point at, if they point. `acting` is how this one take is acted, in place of the personality's delivery.
+export type Part = { line: string; mood: Mood; gesture?: Exclude<Gesture, "none" | "point">; pointAt?: string; acting?: string };
 // Who's on camera: the portrait every take starts from, the voice they speak in, where they film, and how their
 // personality acts. `green` is the color of the green screen behind them, as hex, when they film in front of one.
 export type Cast = { portrait: Blob; voice: string; room: string; delivery: string; green?: string };
@@ -106,8 +121,52 @@ export async function recordTake(
       if (best.cutOff) seconds = Math.min(15, seconds + 2);
       continue;
     }
-    return keep(best, filmed, cost);
+    const natural = await mostNatural(takes.filter((take) => !take.cutOff && take.tinted <= DOUBLED && take.matched >= best.matched - 1), base, signal).catch(() => ({ take: undefined, cost: 0 }));
+    return keep(natural.take ?? best, filmed, cost + natural.cost);
   }
+}
+
+const NATURAL = `You're a video editor choosing between takes of the same person saying the same line into their phone's camera. Each take comes as three frames, from its start, middle, and end. Pick the take that looks most like a real person filming themselves, and least like AI video. Watch for a frozen or fixed smile, eyes that stare without blinking, a stiff or posed body, hands or fingers that warp or move unnaturally, a doubled or smeared face, teeth that look wrong, a mouth that doesn't look mid-word, skin that looks like plastic, and light that changes for no reason. If they're about the same, pick the one with the more natural expression.`;
+const NATURAL_SCHEMA = { type: "object", properties: { pick: { type: "integer" }, why: { type: "string" } }, required: ["pick", "why"], additionalProperties: false };
+
+// Of takes that say the line about as well, Grok keeps the one that looks most like a real person, from three frames of
+// each. The pick is saved as <base>-natural.json, so filming again with the same takes keeps the same one instead of
+// asking again, and maybe getting another answer.
+async function mostNatural(takes: Filmed[], base: string, signal?: AbortSignal): Promise<{ take?: Filmed; cost: number }> {
+  if (takes.length < 2) return { cost: 0 };
+  const files = takes.map((take) => take.file).sort();
+  const saved = `${base}-natural.json`;
+  const kept = existsSync(saved) ? await readFile(saved, "utf8").then((text) => JSON.parse(text) as { files: string[]; pick: string }, () => undefined) : undefined;
+  if (kept && kept.files.join() === files.join()) return { take: takes.find((take) => take.file === kept.pick), cost: 0 };
+  const content = await Promise.all(
+    takes.map(async (take, index) => {
+      const [from, to] = [take.heard[0]?.start ?? 0, take.heard.at(-1)?.end ?? 1];
+      const frames = await Promise.all([0.2, 0.5, 0.8].map((at) => stillAt(take.file, from + (to - from) * at, signal)));
+      return [{ type: "input_text" as const, text: `Take ${index + 1}:` }, ...frames.map((image) => ({ type: "input_image" as const, image, detail: "high" as const }))];
+    }),
+  );
+  const response = await client.responses.create(
+    {
+      model: "grok-4.7",
+      input: [
+        { role: "system", content: NATURAL },
+        { role: "user", content: content.flat() },
+      ],
+      text: { format: { type: "json_schema", name: "natural", schema: NATURAL_SCHEMA } },
+      reasoning: { effort: "low" },
+    },
+    { signal },
+  );
+  const { pick } = response.toJson() as { pick: number };
+  const take = takes[Math.min(Math.max(Math.round(pick), 1), takes.length) - 1];
+  await writeFile(saved, JSON.stringify({ files, pick: take.file }));
+  return { take, cost: response.usage.cost_usd ?? 0 };
+}
+
+// A frame of a take at `time`, as a small JPEG.
+async function stillAt(file: string, time: number, signal?: AbortSignal): Promise<Blob> {
+  const { stdout } = await run("ffmpeg", ["-v", "error", "-ss", time.toFixed(3), "-i", file, "-frames:v", "1", "-vf", "scale=360:640", "-q:v", "4", "-f", "image2pipe", "-c:v", "mjpeg", "pipe:1"], { encoding: "buffer", maxBuffer: 1 << 24, signal });
+  return new Blob([stdout], { type: "image/jpeg" });
 }
 
 // A stand-in for a take, for a free preview: the portrait, still, with the line said in the presenter's voice by text to
@@ -133,6 +192,44 @@ export async function speakTake(part: Part, cast: Cast, base: string, signal?: A
   return take;
 }
 
+// How the presenter reacts to a clip they're watching, by the mood of the part that answers it.
+const REACTIONS: Record<Mood, string> = {
+  chill: "a small nod and a slight smile, interested",
+  shocked: "their eyebrows rising as they take in what they're hearing",
+  smug: "a knowing little smirk, as if they saw this coming",
+  facepalm: "a slow wince, then a small shake of the head",
+};
+
+// Films the presenter watching a clip on their phone and reacting to it without a word, for as long as the clip plays
+// before their line, the way a creator stitches someone else's video. It's one take, with no voice, saved as `file`, and
+// one filmed there before is used again.
+export async function recordReaction(mood: Mood, cast: Cast, seconds: number, file: string, onProgress: (percent: number) => void = () => {}, signal?: AbortSignal): Promise<{ file: string; cost: number }> {
+  if (existsSync(file)) return { file, cost: 0 };
+  const prompt = [
+    `The person in the picture films a TikTok in ${cast.room}, reacting to a video. It's one continuous shot that starts from the picture, with the same face, hair, clothes, and surroundings throughout, and no cut to anywhere else. Handheld vertical phone video, like a real creator.`,
+    `They watch the video on their phone's screen, just below the lens, without saying a word: they listen, and react with their face, ${REACTIONS[mood]}. They blink and breathe naturally, and their mouth stays closed.`,
+    "Nobody speaks, and there's no music.",
+  ].join("\n");
+  return { file, cost: await filmTake(prompt, { ...cast, voice: "" }, Math.max(3, Math.ceil(seconds)), file, onProgress, signal) };
+}
+
+// What's said in the first `seconds` of a clip, word by word, to caption it while it plays with its own sound. It's saved
+// next to the clip. A clip with no sound has no words.
+export async function hearClip(file: string, seconds: number, signal?: AbortSignal): Promise<Array<{ text: string; start: number; end: number }>> {
+  const saved = `${file.replace(/\.mp4$/, "")}-heard-${seconds.toFixed(2)}.json`;
+  if (existsSync(saved)) return JSON.parse(await readFile(saved, "utf8"));
+  const dir = await mkdtemp(join(tmpdir(), "clip-"));
+  try {
+    const failed = await run("ffmpeg", ["-v", "error", "-y", "-i", file, "-t", seconds.toFixed(3), "-vn", "-c:a", "aac", "-b:a", "96k", `${dir}/sound.m4a`], { signal }).then(() => false, () => true);
+    if (failed && !signal?.aborted) return [];
+    const words = (await client.voice.transcribe({ file: new File([await readFile(`${dir}/sound.m4a`)], "clip.m4a"), model: "grok-voice-transcribe-2.0" }, { signal })).words ?? [];
+    await writeFile(saved, JSON.stringify(words));
+    return words;
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+}
+
 // The takes saved for a line, in the order they were filmed.
 export function savedTakes(base: string): string[] {
   const files: string[] = [];
@@ -143,9 +240,7 @@ export function savedTakes(base: string): string[] {
 // Films one take of a line, with no retakes and no transcript, to try out a presenter before saving them.
 export async function filmLine(line: string, cast: Cast, file: string, onProgress: (percent: number) => void = () => {}, signal?: AbortSignal): Promise<{ file: string; cost: number }> {
   const seconds = takeLength(line.split(/\s+/).filter(Boolean).length);
-  const result = await filmTake(takePrompt({ line, mood: "chill" }, cast), cast, seconds, onProgress, signal);
-  await download(result, file, signal);
-  return { file, cost: result.usage?.cost_usd ?? 0 };
+  return { file, cost: await filmTake(takePrompt({ line, mood: "chill" }, cast), cast, seconds, file, onProgress, signal) };
 }
 
 // How many seconds a take of the line is filmed for, which is about how long it runs in the video.
@@ -173,8 +268,7 @@ async function filmAndHear(
   signal?: AbortSignal,
 ): Promise<Filmed> {
   const saved = existsSync(file);
-  const result = saved ? undefined : await filmTake(prompt, cast, seconds, onProgress, signal);
-  if (result) await download(result, file, signal);
+  const filmed = saved ? 0 : await filmTake(prompt, cast, seconds, file, onProgress, signal);
   const { heard, transcribed } = await hearTake(file, signal);
   if (saved) onProgress(100);
   const last = heard.at(-1);
@@ -185,7 +279,7 @@ async function filmAndHear(
     // A take whose last word runs into its end, or that's missing a quarter of the line, stopped before the line did.
     cutOff: !last || heard.length < words.length * 0.75 || last.end > seconds - 0.25,
     tinted: cast.green ? await tintedShare(file, cast.green) : 0,
-    cost: (result?.usage?.cost_usd ?? 0) + (transcribed ? seconds * TRANSCRIPTION_USD_PER_SECOND : 0),
+    cost: filmed + (transcribed ? seconds * TRANSCRIPTION_USD_PER_SECOND : 0),
   };
 }
 
@@ -214,12 +308,14 @@ async function tintedShare(file: string, green: string): Promise<number> {
 // One prompt per take. The portrait is the take's first frame, and the voice comes from reference_audios as <AUDIO_0>. The
 // prompt names where the presenter films and asks for one continuous shot: told only that they film "at their desk", the
 // presenter in a train compartment cut to a living room half a second in.
-function takePrompt({ line, mood, pointAt, acting }: Part, { room, delivery }: Cast): string {
+function takePrompt({ line, mood, gesture, pointAt, acting }: Part, { room, delivery }: Cast): string {
   return [
-    `The person in the picture films a TikTok in ${room}, talking straight into the phone camera. It's one continuous shot that starts from the picture, with the same face, hair, clothes, and surroundings throughout, and no cut to anywhere else. Handheld vertical phone video, natural and expressive, like a real creator.`,
+    `The person in the picture films a TikTok in ${room}, talking straight into the phone camera. It's one continuous shot that starts from the picture, with the same face, hair, clothes, and surroundings throughout, and no cut to anywhere else. Handheld vertical phone video, like a real creator: the framing drifts a little, and the exposure shifts slightly as they move.`,
+    "They're a real person, not a presenter: they blink and breathe naturally, take a small breath before they start talking, now and then their eyes go to the screen just below the lens for a moment, and their face follows what they're saying, with no fixed smile.",
     `They say, in the voice from <AUDIO_0>: "${line}"`,
-    `Their style: ${acting || delivery}`,
+    acting ? `How they act this take: ${acting}` : `Their energy and pace, without making the same moves in every take: ${delivery}`,
     DIRECTIONS[mood],
+    gesture ? GESTURE_DIRECTIONS[gesture] : "",
     pointAt ? `As they start, they point up toward the top of the frame for a moment, at ${pointAt} shown above them.` : "",
     "Their mouth moves with the words. Nobody else speaks, and there's no music.",
   ]
@@ -227,20 +323,29 @@ function takePrompt({ line, mood, pointAt, acting }: Part, { room, delivery }: C
     .join("\n");
 }
 
-// The video's URL is temporary, so it's downloaded right away. The take is made and paid for by now, so a dropped
+// The video's URL is temporary, so it's downloaded right away. The video is made and paid for by now, so a dropped
 // connection, which fetch throws as a TypeError, is tried again, up to twice.
 async function download(result: VideoResponse, file: string, signal?: AbortSignal, tries = 3): Promise<void> {
-  if (!result.video?.url) throw new Error("A take didn't pass moderation, so there's nothing to download.");
+  const url = result.video?.url;
+  if (!url) throw new Error("A video didn't pass moderation, so there's nothing to download.");
   try {
-    const response = await fetch(result.video.url, { signal });
-    if (!response.ok) throw new Error(`Couldn't download a take: ${response.status}`);
+    const response = await fetch(url, { signal });
+    if (!response.ok) throw new Error(`Couldn't download a video: ${response.status}`);
     await writeFile(file, Buffer.from(await response.arrayBuffer()));
   } catch (error) {
-    if (!(error instanceof TypeError) || signal?.aborted || tries === 1) throw error;
+    if (!(error instanceof TypeError) || signal?.aborted) throw error;
+    if (tries === 1) {
+      const reason = error.cause instanceof Error ? error.cause.message : error.message;
+      const host = new URL(url).host;
+      throw new Unreachable(`A finished video couldn't be downloaded from ${host} (${reason}). It's paid for, and filming again picks it up once this computer can reach ${host}.`);
+    }
     await sleep(2000, undefined, { signal });
     return download(result, file, signal, tries - 1);
   }
 }
+
+// A finished video this computer can't download, like behind a firewall that blocks where the videos are.
+class Unreachable extends Error {}
 
 // What's heard in a take, saved next to it as <take>.json, so a take kept for another cut, even by another run of the
 // app, isn't transcribed again. A file that can't be read is heard again.
@@ -280,40 +385,87 @@ async function soundOf(file: string, signal?: AbortSignal): Promise<Buffer<Array
   }
 }
 
-async function filmTake(prompt: string, { portrait, voice }: Cast, seconds: number, onProgress: (percent: number) => void, signal?: AbortSignal): Promise<VideoResponse> {
-  const { request_id } = await startTake(prompt, portrait, voice, seconds, signal);
-  // videos.wait() polls until the video is done but doesn't say how far along it is, so this polls videos.get() itself.
+// Films a take into `file`, starting from the portrait, in the voice from reference_audios as <AUDIO_0>, and returns what
+// it cost.
+function filmTake(prompt: string, { portrait, voice }: Cast, seconds: number, file: string, onProgress: (percent: number) => void, signal?: AbortSignal): Promise<number> {
+  return filmVideo(
+    {
+      model: "grok-imagine-video-1.5",
+      prompt,
+      image: portrait,
+      // A take with no voice, like a reaction, has nobody to sound like.
+      ...(voice ? { reference_audios: [{ voice_id: voice }] } : {}),
+      duration: seconds,
+      aspect_ratio: "9:16",
+      resolution: "720p",
+    },
+    file,
+    onProgress,
+    signal,
+  );
+}
+
+// Films a video with Grok Imagine into `file`, and returns what it cost. A video is billed from the moment it starts,
+// whether or not it's ever downloaded, so its request is saved next to `file` as <name>-request.json right away, and
+// filming again after a run that stopped partway, like when the server restarted, picks the video up instead of paying
+// for another. One that failed, or is too old to download, is filmed again, but not one this computer can't download,
+// since another would be paid for and fail the same way.
+export async function filmVideo(body: VideoGenerateParams, file: string, onProgress: (percent: number) => void = () => {}, signal?: AbortSignal): Promise<number> {
+  const started = file.replace(/\.mp4$/, "-request.json");
+  if (existsSync(started)) {
+    const { request_id } = JSON.parse(await readFile(started, "utf8")) as { request_id: string };
+    const cost = await finish(request_id, file, started, onProgress, signal).catch((error: unknown) => {
+      if (signal?.aborted || error instanceof Unreachable) throw error;
+      return undefined;
+    });
+    if (cost !== undefined) return cost;
+  }
+  const { request_id } = await startVideo(body, signal);
+  await writeFile(started, JSON.stringify({ request_id }));
+  return finish(request_id, file, started, onProgress, signal);
+}
+
+// Waits for a video to be made, downloads it to `file`, and forgets its request.
+async function finish(request_id: string, file: string, started: string, onProgress: (percent: number) => void, signal?: AbortSignal): Promise<number> {
+  const result = await waitFor(request_id, onProgress, signal);
+  await download(result, file, signal);
+  await rm(started, { force: true });
+  return result.usage?.cost_usd ?? 0;
+}
+
+// videos.wait() polls until the video is done but doesn't say how far along it is, so this polls videos.get() itself. A
+// poll that fails because the network dropped or the API was busy is tried again for as long as a video can take, since
+// the video keeps rendering either way.
+async function waitFor(request_id: string, onProgress: (percent: number) => void, signal?: AbortSignal): Promise<VideoResponse> {
   const deadline = Date.now() + MAX_WAIT_MS;
   while (Date.now() < deadline) {
-    const result = await client.videos.get(request_id, { signal });
-    if (result.status === "done") return result;
-    if (result.status !== "pending") throw new Error(`A take ${result.status}: ${result.error?.message ?? "no reason given"}`);
-    onProgress(result.progress ?? 0);
-    await sleep(3000, undefined, { signal });
+    const result = await client.videos.get(request_id, { signal }).catch((error: unknown) => {
+      if (passing(error, signal)) return undefined;
+      throw error;
+    });
+    if (result?.status === "done") return result;
+    if (result && result.status !== "pending") throw new Error(`A video ${result.status}: ${result.error?.message ?? "no reason given"}`);
+    if (result) onProgress(result.progress ?? 0);
+    await sleep(result ? 3000 : 10_000, undefined, { signal });
   }
-  throw new Error(`A take wasn't done after ${MAX_WAIT_MS / 60_000} minutes. Its request ID is ${request_id}.`);
+  throw new Error(`A video wasn't done after ${MAX_WAIT_MS / 60_000} minutes. Its request ID is ${request_id}.`);
+}
+
+// Whether an error is one that passes, like the network dropping or the API being busy, so asking again is worth it.
+function passing(error: unknown, signal?: AbortSignal): boolean {
+  if (signal?.aborted || !APIError.is(error) || error.isAbort()) return false;
+  return error instanceof APIConnectionError || error instanceof TimeoutError || error.isRateLimit() || error.isOverloaded() || (error.status ?? 0) >= 500;
 }
 
 // The SDK doesn't resend a request that creates something when the connection drops before the API answers, since the
-// first one might have gone through. Starting all the takes at once sometimes drops a connection, so a take that never
+// first one might have gone through. Starting all the takes at once sometimes drops a connection, so a video that never
 // got an answer is started again, up to twice.
-async function startTake(prompt: string, portrait: Blob, voice: string, seconds: number, signal?: AbortSignal, tries = 3): Promise<{ request_id: string }> {
+async function startVideo(body: VideoGenerateParams, signal?: AbortSignal, tries = 3): Promise<{ request_id: string }> {
   try {
-    return await client.videos.generate(
-      {
-        model: "grok-imagine-video-1.5",
-        prompt,
-        image: portrait,
-        reference_audios: [{ voice_id: voice }],
-        duration: seconds,
-        aspect_ratio: "9:16",
-        resolution: "720p",
-      },
-      { signal },
-    );
+    return await client.videos.generate(body, { signal });
   } catch (error) {
     if (!(error instanceof APIConnectionError) || tries === 1) throw error;
-    return startTake(prompt, portrait, voice, seconds, signal, tries - 1);
+    return startVideo(body, signal, tries - 1);
   }
 }
 

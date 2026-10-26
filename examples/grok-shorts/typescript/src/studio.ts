@@ -23,7 +23,7 @@ export type FromVideo = { frames: string[]; sample: string; speech: number; look
 
 const INVENT_PROMPT = `You invent presenters for short vertical videos that explain code changes, like developers who post on TikTok. Make each one a specific, memorable adult who'd be fun to watch, and easy to picture.
 - name: their first name.
-- look: one sentence for a photorealistic portrait: their age, at least twenty, their hair, face, and clothes, and one or two details that make them stick. No real people, brands, or logos.
+- look: one sentence for a photorealistic portrait: their age, at least twenty, their hair, face, and clothes, and one or two details that make them stick, like freckles, a chipped tooth, or glasses that slide down. Ordinary-looking, the way real people look on their own phones, never like a model. No real people, brands, or logos.
 - room: where they film, in a few words with one or two details, like "a cluttered garage workshop with a telescope".
 - voice: the voice from the list that fits them best.
 - line: how they'd open a video, in their own voice, in at most fifteen words. It's said out loud, so no emoji or symbols.`;

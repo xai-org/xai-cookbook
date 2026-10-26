@@ -31,14 +31,13 @@ Make a video
 
 Change it by hand
   line <project> <segment> "<line>"
-  layout <project> <segment> <split|full|overlay|green|bubble|visual>
+  layout <project> <segment> <split|full|overlay|green|visual>
   theme <project> <theme>
   move <project> <segment> <to>
   drop <project> <segment>
   trim <project> <segment> [--head <seconds>] [--tail <seconds>]
   use-upload <project> <segment> <upload>
   sound <project> [--music <upload>|none] [--volume <0 to 1>] [--effects on|off]
-  on-screen <project> [--title on|off] [--labels on|off]
   takes <project>
   pick-take <project> <segment> <letter>
   retake <project> <segment> "<direction>" [--max-usd <dollars>]
@@ -75,7 +74,7 @@ Presenters and personalities
 
 <project> is the name draft returns, the video's folder in output/. Segments and versions are numbered from 1, the way
 show lists them.`;
-const STOPPED = "Stopped. Takes that were done are kept for next time, and ones that had started are still billed, since the API can't cancel a video.";
+const STOPPED = "Stopped. Takes that were done are kept for next time. Ones that had started are still billed, since the API can't cancel a video, so filming again picks them up instead of paying for them again.";
 
 const stopping = new AbortController();
 for (const signal of ["SIGINT", "SIGTERM"] as const) process.once(signal, () => stopping.abort());
@@ -101,8 +100,6 @@ try {
       music: { type: "string" },
       volume: { type: "string" },
       effects: { type: "string" },
-      title: { type: "string" },
-      labels: { type: "string" },
       name: { type: "string" },
       colors: { type: "string" },
       text: { type: "string" },
@@ -163,7 +160,7 @@ try {
     };
     const notes = async () => (values.file ? await readFile(here(values.file, "a file"), "utf8") : "");
     const flag = (key: "x" | "y" | "head" | "tail" | "volume") => amount(values[key], `--${key}`);
-    const onOff = (key: "effects" | "title" | "labels" | "glow" | "watermark" | "end-card" | "enabled") => toggle(values[key], `--${key}`);
+    const onOff = (key: "effects" | "glow" | "watermark" | "end-card" | "enabled") => toggle(values[key], `--${key}`);
     const version = () => (values.version === undefined ? undefined : count(values.version, "version"));
     // A personality from a file that `personality write` printed, with any part of it given on its own instead.
     const persona = async () => {
@@ -201,7 +198,6 @@ try {
       trim: () => api.trim(project(), segment(1), { head: flag("head"), tail: flag("tail") }),
       "use-upload": () => api.useUpload(project(), segment(1), said(2, "the upload's id")),
       sound: () => api.sound(project(), { music: values.music, volume: flag("volume"), effects: onOff("effects") }),
-      "on-screen": () => api.onScreen(project(), { title: onOff("title"), labels: onOff("labels") }),
       takes: () => api.takes(project(), { presenter }),
       "pick-take": () => api.pickTake(project(), segment(1), said(2, "the take's letter"), { presenter }),
       retake: () => api.retake(project(), segment(1), said(2, "how to act the retake"), { presenter, maxUsd: dollars(values["max-usd"]), ...steps }),

@@ -2,10 +2,9 @@ import { existsSync } from "node:fs";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { THEMES, THEME_IDS, type Theme, type ThemeId } from "./themes.ts";
 
-// A creator's brand kit, put on every video they make: their name, up to three colors and a font for the words and
-// stickers on screen, drawn the way one of the built-in themes draws them, its `look`, their logo in a corner of every
-// frame, an end card with a call to action after the last line, and the presenter new videos start with, in their own
-// personality.
+// A creator's brand kit, put on every video they make: their name, up to three colors and a font for the words on
+// screen, drawn the way one of the built-in themes draws them, its `look`, their logo in a corner of every frame, an end
+// card with a call to action after the last line, and the presenter new videos start with, in their own personality.
 // It's saved in output/brand/, with the logo next to it.
 export type Brand = {
   name: string;
@@ -102,7 +101,7 @@ export async function removeLogo(): Promise<Brand | undefined> {
   return kept;
 }
 
-// The brand as a theme, for the words and stickers on screen.
+// The brand as a theme, for the words on screen.
 export function brandTheme(brand: Brand): Theme {
   const font = FONTS.find((each) => each.id === brand.font) ?? FONTS[0];
   const { style } = THEMES[brand.look ?? "pop"];
