@@ -46,14 +46,18 @@ REGISTRY_HEADER = (
 FRONT_MATTER = re.compile(r"---\n(.*?)\n---\n", re.DOTALL)
 FENCED_CODE = re.compile(r"^(```|~~~).*?^\1", re.DOTALL | re.MULTILINE)
 INLINE_CODE = re.compile(r"`[^`\n]*`")
-LINK_TARGET = re.compile(r"\]\(\s*<?([^)\s>]+)>?(?:\s+\"[^\"]*\")?\s*\)|\bhref=\"([^\"]+)\"")
+LINK_TARGET = re.compile(r"\]\(\s*<?([^)\s>]+)>?(?:\s+[\"'][^\"']*[\"'])?\s*\)|\b(?:href|src)=[\"']([^\"']+)[\"']")
 
 
 def read_front_matter(readme: Path) -> dict:
     match = FRONT_MATTER.match(readme.read_text(encoding="utf-8"))
     if not match:
         raise ValueError("must start with a front matter block between --- lines")
-    meta = yaml.safe_load(match.group(1)) or {}
+    meta = yaml.safe_load(match.group(1))
+    if meta is None:
+        meta = {}
+    if not isinstance(meta, dict):
+        raise ValueError("front matter must be a YAML mapping")
     if isinstance(meta.get("date"), dt.date):
         meta["date"] = meta["date"].isoformat()
     return meta
@@ -85,7 +89,8 @@ def load_examples() -> tuple[list[dict], list[str]]:
             for key in ("notebook", "cover"):
                 if key in meta and not (folder / meta[key]).is_file():
                     problems.append(f"{where}: {key} '{meta[key]}' doesn't exist")
-            examples.append({**meta, "slug": folder.name, "code": code})
+            if not problems:
+                examples.append({**meta, "slug": folder.name, "code": code})
         errors += problems
 
     return examples, errors
@@ -105,7 +110,7 @@ def render_catalog(examples: list[dict]) -> str:
         for example in group:
             base = f"examples/{example['slug']}"
             code = " · ".join(
-                f"[{LANGUAGE_NAMES[lang]}]({base}/{'' if rel == '.' else rel.strip('/') + '/'})"
+                f"[{LANGUAGE_NAMES.get(lang, lang.capitalize())}]({base}/{'' if rel == '.' else rel.strip('/') + '/'})"
                 for lang, rel in example["code"].items()
             )
             description = example["description"].replace("|", "\\|")
@@ -161,10 +166,10 @@ def broken_links() -> list[str]:
     for path in markdown_files():
         text = INLINE_CODE.sub("", FENCED_CODE.sub("", path.read_text(encoding="utf-8")))
         for match in LINK_TARGET.finditer(text):
-            target = match.group(1) or match.group(2)
-            if re.match(r"^([a-z][a-z0-9+.-]*:|#|//)", target, re.IGNORECASE):
+            target = (match.group(1) or match.group(2) or "").strip()
+            if not target or re.match(r"^([a-z][a-z0-9+.-]*:|#|//)", target, re.IGNORECASE):
                 continue
-            relative = unquote(target.split("#", 1)[0].split("?", 1)[0])
+            relative = unquote(target.split("#", 1)[0].split("?", 1)[0]).strip()
             if not relative:
                 continue
             resolved = ROOT / relative.lstrip("/") if relative.startswith("/") else path.parent / relative
