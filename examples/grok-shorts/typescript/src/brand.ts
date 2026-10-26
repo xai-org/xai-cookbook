@@ -1,6 +1,6 @@
 import { existsSync } from "node:fs";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
-import { THEMES, THEME_IDS, type Theme, type ThemeId } from "./themes.ts";
+import { THEMES, THEME_IDS, type Theme, type ThemeId, readableOn } from "./themes.ts";
 
 // A creator's brand kit, put on every video they make: their name, up to three colors and a font for the words on
 // screen, drawn the way one of the built-in themes draws them, its `look`, their logo in a corner of every frame, an end
@@ -39,6 +39,7 @@ export const FONTS = [
 export const FONT_FILES = [
   { family: "Inter", weight: 800, file: "fonts/Inter-ExtraBold.ttf" },
   { family: "Inter", weight: 900, file: "fonts/Inter-Black.ttf" },
+  { family: "Kalam", weight: 700, file: "fonts/Kalam-Bold.ttf" },
 ];
 
 // How long the end card stays on screen after the last line, in seconds.
@@ -104,8 +105,9 @@ export async function removeLogo(): Promise<Brand | undefined> {
 // The brand as a theme, for the words on screen.
 export function brandTheme(brand: Brand): Theme {
   const font = FONTS.find((each) => each.id === brand.font) ?? FONTS[0];
-  const { style } = THEMES[brand.look ?? "pop"];
-  return { name: brand.name || "Your brand", summary: "Your colors and font, from your brand kit.", colors: brand.colors, text: brand.text, font: font.stack, glow: brand.glow, style };
+  const { style, graphic } = THEMES[brand.look ?? "pop"];
+  const accents = brand.colors.map((color) => readableOn(color, graphic.ground));
+  return { name: brand.name || "Your brand", summary: "Your colors and font, from your brand kit.", colors: brand.colors, text: brand.text, font: font.stack, glow: brand.glow, style, graphic: { ...graphic, accents } };
 }
 
 // The theme a video is made in: one of the built-in themes, or the brand kit's, if there is one.

@@ -43,7 +43,7 @@ Grok hears about each of these with the next message, and keeps them.
 - `shorts sound <project> [--music <upload>|none] [--volume <0 to 1>] [--effects on|off]`: music from the library under the voice, and sound effects. It films nothing new.
 ## Film the changes
 
-`shorts changes <project>` lists what changed since the current version and which changes need new takes, and `shorts estimate <project>` what filming them costs. A new line, mood, or presenter, or a layout to or from a green screen, needs new takes. Everything else only cuts the video again, for nothing. Then `shorts preview <project>`, or, after a yes for the cost, `shorts film <project> --max-usd <cap>`. Filming keeps the take each unchanged segment used.
+`shorts changes <project>` lists what changed since the current version and which changes need new takes, and `shorts estimate <project>` what filming them costs. A new line, mood, or presenter, or a layout to or from a green screen, needs new takes, and so does the presenter's reaction to a clip that plays first, which a green screen films in front of it. Everything else only cuts the video again, for nothing. Then `shorts preview <project>`, or, after a yes for the cost, `shorts film <project> --max-usd <cap>`. Filming keeps the take each unchanged segment used.
 
 ## Takes
 

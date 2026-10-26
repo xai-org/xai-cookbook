@@ -64,9 +64,10 @@ export const OVER = { x: 60, y: 168, width: WIDTH - 120, height: 500 };
 // A diff or a pull request laid over the presenter's video is drawn this tall at the frame's full width, then scaled
 // down into its spot.
 const PANEL_HEIGHT = 640;
-// A post is shown whole, with room around it, and so is anything wide, like a landscape clip, across the screen.
+// A post is shown whole, with room around it, and so is anything that isn't tall, like a landscape or square clip,
+// across the middle of the screen, where a square one fills the width.
 const POST_ALONE = { x: 60, y: 220, width: WIDTH - 120, height: 1250 };
-const WIDE_ALONE = { x: 0, y: 560, width: WIDTH, height: 800 };
+const WIDE_ALONE = { x: 0, y: 460, width: WIDTH, height: 1000 };
 // A diff's colors, the way GitHub's dark theme draws one in its editor.
 const EDITOR = { background: "#0d1117", bar: "#010409", line: "#30363d", dim: "#7d8590", text: "#e6edf3", prose: "#c9d1d9", added: "rgb(46 160 67 / 0.2)", removed: "rgb(248 81 73 / 0.2)", plus: "#3fb950", minus: "#f85149", hunk: "#79c0ff" };
 // How the presenter is framed: how much closer than the whole take, and which third of the frame their face is in, -1
@@ -486,7 +487,7 @@ function drawScreen(ctx: SKRSContext2D, card: Card, video: Canvas | undefined, b
   }
   if (card.kind !== "media") return;
   const source = video ?? card.image;
-  if (card.fit === "cover" && source && source.width > source.height * 1.2) drawWide(ctx, source, WIDE_ALONE, since);
+  if (card.fit === "cover" && source && source.width > source.height * 0.8) drawWide(ctx, source, WIDE_ALONE, since);
   else drawMedia(ctx, card, video, card.fit === "contain" ? POST_ALONE : FULL, since, length);
 }
 
@@ -728,7 +729,7 @@ function drawOverlay(ctx: SKRSContext2D, card: Card, video: Canvas | undefined, 
   ctx.restore();
 }
 
-// Something wide, like a landscape clip, shown whole across `box`, on the plain dark background.
+// Something that isn't tall, like a landscape or square clip, shown whole across `box`, on the plain dark background.
 function drawWide(ctx: SKRSContext2D, source: Image | Canvas, box: Box, since: number): void {
   const scale = Math.min(box.width / source.width, box.height / source.height) * (1 + Math.min(since, 8) * 0.006);
   const [width, height] = [source.width * scale, source.height * scale];

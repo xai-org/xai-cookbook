@@ -36,7 +36,7 @@ It prints JSON. In the commands below, `shorts` means the path in its `shorts` f
    ```
 
    It returns `project`, the name every other command takes. For an idea, Grok may come back with `questions` and no `segments`: ask the person, then send their answers with `shorts revise <project> "<answers>"`. When nobody can answer, add `--go-ahead` to draft.
-4. **Show the script.** Share the title, Grok's `note`, and each segment's line. Ask for changes with `shorts revise <project> "<what to change>"` until it's right, like "show how it works as a diagram" for a motion graphic, or "play the clip of what she said first" for a clip that plays with its own sound before the line. The grok-shorts-edit skill has everything else that can change.
+4. **Show the script.** Share the title, Grok's `note`, and each segment's line. Ask for changes with `shorts revise <project> "<what to change>"` until it's right, like "show how it works as a diagram" for a motion graphic, "play the clip of what she said first" for a clip that plays with its own sound before the line while the presenter watches it from under it, or "react in front of the clip on a green screen" to have them watch it keyed out in front of it, the way X's React with Video does. The grok-shorts-edit skill has everything else that can change.
 5. **Preview it.** `shorts preview <project>` makes the whole video with the presenter's portrait saying each line in their voice, for a fraction of a cent. Attach the file in `video`, and say it's a preview.
 6. **Get a yes for the cost.** `estimate.usd`, in what draft, revise, and show return, is what filming costs, nearly all of it. Say it plainly, like "Filming this costs about $12", and film only after the person who asked says yes.
 7. **Film it.**
@@ -45,7 +45,7 @@ It prints JSON. In the commands below, `shorts` means the path in its `shorts` f
    shorts film <project> --max-usd <a little over the estimate, never more than they agreed to>
    ```
 
-   It takes two to five minutes. A take that cuts its line off is filmed again, longer, so it can come in a little over the estimate. Takes of segments that didn't change are kept, so filming again after a change only pays for what changed.
+   It takes two to five minutes. A take that cuts its line off is filmed again, longer, so it can come in a little over the estimate. Takes of segments that didn't change are kept, so filming again after a change only pays for what changed. Takes are paid for once they start, so when filming stops partway, run it again: it picks up the takes that started instead of paying for them twice.
 8. **Hand it over.** Attach the file in `video`, with what goes with it:
    - `shorts caption <project> --platform shorts|tiktok|reels`: a title, a description, and hashtags.
    - `shorts cover <project>`: a cover picture, from the hook, or another moment with `--at <seconds>`.
@@ -71,3 +71,5 @@ A command that fails prints `{"error": "..."}` and exits with 1, and the message
 - `Grok is waiting for answers to its questions`: answer them with revise first.
 - `fetch failed: ETIMEDOUT` on every call: the network is slow to connect. Run the commands with `NODE_OPTIONS=--network-family-autoselection-attempt-timeout=2000`.
 - `GitHub's rate limit is used up`: read the pull request with the person's GitHub app and pass it with `--pr`.
+- `A finished video couldn't be downloaded from vidgen.x.ai`: this computer's network blocks where Grok Imagine's videos download from. The takes are paid for and kept, so `film` picks them up once the network lets it through, without paying again. Don't film anything else until then.
+- A notice that a clip shows a picture instead: some networks can't download from YouTube or X. The video still works, with a picture where the clip would be.

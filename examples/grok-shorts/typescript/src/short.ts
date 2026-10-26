@@ -261,7 +261,7 @@ export async function filmDraft(
   timeline.duration += tail;
   const video = `${dir}/${preview ? "preview" : "short"}.mp4`;
   const theme = themeFor(draft.theme, brand);
-  const timedMedia = await Promise.all(shownMedia.map((got, index) => timeGraphic(draft.segments[index], got, timeline, index, theme, dir, signal)));
+  const timedMedia = await Promise.all(shownMedia.map((got, index) => timeGraphic(draft.segments[index], got, timeline, index, theme, dir, signal, variantOf(draft, index))));
   const clips = await Promise.all(timedMedia.map(async (got) => (got?.video ? { file: got.file, size: fitWithin(await videoSize(got.file), 1080) } : undefined)));
   const marks = brand && { logo: brand.logo ? await loadImage(brand.logo) : undefined, watermark: brand.watermark, endCard: brand.endCard.on ? { name: brand.name, line: brand.endCard.line } : undefined };
   const sound = { ...DEFAULT_SOUND, ...draft.sound };
@@ -306,21 +306,23 @@ async function getVisuals(draft: Draft, cache: Cache, dir: string, broll: boolea
     draft.segments.map(async (segment, index) => {
       if (!isMedia(segment.screen) || (!broll && segment.screen.kind === "broll")) return undefined;
       // Pictures and clips that Grok Imagine makes are made in the shape of the space they fill. A page, post, or clip is the
-      // same whichever beat shows it, so it's fetched once. A graphic is drawn for its layout, line, and theme.
+      // same whichever beat shows it, so it's fetched once. A graphic is drawn for its layout, line, theme, and place among
+      // the video's graphics.
       const { screen } = segment;
       const aspect = segment.layout === "split" || segment.layout === "overlay" ? "4:3" : "9:16";
+      const variant = variantOf(draft, index);
       const key = JSON.stringify(
         screen.kind === "picture" || screen.kind === "broll"
           ? [screen, aspect]
           : screen.kind === "upload"
             ? [screen.kind, screen.asset]
             : screen.kind === "motion"
-              ? [screen, segment.layout, segment.line, theme]
+              ? [screen, segment.layout, segment.line, theme, variant]
               : [screen.kind, screen.url, screen.kind === "clip" ? screen.start : 0, ...(screen.kind === "clip" && screen.play ? [screen.play] : [])],
       );
       let fetching = cache.media.get(key);
       if (!fetching) {
-        fetching = fetchMedia(segment, aspect, `${dir}/${screen.kind}-${fingerprint(key)}`, on, theme, signal).then((fetched) => {
+        fetching = fetchMedia(segment, aspect, `${dir}/${screen.kind}-${fingerprint(key)}`, on, theme, signal, variant).then((fetched) => {
           cost += fetched.cost;
           return fetched.media;
         });
@@ -337,6 +339,15 @@ async function getVisuals(draft: Draft, cache: Cache, dir: string, broll: boolea
   return { media, cost };
 }
 
+// How a segment's graphic is presented: which of the video's graphics it is, counted from a starting point of the video's
+// own, so each graphic is presented a little differently from the one before, and videos with one graphic don't all
+// present it the same way.
+function variantOf(draft: Draft, index: number): number {
+  let start = 0;
+  for (const char of "pr" in draft.source ? draft.source.pr.url : draft.source.idea) start = (start * 31 + char.charCodeAt(0)) % 6;
+  return start + draft.segments.slice(0, index).filter((segment) => segment.screen.kind === "motion").length;
+}
+
 function isMedia(screen: Screen): screen is Extract<Screen, { kind: "picture" | "broll" | "page" | "post" | "clip" | "upload" | "motion" }> {
   return ["picture", "broll", "page", "post", "clip", "upload", "motion"].includes(screen.kind);
 }
@@ -345,12 +356,12 @@ function isMedia(screen: Screen): screen is Extract<Screen, { kind: "picture" | 
 // seconds of a video, or a graphic in `theme`, sized for about as long as the line takes to say. Anything real that can't
 // be fetched, like a page behind a login, becomes the picture Grok described in its place, and a picture that can't be
 // drawn, like one that doesn't pass moderation, or a graphic that can't be rendered, leaves the beat's emoji.
-async function fetchMedia(segment: Segment, aspect: "4:3" | "9:16", name: string, on: FilmEvents, theme: Theme, signal?: AbortSignal): Promise<{ media?: Media; cost: number }> {
+async function fetchMedia(segment: Segment, aspect: "4:3" | "9:16", name: string, on: FilmEvents, theme: Theme, signal?: AbortSignal, variant = 0): Promise<{ media?: Media; cost: number }> {
   // Until there's a take to time it to, a graphic's items come on about when they'd be said.
   if (segment.screen.kind === "motion") {
     const seconds = lineSeconds(segment.line);
     const words = segment.line.split(/\s+/).filter(Boolean).map((text, index) => ({ text, start: 0.3 + index / 2.8 }));
-    const file = await renderMotion(segment.screen.motion, segment.layout, seconds, cueTimes(segment.screen.motion, words, seconds), theme, `${name}.mp4`, signal).catch((error) => {
+    const file = await renderMotion(segment.screen.motion, segment.layout, seconds, cueTimes(segment.screen.motion, words, seconds), theme, `${name}.mp4`, signal, variant).catch((error) => {
       if (signal?.aborted) throw error;
       on.notice?.(`${segment.label}: ${error instanceof Error ? error.message : String(error)}`);
       return undefined;
@@ -392,15 +403,15 @@ async function fetchMedia(segment: Segment, aspect: "4:3" | "9:16", name: string
 }
 
 // A segment's graphic drawn again for its take, with each item coming on as its cue word is said, or what it showed before
-// if it isn't a graphic or can't be drawn again.
-async function timeGraphic(segment: Segment, got: Media | undefined, timeline: Timeline, index: number, theme: Theme, dir: string, signal?: AbortSignal): Promise<Media | undefined> {
+// if it isn't a graphic or can't be drawn again. `variant` is which of the video's graphics it is.
+async function timeGraphic(segment: Segment, got: Media | undefined, timeline: Timeline, index: number, theme: Theme, dir: string, signal?: AbortSignal, variant = 0): Promise<Media | undefined> {
   if (segment.screen.kind !== "motion" || !got) return got;
   const part = timeline.parts[index];
   const seconds = Math.round((part.end - part.start + 0.2) * 100) / 100;
   const words = timeline.words.filter((word) => word.part === index).map((word) => ({ text: word.text, start: word.start - part.start }));
   const times = cueTimes(segment.screen.motion, words, seconds);
-  const file = `${dir}/motion-${fingerprint(JSON.stringify([segment.screen.motion, segment.layout, seconds, times, theme]))}.mp4`;
-  return renderMotion(segment.screen.motion, segment.layout, seconds, times, theme, file, signal).then(
+  const file = `${dir}/motion-${fingerprint(JSON.stringify([segment.screen.motion, segment.layout, seconds, times, theme, variant]))}.mp4`;
+  return renderMotion(segment.screen.motion, segment.layout, seconds, times, theme, file, signal, variant).then(
     (rendered) => ({ ...got, file: rendered }),
     (error) => {
       if (signal?.aborted) throw error;

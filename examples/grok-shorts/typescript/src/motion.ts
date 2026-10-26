@@ -9,27 +9,36 @@ import { promisify } from "node:util";
 import { FONT_FILES } from "./brand.ts";
 import { HEIGHT, OVER, SPLIT, WIDTH } from "./frames.ts";
 import type { Layout, Motion } from "./script.ts";
-import { type Theme, inkOn } from "./themes.ts";
+import { type Graphic, type Theme, luminanceOf } from "./themes.ts";
 
 // Motion graphics, for beats that are clearer drawn out than shown, like a diagram of how something works or numbers to
-// compare. Each one is a small HyperFrames composition: HTML laid out here from the beat's graphic, in the video's theme,
-// with a GSAP timeline that brings each item on screen as the presenter says its cue word. HyperFrames renders it to a
-// video in headless Chrome, and the video plays it like any clip.
+// compare. Each one is a small HyperFrames composition: HTML laid out here from the beat's graphic, with a GSAP timeline
+// that brings each item on screen as the presenter says its cue word. HyperFrames renders it to a video in headless
+// Chrome, and the video plays it like any clip. A video's graphics all take its theme's look, the way an editor styles a
+// video's graphics alike, and each is presented a little differently from the one before it, so they don't repeat.
 
 const run = promisify(execFile);
 const find = createRequire(import.meta.url).resolve;
-// HyperFrames' command line, run with this Node, and GSAP, which is copied next to each composition so a render needs no
-// network.
+// HyperFrames' command line, run with this Node, and the scripts copied next to each composition so a render needs no
+// network: GSAP, and Rough.js, which draws shapes as if by hand.
 const HYPERFRAMES = join(dirname(find("hyperframes/package.json")), "bin/hyperframes.mjs");
-const GSAP = find("gsap/dist/gsap.min.js");
+const SCRIPTS = [find("gsap/dist/gsap.min.js"), find("roughjs/bundled/rough.js")];
 const SANS = `"Helvetica Neue", "Segoe UI", "DejaVu Sans", Arial, sans-serif`;
 // Measures words in the fonts the graphic is rendered in, which Chrome finds on this computer the same way.
 const ruler = createCanvas(1, 1).getContext("2d");
 
 type Box = { x: number; y: number; width: number; height: number };
 type Frame = { width: number; height: number; top: number; bottom: number; title: number };
-// A graphic's markup, and the GSAP calls that animate it, which read each item's time from T.
-type Drawn = { html: string; script: string };
+type Item = Motion["items"][number];
+// A shape the page draws when it loads, the look's way: a box, or a ring in a box, by its corner and size, a line or an
+// arrow between two points, or a bar or a column filled in.
+type Shape = { id: string; kind: "box" | "ring" | "line" | "arrow" | "bar" | "column"; at: number[]; color: string };
+// A graphic's words, laid out as HTML, the shapes drawn around and between them, and the GSAP calls that bring them on,
+// which read each item's time from T.
+type Drawn = { html: string; shapes: Shape[]; script: string };
+// What a graphic is drawn with: its theme's look, the fonts its labels and details are in, each item's color in turn,
+// and which of the video's graphics it is, `variant`, which picks how it's presented.
+type Pen = { graphic: Graphic; label: { font: string; weight: number }; detail: { font: string; weight: number }; colors: string[]; variant: number };
 
 // The size a graphic is rendered at for a layout, the band of it the graphic goes in, under the apps' top bar, above the
 // captions, and above a presenter keyed out in front of it, and how big its title is. Laid over the presenter, it's
@@ -68,15 +77,14 @@ export function cueTimes(motion: Motion, words: Array<{ text: string; start: num
 }
 
 // Renders the graphic to `file`, `seconds` long, sized for `layout`, with item i coming on screen `times[i]` seconds in.
-// HyperFrames renders it in headless Chrome, which it downloads the first time. A graphic rendered before is used again,
-// and a render that stops partway isn't kept.
-export async function renderMotion(motion: Motion, layout: Layout, seconds: number, times: number[], theme: Theme, file: string, signal?: AbortSignal): Promise<string> {
+// `variant` is which of the video's graphics it is, from 0. HyperFrames renders it in headless Chrome, which it downloads
+// the first time. A graphic rendered before is used again, and a render that stops partway isn't kept.
+export async function renderMotion(motion: Motion, layout: Layout, seconds: number, times: number[], theme: Theme, file: string, signal?: AbortSignal, variant = 0): Promise<string> {
   if (existsSync(file)) return file;
   const dir = await mkdtemp(join(tmpdir(), "motion-"));
   try {
-    await writeFile(join(dir, "index.html"), compositionOf(motion, motionFrame(layout), seconds, times, theme));
-    await copyFile(GSAP, join(dir, "gsap.min.js"));
-    await Promise.all(FONT_FILES.map((font) => copyFile(font.file, join(dir, basename(font.file)))));
+    await writeFile(join(dir, "index.html"), compositionOf(motion, motionFrame(layout), seconds, times, theme, variant));
+    await Promise.all([...SCRIPTS, ...FONT_FILES.map((font) => font.file)].map((each) => copyFile(each, join(dir, basename(each)))));
     const rendering = resolve(`${file}.part.mp4`);
     await run(process.execPath, [HYPERFRAMES, "render", dir, "-o", rendering, "-f", "30"], {
       signal,
@@ -93,64 +101,65 @@ export async function renderMotion(motion: Motion, layout: Layout, seconds: numb
   return file;
 }
 
-// The composition: the plain dark of the rest of the video, with a faint grid of dots and a soft glow of the theme's
-// first color, the title, if there is one, over the graphic, and a paused timeline that HyperFrames seeks frame by frame,
-// easing the whole graphic slowly closer as it plays.
-function compositionOf(motion: Motion, frame: Frame, seconds: number, times: number[], theme: Theme): string {
+// The composition: the look's ground, with the grain of paper or chalk under a sketch or a newspaper's chart, the title,
+// if there is one, the shapes, drawn when the page loads, under the words, and a paused timeline that HyperFrames seeks
+// frame by frame, easing the whole graphic slowly closer as it plays.
+function compositionOf(motion: Motion, frame: Frame, seconds: number, times: number[], theme: Theme, variant: number): string {
   const { width, height } = frame;
+  const pen = penOf(theme, motion.items.length, variant);
+  const { look, ground, ink, muted } = pen.graphic;
   const stage = { x: 64, y: frame.top, width: width - 128, height: frame.bottom - frame.top };
-  const titled = motion.title ? Math.round(frame.title * 2.1) : 0;
+  const title = titleOf(motion, stage, frame.title, pen);
+  const titled = motion.title ? Math.round(frame.title * (look === "sketch" ? 2.5 : 2.1)) : 0;
   const area = { x: stage.x, y: stage.y + titled, width: stage.width, height: stage.height - titled };
-  const colors = motion.items.map((_, index) => theme.colors[index % theme.colors.length]);
-  const font = `${theme.font}, ${SANS}`;
-  const drawn = { flow: flowOf, hub: hubOf, bars: barsOf, steps: stepsOf, stat: statOf }[motion.style](motion, area, colors, font);
-  const glow = theme.glow ? "box-shadow: 0 0 36px color-mix(in srgb, var(--c) 55%, transparent);" : "";
+  const drawn = { flow: flowOf, hub: hubOf, bars: barsOf, steps: stepsOf, stat: statOf }[motion.style](motion, area, pen, seconds);
+  const grain = { sketch: 0.1, editorial: 0.06, keynote: 0, neon: 0 }[look];
+  const noise = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='280' height='280'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`;
   return `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=${width}, height=${height}" />
-<script src="gsap.min.js"></script>
+${SCRIPTS.map((each) => `<script src="${basename(each)}"></script>`).join("\n")}
 <style>
-@font-face { font-family: Inter; src: url("Inter-ExtraBold.ttf"); font-weight: 800; }
-@font-face { font-family: Inter; src: url("Inter-Black.ttf"); font-weight: 900; }
+${FONT_FILES.map(({ family, weight, file }) => `@font-face { font-family: ${family}; src: url("${basename(file)}"); font-weight: ${weight}; }`).join("\n")}
 * { margin: 0; padding: 0; box-sizing: border-box; }
-html, body { width: ${width}px; height: ${height}px; overflow: hidden; background: #0b0b0f; }
-#root { position: relative; width: 100%; height: 100%; overflow: hidden; color: #fff; font-family: ${font}; }
-.ground { position: absolute; inset: 0; background-image: radial-gradient(rgb(255 255 255 / 0.07) 2px, transparent 2.5px), radial-gradient(circle at 50% 45%, color-mix(in srgb, ${theme.colors[0]} 22%, transparent), transparent 62%); background-size: 36px 36px, 100% 100%; }
+html, body { width: ${width}px; height: ${height}px; overflow: hidden; background: ${ground}; }
+#root { position: relative; width: 100%; height: 100%; overflow: hidden; color: ${ink}; }
+.ground { position: absolute; inset: 0; background: ${ground}; }
+.grain { position: absolute; inset: 0; opacity: ${grain}; mix-blend-mode: ${luminanceOf(ground) > 0.4 ? "multiply" : "screen"}; background-image: ${noise}; }
 #stage { position: absolute; inset: 0; transform-origin: 50% 45%; }
-.title { position: absolute; left: ${stage.x}px; width: ${stage.width}px; top: ${stage.y}px; font-size: ${frame.title}px; font-weight: 900; letter-spacing: 0.03em; line-height: 1.1; text-transform: uppercase; color: ${theme.colors[0]}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.node { position: absolute; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 8px; padding: 14px 22px; text-align: center; border: 5px solid var(--c); border-radius: 28px; background: #15151d; ${glow} }
-.round { border-radius: 50%; }
-.label { font-weight: 900; line-height: 1.06; overflow-wrap: break-word; }
-.detail { font-family: ${SANS}; font-weight: 600; line-height: 1.2; color: rgb(255 255 255 / 0.72); }
-.fill { position: absolute; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-.columns { display: flex; max-width: 100%; }
-.column { display: flex; flex-direction: column; min-width: 0; }
-.step { display: flex; align-items: center; gap: 26px; }
-.step > div:last-child { min-width: 0; }
-.number { font-weight: 900; line-height: 1; white-space: nowrap; font-variant-numeric: tabular-nums; }
-.badge { flex: none; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--c); color: var(--ink); font-weight: 900; ${glow} }
-.bar { position: absolute; border-radius: 9999px; background: var(--c); ${glow} }
-.value { position: absolute; font-weight: 900; white-space: nowrap; }
-svg { position: absolute; inset: 0; overflow: visible; }
+#ink { position: absolute; left: 0; top: 0; overflow: visible; }
+.title { position: absolute; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.15; }
+.row { position: absolute; }
+.t { position: absolute; display: flex; flex-direction: column; justify-content: center; gap: 6px; }
+.t.center { align-items: center; text-align: center; padding: 14px 22px; }
+.label { font-family: ${pen.label.font}; font-weight: ${pen.label.weight}; line-height: 1.08; overflow-wrap: break-word; }
+.detail { font-family: ${pen.detail.font}; font-weight: ${pen.detail.weight}; line-height: 1.2; color: ${muted}; }
+.num, .value { position: absolute; font-family: ${pen.label.font}; font-weight: ${pen.label.weight}; line-height: 1; white-space: nowrap; font-variant-numeric: tabular-nums; }
+${look === "neon" ? ".label, .num, .value { color: #fff; text-shadow: 0 0 18px var(--c), 0 0 5px var(--c); }" : ""}
 </style>
 </head>
 <body>
 <div id="root" data-composition-id="main" data-start="0" data-duration="${seconds.toFixed(3)}" data-width="${width}" data-height="${height}">
 <div class="ground"></div>
+${grain ? `<div class="grain"></div>` : ""}
 <div id="stage">
-${motion.title ? `<div id="title" class="title">${escape(motion.title)}</div>` : ""}
+<svg id="ink" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><defs><filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs></svg>
+${title.html}
 ${drawn.html}
 </div>
 </div>
 <script>
 const T = ${JSON.stringify(times.map((time) => Number(time.toFixed(3))))};
+const LOOK = "${look}";
+const SHAPES = ${JSON.stringify([...title.shapes, ...drawn.shapes].map((shape) => ({ ...shape, at: shape.at.map((each) => Number(each.toFixed(1))) })))};
 const format = (decimals) => (value) => Number(value).toLocaleString("en-US", { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
 const within = (at, seconds) => Math.max(0.25, Math.min(seconds, ${seconds.toFixed(3)} - at - 0.15));
+${DRAWING}
 const tl = gsap.timeline({ paused: true });
 tl.fromTo("#stage", { scale: 1 }, { scale: 1.035, duration: ${seconds.toFixed(3)}, ease: "none" }, 0);
-${motion.title ? `tl.from("#title", { opacity: 0, y: -14, duration: 0.4, ease: "power2.out" }, 0.05);` : ""}
+${title.script}
 ${drawn.script}
 window.__timelines = window.__timelines || {};
 window.__timelines["main"] = tl;
@@ -161,10 +170,103 @@ tl.seek(0);
 `;
 }
 
+// What the page runs before its timeline: draws each shape in SHAPES into the SVG under the words, by hand with
+// Rough.js for a sketch, in hairlines for a newspaper's chart, or as glowing tubes for neon, and leaves every stroke
+// undrawn, for the timeline to draw on. A keynote has no boxes, only thin lines and solid bars.
+const DRAWING = `
+const NS = "http://www.w3.org/2000/svg";
+const ink = document.getElementById("ink");
+const rc = LOOK === "sketch" ? rough.svg(ink) : null;
+const [BOX, LINE] = { keynote: [0, 3.5], editorial: [3, 2.5], neon: [5, 4.5], sketch: [4.5, 4] }[LOOK];
+function make(name, attributes) {
+  const node = document.createElementNS(NS, name);
+  for (const key in attributes) node.setAttribute(key, attributes[key]);
+  return node;
+}
+function seedOf(id) {
+  let hash = 7;
+  for (const char of id) hash = (hash * 31 + char.charCodeAt(0)) % 2147483647;
+  return hash || 1;
+}
+function headOf([x1, y1, x2, y2], size) {
+  const angle = Math.atan2(y2 - y1, x2 - x1);
+  return [angle + 2.6, angle - 2.6].map((turn) => [x2, y2, x2 + size * Math.cos(turn), y2 + size * Math.sin(turn)]);
+}
+function sketched({ id, kind, at: [a, b, c, d], color }) {
+  const style = { stroke: color, strokeWidth: kind === "line" || kind === "arrow" ? LINE : BOX, roughness: 1.5, bowing: 1.2, seed: seedOf(id) };
+  if (kind === "box") return rc.rectangle(a, b, c, d, style);
+  if (kind === "ring") return rc.ellipse(a + c / 2, b + d / 2, c, d, style);
+  if (kind === "bar" || kind === "column") return rc.rectangle(a, b, c, d, { ...style, fill: color, fillStyle: "hachure", hachureGap: 11, fillWeight: BOX * 0.55, hachureAngle: -41 });
+  const group = make("g", {});
+  group.appendChild(rc.line(a, b, c, d, style));
+  if (kind === "arrow") for (const [p, q, r, s] of headOf([a, b, c, d], 26)) group.appendChild(rc.line(p, q, r, s, { ...style, seed: style.seed + 1 }));
+  return group;
+}
+function plain({ kind, at: [a, b, c, d], color }) {
+  const group = make("g", LOOK === "neon" ? { filter: "url(#glow)" } : {});
+  const stroke = (width) => ({ stroke: color, "stroke-width": width, fill: "none", "stroke-linecap": LOOK === "editorial" ? "butt" : "round", "stroke-linejoin": "round", class: "s" });
+  if (kind === "box") group.appendChild(make("rect", { x: a, y: b, width: c, height: d, rx: LOOK === "neon" ? 26 : 0, ...stroke(BOX) }));
+  else if (kind === "ring") group.appendChild(make("ellipse", { cx: a + c / 2, cy: b + d / 2, rx: c / 2, ry: d / 2, ...stroke(BOX) }));
+  else if (kind === "bar" || kind === "column") {
+    const tube = LOOK === "neon" ? { "fill-opacity": 0.3, stroke: color, "stroke-width": LINE } : {};
+    group.appendChild(make("rect", { x: a, y: b, width: c, height: d, rx: LOOK === "editorial" ? 0 : Math.min(c, d, LOOK === "neon" ? 48 : 28) / 2, fill: color, ...tube }));
+  } else {
+    group.appendChild(make("line", { x1: a, y1: b, x2: c, y2: d, ...stroke(LINE) }));
+    if (kind === "arrow") for (const [p, q, r, s] of headOf([a, b, c, d], 20)) group.appendChild(make("line", { x1: p, y1: q, x2: r, y2: s, ...stroke(LINE) }));
+  }
+  return group;
+}
+for (const shape of SHAPES) {
+  const drawn = LOOK === "sketch" ? sketched(shape) : plain(shape);
+  drawn.setAttribute("id", shape.id);
+  if (LOOK === "sketch") for (const path of drawn.querySelectorAll("path")) path.classList.add("s");
+  ink.appendChild(drawn);
+}
+for (const stroke of ink.querySelectorAll(".s")) {
+  const length = stroke.getTotalLength();
+  stroke.style.strokeDasharray = length + " " + length;
+  stroke.style.strokeDashoffset = String(length);
+}
+`;
+
+function penOf(theme: Theme, count: number, variant: number): Pen {
+  const { graphic } = theme;
+  const font = graphic.font ?? `${theme.font}, ${SANS}`;
+  const weight = { keynote: 900, sketch: 700, editorial: 700, neon: 800 }[graphic.look];
+  const detail = graphic.look === "sketch" ? { font, weight: 700 } : graphic.look === "editorial" ? { font: `${theme.font}, ${SANS}`, weight: 400 } : { font: SANS, weight: 600 };
+  const colors = Array.from({ length: count }, (_, index) => graphic.accents[index % graphic.accents.length]);
+  return { graphic, label: { font, weight }, detail, colors, variant };
+}
+
+// The title, the look's way: small and spaced out over a keynote, written by hand and underlined, a newspaper chart's
+// kicker over a rule, or a neon sign.
+function titleOf(motion: Motion, stage: Box, size: number, pen: Pen): Drawn {
+  if (!motion.title) return { html: "", shapes: [], script: "" };
+  const { look, ink, muted, accents } = pen.graphic;
+  const font = {
+    keynote: `font: 800 ${Math.round(size * 0.74)}px ${pen.label.font}; letter-spacing: 0.16em; text-transform: uppercase; color: ${muted};`,
+    sketch: `font: ${pen.label.weight} ${Math.round(size * 1.2)}px ${pen.label.font}; color: ${ink};`,
+    editorial: `font: 800 ${Math.round(size * 0.72)}px ${SANS}; letter-spacing: 0.1em; text-transform: uppercase; color: ${accents[0]};`,
+    neon: `font: 800 ${size}px ${pen.label.font}; letter-spacing: 0.05em; text-transform: uppercase; color: #fff; text-shadow: 0 0 18px ${accents[0]}, 0 0 5px ${accents[0]};`,
+  }[look];
+  const shapes: Shape[] = [];
+  if (look === "sketch") {
+    const long = Math.min(stage.width, widthOf(motion.title, Math.round(size * 1.2), pen.label.font, pen.label.weight) + 12);
+    shapes.push({ id: "tu", kind: "line", at: [stage.x - 4, stage.y + size * 1.62, stage.x + long, stage.y + size * 1.5], color: accents[0] });
+  }
+  if (look === "editorial") shapes.push({ id: "tu", kind: "line", at: [stage.x, stage.y + size * 1.3, stage.x + stage.width, stage.y + size * 1.3], color: ink });
+  return {
+    html: `<div id="title" class="title" style="left:${stage.x}px; top:${stage.y}px; width:${stage.width}px; ${font.replaceAll('"', "'")}">${escape(motion.title)}</div>`,
+    shapes,
+    script: [enter(pen, "#title", "0.05"), ...shapes.map((shape) => draw(pen, shape, "0.3", 0.5))].join("\n"),
+  };
+}
+
 // Steps with arrows between them: down a frame taller than it's wide, and across a wider one, in one row for up to three
-// and in two for more, the second running back under the first. Each step pops in as it's said, and the arrow into it
-// draws just before.
-function flowOf(motion: Motion, area: Box, colors: string[], font: string): Drawn {
+// and in two for more, the second running back under the first. Each step comes on as it's said, and the arrow into it
+// draws just before. On a keynote, the newest step is in color and the ones before it go back to plain.
+function flowOf(motion: Motion, area: Box, pen: Pen, seconds: number): Drawn {
+  const { look, ink, muted } = pen.graphic;
   const count = motion.items.length;
   const perRow = isWide(area) ? (count <= 3 ? count : Math.ceil(count / 2)) : 1;
   const rows = Math.ceil(count / perRow);
@@ -179,20 +281,28 @@ function flowOf(motion: Motion, area: Box, colors: string[], font: string): Draw
     const column = row % 2 ? perRow - 1 - (index % perRow) : index % perRow;
     return { x: left + column * (width + gapX), y: top + row * (height + gapY), width, height };
   });
-  const size = fitText(motion.items, ...inside(width, height), Math.round(clamp(across ? Math.min(width / 5.5, height * 0.3) : height * 0.3, 28, 56)), font);
-  const arrows = boxes.slice(1).map((box, index) => link(boxes[index], box));
+  const size = fitText(motion.items, ...inside(width, height), Math.round(clamp(across ? Math.min(width / 5.5, height * 0.3) : height * 0.3, 28, 56)), pen);
+  const outlines = boxes.flatMap((box, index): Shape[] => (look === "keynote" ? [] : [{ id: `b${index}`, kind: "box", at: [box.x, box.y, box.width, box.height], color: look === "editorial" ? ink : pen.colors[index] }]));
+  const arrows = boxes.slice(1).map((box, index): Shape => ({ id: `a${index}`, kind: "arrow", at: link(boxes[index], box), color: look === "keynote" ? muted : look === "neon" ? pen.colors[index + 1] : ink }));
+  const last = count - 1;
+  const spice = spiced(pen) ? emphasize(pen, boxes[last], `#i${last}`, "center", landing(last, seconds)) : undefined;
   return {
-    html: `${svg(arrows.map((each, index) => each.svg(`a${index}`, colors[index + 1])))}${boxes.map((box, index) => node(`i${index}`, box, motion.items[index], colors[index], size)).join("")}`,
+    html: [spice?.html ?? "", ...boxes.map((box, index) => words(`i${index}`, box, motion.items[index], size, pen, "center", look === "keynote" ? pen.colors[index] : undefined))].join("\n"),
+    shapes: [...outlines, ...arrows, ...(spice?.shapes ?? [])],
     script: [
-      ...boxes.map((_, index) => `tl.from("#i${index}", { opacity: 0, scale: 0.86, duration: 0.42, ease: "back.out(1.7)" }, T[${index}]);`),
-      ...arrows.map((each, index) => each.script(`a${index}`, `Math.max(T[${index}] + 0.2, T[${index + 1}] - 0.32)`)),
+      ...outlines.map((shape, index) => draw(pen, shape, `T[${index}]`)),
+      ...boxes.map((_, index) => enter(pen, `#i${index}`, `T[${index}] + ${look === "keynote" ? 0 : 0.12}`)),
+      ...(look === "keynote" ? boxes.slice(0, -1).map((_, index) => `tl.to("#i${index} .label", { color: "${ink}", duration: 0.35 }, T[${index + 1}]);`) : []),
+      ...arrows.map((shape, index) => draw(pen, shape, `Math.max(T[${index}] + 0.2, T[${index + 1}] - 0.32)`, 0.3)),
+      spice?.script ?? "",
     ].join("\n"),
   };
 }
 
-// The first item in a circle at the center, and the rest around it, each with a spoke to the center that draws just
-// before it pops in. In a wide frame, the circle is bigger and the ring around it flatter.
-function hubOf(motion: Motion, area: Box, colors: string[], font: string): Drawn {
+// The first item at the center, and the rest around it, each joined to the center by a spoke that draws just before it
+// comes on. In a wide frame, the center is bigger and the ring around it flatter.
+function hubOf(motion: Motion, area: Box, pen: Pen, seconds: number): Drawn {
+  const { look, ink, muted } = pen.graphic;
   const [center, ...around] = motion.items;
   const [x, y] = [area.x + area.width / 2, area.y + area.height / 2];
   const wide = isWide(area);
@@ -201,152 +311,273 @@ function hubOf(motion: Motion, area: Box, colors: string[], font: string): Drawn
   const outer = { width: Math.min(300, area.width * (wide ? 0.3 : 0.34)), height: Math.min(132, area.height * (wide ? 0.24 : 0.2)) };
   const spots = around.map((_, index) => {
     const angle = -Math.PI / 2 + (index * 2 * Math.PI) / around.length;
-    return [x + rx * Math.cos(angle), y + ry * Math.sin(angle)];
+    return { x: x + rx * Math.cos(angle) - outer.width / 2, y: y + ry * Math.sin(angle) - outer.height / 2, ...outer };
   });
-  const spokes = spots.map(([toX, toY]) => {
-    const [dx, dy] = [toX - x, toY - y];
+  const middle = { x: x - diameter / 2, y: y - diameter / 2, width: diameter, height: diameter };
+  const spokes = spots.map((spot, index): Shape => {
+    const [dx, dy] = [spot.x + outer.width / 2 - x, spot.y + outer.height / 2 - y];
     const length = Math.hypot(dx, dy);
-    const [startShare, endShare] = [(diameter / 2 + 12) / length, Math.max(0, 1 - (outer.height / 2 + 18) / length)];
-    return arrow([x + dx * startShare, y + dy * startShare], [x + dx * endShare, y + dy * endShare], false);
+    const [from, to] = [(diameter / 2 + 12) / length, Math.max(0, 1 - (outer.height / 2 + 18) / length)];
+    return { id: `a${index}`, kind: "line", at: [x + dx * from, y + dy * from, x + dx * to, y + dy * to], color: look === "keynote" ? muted : look === "editorial" ? ink : pen.colors[index + 1] };
   });
-  const size = fitText(around, ...inside(outer.width, outer.height), Math.round(clamp(outer.height * 0.3, 28, 44)), font);
+  const outlines: Shape[] =
+    look === "keynote"
+      ? []
+      : [
+          { id: "r0", kind: "ring", at: [middle.x, middle.y, middle.width, middle.height], color: look === "editorial" ? ink : pen.colors[0] },
+          ...spots.map((spot, index): Shape => ({ id: `b${index + 1}`, kind: "box", at: [spot.x, spot.y, spot.width, spot.height], color: look === "editorial" ? ink : pen.colors[index + 1] })),
+        ];
+  const size = fitText(around, ...inside(outer.width, outer.height), Math.round(clamp(outer.height * 0.3, 28, 44)), pen);
   // Words in the circle stay in its middle, where it's widest.
-  const middle = fitText([center], inside(diameter, diameter)[0], diameter * 0.6, Math.round(clamp(diameter * 0.15, 28, 56)), font);
+  const centered = fitText([center], inside(diameter, diameter)[0], diameter * 0.6, Math.round(clamp(diameter * 0.15, 28, 56)), pen);
+  const last = around.length;
+  const spice = spiced(pen) && last ? emphasize(pen, spots[last - 1], `#i${last}`, "center", landing(last, seconds)) : undefined;
   return {
     html: [
-      svg(spokes.map((each, index) => each.svg(`a${index}`, colors[index + 1]))),
-      node("i0", { x: x - diameter / 2, y: y - diameter / 2, width: diameter, height: diameter }, center, colors[0], middle, "round"),
-      ...spots.map(([spotX, spotY], index) => node(`i${index + 1}`, { x: spotX - outer.width / 2, y: spotY - outer.height / 2, ...outer }, around[index], colors[index + 1], size)),
-    ].join(""),
+      spice?.html ?? "",
+      words("i0", middle, center, look === "keynote" ? Math.round(centered * 1.15) : centered, pen, "center", look === "keynote" ? pen.colors[0] : undefined),
+      ...spots.map((spot, index) => words(`i${index + 1}`, spot, around[index], size, pen, "center")),
+    ].join("\n"),
+    shapes: [...outlines, ...spokes, ...(spice?.shapes ?? [])],
     script: [
-      `tl.from("#i0", { opacity: 0, scale: 0.7, duration: 0.45, ease: "back.out(1.7)" }, T[0]);`,
-      ...spots.map((_, index) => `${spokes[index].script(`a${index}`, `Math.max(T[0] + 0.2, T[${index + 1}] - 0.3)`)}\ntl.from("#i${index + 1}", { opacity: 0, scale: 0.8, duration: 0.4, ease: "back.out(1.7)" }, T[${index + 1}]);`),
+      ...outlines.map((shape, index) => draw(pen, shape, index ? `T[${index}]` : "T[0]")),
+      enter(pen, "#i0", "T[0] + 0.1"),
+      ...spokes.map((shape, index) => draw(pen, shape, `Math.max(T[0] + 0.2, T[${index + 1}] - 0.3)`, 0.3)),
+      ...spots.map((_, index) => enter(pen, `#i${index + 1}`, `T[${index + 1}] + 0.1`)),
+      spice?.script ?? "",
     ].join("\n"),
   };
 }
 
-// A bar for each number, as long as it is next to the biggest, with its label over it and its value counting up at its
-// end as it grows.
-function barsOf(motion: Motion, area: Box, colors: string[]): Drawn {
+// A bar for each number, as long as it is next to the biggest, with its label and its value counting up as it grows:
+// across, each under its label, or, for every other graphic when there's room, standing up as columns. On a newspaper's
+// chart, every bar is ink but the biggest.
+function barsOf(motion: Motion, area: Box, pen: Pen, seconds: number): Drawn {
+  const { look, ink } = pen.graphic;
   const count = motion.items.length;
   const biggest = Math.max(...motion.items.map((item) => Math.abs(item.value)), 1e-9);
-  const row = Math.min(200, area.height / count);
-  const thick = Math.round(clamp(row * 0.36, 22, 66));
-  const size = Math.round(clamp(row * 0.34, 28, 48));
-  const top = area.y + (area.height - count * row) / 2;
+  const top = motion.items.findIndex((item) => Math.abs(item.value) === biggest);
   const [before, after] = unitAround(motion.unit);
-  // The longest bar leaves room after it for the longest value.
-  const longest = Math.max(...motion.items.map((item) => `${before}${item.value.toLocaleString("en-US")}${after}`.length));
-  const room = area.width - 22 - longest * size * 1.15 * 0.64;
-  const html = motion.items.map((item, index) => {
-    const y = top + index * row;
-    const length = Math.max(thick, (room * Math.abs(item.value)) / biggest);
-    return `<div id="l${index}" class="value" style="left:${area.x}px; top:${y}px; font-size:${size}px;">${escape(item.label)}${item.detail ? ` <span class="detail" style="font-size:${Math.round(size * 0.7)}px">${escape(item.detail)}</span>` : ""}</div>
-<div id="b${index}" class="bar" style="--c:${colors[index]}; left:${area.x}px; top:${y + size * 1.4}px; width:${length}px; height:${thick}px;"></div>
-<div id="w${index}" class="value" style="left:${area.x + length + 22}px; top:${y + size * 1.4 + thick / 2 - size * 0.62}px; font-size:${Math.round(size * 1.15)}px; color:${colors[index]};">${escape(before)}<span id="v${index}">0</span>${escape(after)}</div>`;
+  const shown = (item: Item) => `${before}${item.value.toLocaleString("en-US")}${after}`;
+  const colorOf = (index: number) => (look === "editorial" ? (index === top ? pen.graphic.accents[0] : ink) : pen.colors[index]);
+  const standing = pen.variant % 2 === 1 && area.height >= 340;
+  const html: string[] = [];
+  const shapes: Shape[] = [];
+  const script: string[] = [];
+  let mark: Box = area;
+  if (standing) {
+    const slot = area.width / count;
+    const thick = Math.round(Math.min(150, slot * 0.56));
+    const size = fitText(motion.items.map((item) => ({ ...item, detail: "" })), slot - 12, 110, Math.round(clamp(slot * 0.16, 28, 44)), pen);
+    const valueSize = Math.round(size * 1.15);
+    const base = area.y + area.height - 120;
+    const tallest = base - (area.y + valueSize * 1.6);
+    motion.items.forEach((item, index) => {
+      const length = Math.max(thick * 0.3, (tallest * Math.abs(item.value)) / biggest);
+      const x = area.x + index * slot + (slot - thick) / 2;
+      shapes.push({ id: `b${index}`, kind: "column", at: [x, base - length, thick, length], color: colorOf(index) });
+      html.push(`<div id="l${index}" class="t center" style="${place({ x: area.x + index * slot, y: base + 6, width: slot, height: 114 })} padding: 0 6px; justify-content: flex-start;"><div class="label" style="font-size:${size}px">${escape(item.label)}</div></div>`);
+      html.push(`<div id="w${index}" class="value" style="left:${f(area.x + index * slot)}px; width:${f(slot)}px; text-align:center; top:${f(base - length - valueSize * 1.25)}px; font-size:${valueSize}px; color:${colorOf(index)}; --c:${colorOf(index)};">${escape(before)}<span id="v${index}">0</span>${escape(after)}</div>`);
+      if (index === top) mark = { x: area.x + index * slot + (slot - widthOf(shown(item), valueSize, pen.label.font, pen.label.weight)) / 2, y: base - length - valueSize * 1.25, width: widthOf(shown(item), valueSize, pen.label.font, pen.label.weight), height: valueSize };
+    });
+    if (look === "editorial") shapes.push({ id: "axis", kind: "line", at: [area.x, base, area.x + area.width, base], color: ink });
+  } else {
+    const row = Math.min(200, area.height / count);
+    const thick = Math.round(clamp(row * 0.36, 22, 66));
+    const size = Math.round(clamp(row * 0.34, 28, 48));
+    const valueSize = Math.round(size * 1.15);
+    const longest = Math.max(...motion.items.map((item) => widthOf(shown(item), valueSize, pen.label.font, pen.label.weight)));
+    const room = area.width - 24 - longest;
+    const first = area.y + (area.height - count * row) / 2;
+    motion.items.forEach((item, index) => {
+      const y = first + index * row;
+      const length = Math.max(thick, (room * Math.abs(item.value)) / biggest);
+      const detail = item.detail ? ` <span class="detail" style="font-size:${Math.round(size * 0.7)}px">${escape(item.detail)}</span>` : "";
+      html.push(`<div id="l${index}" class="value" style="left:${f(area.x)}px; top:${f(y)}px; font-size:${size}px; color:${look === "neon" ? "#fff" : ink}; --c:${colorOf(index)};">${escape(item.label)}${detail}</div>`);
+      shapes.push({ id: `b${index}`, kind: "bar", at: [area.x, y + size * 1.4, length, thick], color: colorOf(index) });
+      html.push(`<div id="w${index}" class="value" style="left:${f(area.x + length + 22)}px; top:${f(y + size * 1.4 + thick / 2 - valueSize * 0.55)}px; font-size:${valueSize}px; color:${colorOf(index)}; --c:${colorOf(index)};">${escape(before)}<span id="v${index}">0</span>${escape(after)}</div>`);
+      if (index === top) mark = { x: area.x + length + 22, y: y + size * 1.4 + thick / 2 - valueSize * 0.55, width: widthOf(shown(item), valueSize, pen.label.font, pen.label.weight), height: valueSize };
+    });
+    if (look === "editorial") shapes.push({ id: "axis", kind: "line", at: [area.x - 10, first + size * 1.2, area.x - 10, first + (count - 1) * row + size * 1.4 + thick + 8], color: ink });
+  }
+  if (shapes.some((shape) => shape.id === "axis")) script.push(draw(pen, shapes.find((shape) => shape.id === "axis")!, "T[0]", 0.4));
+  motion.items.forEach((item, index) => {
+    script.push(
+      enter(pen, `#l${index}`, `T[${index}]`),
+      draw(pen, shapes.find((shape) => shape.id === `b${index}`)!, `T[${index}]`, `within(T[${index}], 0.75)`),
+      `tl.from("#w${index}", { opacity: 0, duration: 0.25 }, T[${index}] + 0.15);`,
+      countUp(`v${index}`, item.value, `T[${index}]`, 0.75),
+    );
   });
-  return {
-    html: html.join("\n"),
-    script: motion.items
-      .map((item, index) => {
-        const length = Math.max(thick, (room * Math.abs(item.value)) / biggest);
-        return [
-          `tl.from("#l${index}", { opacity: 0, x: -24, duration: 0.3, ease: "power2.out" }, T[${index}]);`,
-          `tl.fromTo("#b${index}", { width: 0 }, { width: ${length.toFixed(1)}, duration: within(T[${index}], 0.75), ease: "power2.out" }, T[${index}]);`,
-          `tl.from("#w${index}", { opacity: 0, duration: 0.25 }, T[${index}] + 0.15);`,
-          countUp(`v${index}`, item.value, `T[${index}]`, 0.75),
-        ].join("\n");
-      })
-      .join("\n"),
-  };
+  const spice = spiced(pen) ? emphasize(pen, mark, `#w${top}`, "left", `Math.min(T[${top}] + 0.9, ${(seconds - 0.9).toFixed(2)})`) : undefined;
+  return { html: [spice?.html ?? "", ...html].join("\n"), shapes: [...shapes, ...(spice?.shapes ?? [])], script: [...script, spice?.script ?? ""].join("\n") };
 }
 
-// The steps in order, each with its number in a circle of its color, sliding in as it's said, in a block in the middle of
-// the frame: one column, or two side by side when a wide frame has four or more, which one column would make too small.
-function stepsOf(motion: Motion, area: Box, colors: string[], font: string): Drawn {
+// The steps in order, each with its number, in a block in the middle of the frame: one column, or two side by side when
+// a wide frame has four or more, which one column would make too small. In every other graphic, the step being said
+// stands out and the ones before it fade back, like a list being read out.
+function stepsOf(motion: Motion, area: Box, pen: Pen, seconds: number): Drawn {
+  const { look, muted } = pen.graphic;
   const count = motion.items.length;
   const columns = isWide(area) && count >= 4 ? 2 : 1;
   const rows = Math.ceil(count / columns);
   const row = Math.min(200, area.height / rows);
   const most = Math.round(clamp(row * 0.36, 28, 54));
-  const badge = Math.round(Math.min(100, row * 0.6, most * 1.8));
-  const size = fitText(motion.items, (area.width - 64 * (columns - 1)) / columns - badge - 26, row - 12, most, font);
-  const step = (item: Motion["items"][number], index: number) => `<div id="s${index}" class="step" style="min-height:${row.toFixed(1)}px">
-<div class="badge" style="--c:${colors[index]}; --ink:${inkOn(colors[index])}; width:${badge}px; height:${badge}px; font-size:${Math.round(badge * 0.5)}px;">${index + 1}</div>
-<div><div class="label" style="font-size:${size}px">${escape(item.label)}</div>${item.detail ? `<div class="detail" style="font-size:${Math.round(size * 0.62)}px; margin-top:6px">${escape(item.detail)}</div>` : ""}</div>
-</div>`;
-  const column = (first: number) => `<div class="column">${motion.items.slice(first, first + rows).map((item, at) => step(item, first + at)).join("\n")}</div>`;
-  return {
-    html: `<div class="fill" style="${place(area)}"><div class="columns" style="gap:64px">${Array.from({ length: columns }, (_, index) => column(index * rows)).join("\n")}</div></div>`,
-    script: motion.items.map((_, index) => `tl.from("#s${index}", { opacity: 0, x: -60, duration: 0.42, ease: "power3.out" }, T[${index}]);`).join("\n"),
-  };
+  const ringed = look === "sketch" || look === "neon";
+  const numeral = (index: number) => (look === "keynote" ? String(index + 1).padStart(2, "0") : String(index + 1));
+  const marker = ringed ? Math.round(Math.min(96, row * 0.58, most * 1.75)) : Math.round(widthOf(numeral(count - 1), most * 1.05, pen.label.font, pen.label.weight) + 4);
+  const gap = 28;
+  const column = (area.width - 64 * (columns - 1)) / columns;
+  const size = fitText(motion.items, column - marker - gap, row - 12, most, pen);
+  const small = Math.round(size * 0.62);
+  const said = (item: Item) => Math.min(column - marker - gap, Math.max(widthOf(item.label, size, pen.label.font, pen.label.weight), item.detail ? widthOf(item.detail, small, pen.detail.font, pen.detail.weight) : 0));
+  const block = columns === 1 ? marker + gap + Math.max(...motion.items.map(said)) : column;
+  const left = area.x + (area.width - (columns * block + (columns - 1) * 64)) / 2;
+  const top = area.y + (area.height - rows * row) / 2;
+  const html: string[] = [];
+  const shapes: Shape[] = [];
+  const script: string[] = [];
+  const spots = motion.items.map((item, index) => {
+    const spot = { x: left + Math.floor(index / rows) * (block + 64), y: top + (index % rows) * row, width: block, height: row };
+    const tall = textHeight(item, block - marker - gap, size, pen);
+    const labelTop = (row - tall) / 2;
+    const color = pen.colors[index];
+    const number = ringed
+      ? `<div class="num" style="left:0; top:${f((row - marker) / 2)}px; width:${marker}px; height:${marker}px; display:flex; align-items:center; justify-content:center; font-size:${Math.round(marker * 0.5)}px; color:${look === "sketch" ? color : "#fff"}; --c:${color};">${numeral(index)}</div>`
+      : `<div class="num" style="left:0; top:${f(labelTop + size * 0.04)}px; font-size:${Math.round(size * 1.05)}px; color:${color};">${numeral(index)}</div>`;
+    html.push(`<div id="s${index}" class="row" style="${place(spot)}">${number}${words(`w${index}`, { x: marker + gap, y: 0, width: block - marker - gap, height: row }, item, size, pen, "left")}</div>`);
+    if (ringed) shapes.push({ id: `r${index}`, kind: "ring", at: [spot.x, spot.y + (row - marker) / 2, marker, marker], color });
+    if (look === "editorial" && index % rows !== rows - 1 && index !== count - 1) shapes.push({ id: `u${index}`, kind: "line", at: [spot.x, spot.y + row - 2, spot.x + block, spot.y + row - 2], color: muted });
+    return { x: spot.x + marker + gap, y: spot.y + labelTop, width: Math.min(block - marker - gap, widthOf(item.label, size, pen.label.font, pen.label.weight)), height: size * 1.08 };
+  });
+  motion.items.forEach((_, index) => {
+    if (ringed) script.push(draw(pen, shapes.find((shape) => shape.id === `r${index}`)!, `T[${index}]`, 0.4));
+    script.push(enter(pen, `#s${index}`, `T[${index}] + ${ringed ? 0.08 : 0}`));
+    const rule = shapes.find((shape) => shape.id === `u${index}`);
+    if (rule) script.push(draw(pen, rule, `T[${index}] + 0.2`, 0.4));
+    if (pen.variant % 2 === 1 && index > 0) {
+      const back = motion.items.slice(0, index).flatMap((__, earlier) => [`#s${earlier}`, ...(ringed ? [`#r${earlier}`] : [])]);
+      script.push(`tl.to(${q(back.join(", "))}, { opacity: 0.3, duration: 0.3 }, T[${index}]);`);
+    }
+  });
+  const last = count - 1;
+  const spice = spiced(pen) ? emphasize(pen, spots[last], `#s${last}`, "left", landing(last, seconds)) : undefined;
+  return { html: [spice?.html ?? "", ...html].join("\n"), shapes: [...shapes, ...(spice?.shapes ?? [])], script: [...script, spice?.script ?? ""].join("\n") };
 }
 
-// One big number, counting up from nothing as it's said, with what it is under it, as big as fits.
-function statOf(motion: Motion, area: Box, colors: string[]): Drawn {
+// One big number, counting up from nothing as it's said, with what it is under it, as big as fits, marked the look's
+// way once it lands: circled by hand, ruled under, or underlined in the accent.
+function statOf(motion: Motion, area: Box, pen: Pen): Drawn {
+  const { look, ink, accents } = pen.graphic;
   const [item] = motion.items;
   const [before, after] = unitAround(motion.unit);
-  const characters = `${before}${item.value.toLocaleString("en-US")}${after}`.length;
-  const size = Math.round(Math.min(isWide(area) ? 170 : 230, area.height * 0.45, area.width / (characters * 0.64)));
+  const text = `${before}${item.value.toLocaleString("en-US")}${after}`;
+  const size = Math.round(Math.min(isWide(area) ? 170 : 230, area.height * 0.45, area.width / (text.length * 0.64)));
   const label = Math.round(clamp(size * 0.3, 34, 56));
+  const wide = widthOf(text, size, pen.label.font, pen.label.weight);
+  const under = textHeight(item, area.width, label, pen);
+  const top = area.y + (area.height - (size * 1.12 + under)) / 2;
+  const number = { x: area.x + (area.width - wide) / 2, y: top, width: wide, height: size };
+  const color = look === "editorial" ? ink : accents[0];
+  const shapes: Shape[] = [];
+  if (look === "sketch") shapes.push({ id: "mark", kind: "ring", at: [number.x - 46, number.y - 30, number.width + 92, number.height + 50], color: accents[1 % accents.length] });
+  if (look === "editorial") shapes.push({ id: "mark", kind: "line", at: [number.x, number.y + size * 1.04, number.x + number.width, number.y + size * 1.04], color: accents[0] });
+  const underline = look === "keynote" ? `<div id="mark" style="position:absolute; ${place({ x: number.x, y: number.y + size * 1.02, width: number.width, height: 10 })} background:${accents[0]};"></div>` : "";
   return {
-    html: `<div class="fill" style="${place(area)}">
-<div id="stat" class="number" style="font-size:${size}px; color:${colors[0]};">${escape(before)}<span id="v0">0</span>${escape(after)}</div>
-<div id="what" style="margin-top:${Math.round(size * 0.12)}px; text-align:center;"><div class="label" style="font-size:${label}px">${escape(item.label)}</div>${item.detail ? `<div class="detail" style="font-size:${Math.round(label * 0.62)}px; margin-top:12px">${escape(item.detail)}</div>` : ""}</div>
-</div>`,
+    html: [
+      underline,
+      `<div id="stat" class="value" style="left:${f(area.x)}px; width:${f(area.width)}px; top:${f(number.y)}px; text-align:center; font-size:${size}px; color:${color}; --c:${accents[0]};">${escape(before)}<span id="v0">0</span>${escape(after)}</div>`,
+      words("what", { x: area.x, y: top + size * 1.12 - 14, width: area.width, height: under + 28 }, item, label, pen, "center"),
+    ].join("\n"),
+    shapes,
     script: [
-      `tl.from("#stat", { opacity: 0, scale: 0.82, duration: 0.45, ease: "back.out(1.6)" }, T[0]);`,
+      enter(pen, "#stat", "T[0]"),
       countUp("v0", item.value, "T[0]", 1.1),
-      `tl.from("#what", { opacity: 0, y: 24, duration: 0.4, ease: "power2.out" }, T[0] + 0.3);`,
+      enter(pen, "#what", "T[0] + 0.3"),
+      shapes.length ? draw(pen, shapes[0], "T[0] + 1", 0.6) : "",
+      underline ? `tl.from("#mark", { scaleX: 0, transformOrigin: "0% 50%", duration: 0.45, ease: "power3.out" }, T[0] + 1);` : "",
     ].join("\n"),
   };
 }
 
-// A step, or the center of a hub, in a box bordered in its color.
-function node(id: string, box: Box, item: Motion["items"][number], color: string, size: number, shape = ""): string {
+// An item's label, with its detail under it, in `box`: centered in it, as in a diagram, or from its left, as in a list.
+// `color` colors the label, and a neon look glows in the item's color.
+function words(id: string, box: Box, item: Item, size: number, pen: Pen, align: "center" | "left", color?: string): string {
   const detail = item.detail ? `<div class="detail" style="font-size:${Math.round(size * 0.62)}px">${escape(item.detail)}</div>` : "";
-  return `<div id="${id}" class="node ${shape}" style="--c:${color}; left:${box.x.toFixed(1)}px; top:${box.y.toFixed(1)}px; width:${box.width.toFixed(1)}px; height:${box.height.toFixed(1)}px;"><div class="label" style="font-size:${size}px">${escape(item.label)}</div>${detail}</div>`;
+  const glow = color ?? pen.colors[Number(id.replace(/\D/g, "")) % pen.colors.length] ?? pen.colors[0];
+  return `<div id="${id}" class="t${align === "center" ? " center" : ""}" style="${place(box)} --c:${glow};"><div class="label" style="font-size:${size}px;${color ? ` color:${color};` : ""}">${escape(item.label)}</div>${detail}</div>`;
 }
 
-// A line from one point to another that draws itself, with an arrowhead at its end that shows once it's drawn, unless
-// it's a spoke. It's hidden until it starts drawing, since a round end draws a dot even where none of the line shows.
-function arrow([fromX, fromY]: number[], [toX, toY]: number[], head = true) {
-  const length = Math.hypot(toX - fromX, toY - fromY);
-  const angle = Math.atan2(toY - fromY, toX - fromX);
-  const tip = (turn: number, back: number) => `${(toX - back * Math.cos(angle + turn)).toFixed(1)},${(toY - back * Math.sin(angle + turn)).toFixed(1)}`;
+// Brings words on the look's way, and every other graphic another way, so a video's graphics don't all arrive alike: on
+// a keynote, rising or sliding in, in a sketch, written out or popped on, on a newspaper's chart, faded up or wiped on,
+// and in neon, flickering or switched on.
+function enter(pen: Pen, selector: string, at: string): string {
+  const other = pen.variant % 2 === 1;
+  const reveal = (inset: string, seconds: number, ease: string) =>
+    `tl.fromTo(${q(selector)}, { clipPath: "inset(${inset.replace("R", "100%")})" }, { clipPath: "inset(${inset.replace("R", "-6%")})", duration: ${seconds}, ease: "${ease}" }, ${at});`;
+  if (pen.graphic.look === "keynote") {
+    return other ? `tl.from(${q(selector)}, { opacity: 0, x: -56, duration: 0.45, ease: "power3.out" }, ${at});` : `tl.from(${q(selector)}, { opacity: 0, y: 44, duration: 0.5, ease: "power3.out" }, ${at});`;
+  }
+  if (pen.graphic.look === "sketch") {
+    return other ? `tl.from(${q(selector)}, { opacity: 0, scale: 0.55, rotation: -5, duration: 0.42, ease: "back.out(2.2)" }, ${at});` : reveal("-30% R -30% -6%", 0.55, "power1.inOut");
+  }
+  if (pen.graphic.look === "editorial") return other ? reveal("-12% R -12% -2%", 0.45, "power2.inOut") : `tl.from(${q(selector)}, { opacity: 0, y: 16, duration: 0.38, ease: "power2.out" }, ${at});`;
+  return other
+    ? reveal("-20% R -20% -10%", 0.35, "power2.out")
+    : `tl.fromTo(${q(selector)}, { opacity: 0 }, { keyframes: [{ opacity: 1, duration: 0.04 }, { opacity: 0.15, duration: 0.06 }, { opacity: 1, duration: 0.04 }, { opacity: 0.45, duration: 0.05 }, { opacity: 1, duration: 0.1 }] }, ${at});`;
+}
+
+// Draws a shape on at `at`, over `seconds`: its strokes trace themselves as if drawn, and a solid bar grows from where it
+// starts.
+function draw(pen: Pen, shape: Shape, at: string, seconds: number | string = 0.45): string {
+  if (pen.graphic.look !== "sketch" && (shape.kind === "bar" || shape.kind === "column")) {
+    const grow = shape.kind === "bar" ? `scaleX: 0, transformOrigin: "0% 50%"` : `scaleY: 0, transformOrigin: "50% 100%"`;
+    return `tl.from("#${shape.id}", { ${grow}, duration: ${seconds}, ease: "power2.out" }, ${at});`;
+  }
+  return `tl.to("#${shape.id} .s", { strokeDashoffset: 0, duration: ${seconds}, ease: "power1.inOut", stagger: 0.04 }, ${at});`;
+}
+
+// Whether this graphic marks its key item once it lands: every third graphic in a video does.
+function spiced(pen: Pen): boolean {
+  return pen.variant % 3 === 2;
+}
+
+// When the item at `index` has landed, to mark it, a moment before the graphic ends at the latest.
+function landing(index: number, seconds: number): string {
+  return `Math.min(T[${index}] + 0.6, ${(seconds - 0.9).toFixed(2)})`;
+}
+
+// Marks the key item, in `box`, at `at`, the look's way: a bar of the accent swept under it, or a pop of it in a diagram,
+// on a keynote, a ring drawn around it by hand, a highlighter stroke behind it, or a pulse of light.
+function emphasize(pen: Pen, box: Box, target: string, align: "center" | "left", at: string): Drawn {
+  const { look, accents } = pen.graphic;
+  const color = accents[0];
+  if (look === "sketch") {
+    const ring: Shape = { id: "em", kind: "ring", at: [box.x - 34, box.y - 24, box.width + 68, box.height + 48], color };
+    return { html: "", shapes: [ring], script: draw(pen, ring, at, 0.7) };
+  }
+  if (look === "neon" || (look === "keynote" && align === "center")) {
+    return { html: "", shapes: [], script: `tl.to(${q(target)}, { scale: 1.08, duration: 0.18, yoyo: true, repeat: 3, ease: "sine.inOut" }, ${at});` };
+  }
+  const mark = look === "keynote" ? { x: box.x, y: box.y + box.height + 8, width: box.width, height: 10 } : { x: box.x - 10, y: box.y + box.height * 0.1, width: box.width + 20, height: box.height * 0.84 };
   return {
-    svg: (id: string, color: string) =>
-      `<path id="${id}" d="M${fromX.toFixed(1)} ${fromY.toFixed(1)} L${toX.toFixed(1)} ${toY.toFixed(1)}" stroke="${color}" stroke-width="7" stroke-linecap="round" fill="none" stroke-dasharray="${length.toFixed(1)}" stroke-dashoffset="${length.toFixed(1)}" opacity="0"/>` +
-      (head ? `<polygon id="${id}h" points="${toX.toFixed(1)},${toY.toFixed(1)} ${tip(0.5, 26)} ${tip(-0.5, 26)}" fill="${color}" opacity="0"/>` : ""),
-    script: (id: string, at: string) =>
-      `tl.set("#${id}", { attr: { opacity: 1 } }, ${at});\ntl.to("#${id}", { attr: { "stroke-dashoffset": 0 }, duration: 0.32, ease: "power2.inOut" }, ${at});` +
-      (head ? `\ntl.to("#${id}h", { attr: { opacity: 1 }, duration: 0.08 }, ${at} + 0.26);` : ""),
+    html: `<div id="em" style="position:absolute; ${place(mark)} background:${color}; opacity:${look === "keynote" ? 1 : 0.24};"></div>`,
+    shapes: [],
+    script: `tl.from("#em", { scaleX: 0, transformOrigin: "0% 50%", duration: 0.45, ease: "power3.out" }, ${at});`,
   };
 }
 
-// An arrow from one box to the next: across, between boxes side by side, or down, from a box to the one under it.
-function link(from: Box, to: Box) {
-  const [fromX, fromY, toX, toY] = [from.x + from.width / 2, from.y + from.height / 2, to.x + to.width / 2, to.y + to.height / 2];
-  if (Math.abs(toX - fromX) <= Math.abs(toY - fromY)) return arrow([fromX, from.y + from.height + 12], [toX, to.y - 16]);
-  const right = toX > fromX;
-  return arrow([right ? from.x + from.width + 14 : from.x - 14, fromY], [right ? to.x - 16 : to.x + to.width + 16, toY]);
-}
-
-function svg(paths: string[]): string {
-  return `<svg width="100%" height="100%">${paths.join("")}</svg>`;
-}
-
-// The biggest size up to `size` at which every item's label in `font`, wrapped to lines `width` wide, and its detail under
-// it fit `height`, with no word broken in two. Every item gets the same size, so they look alike.
-function fitText(items: Motion["items"], width: number, height: number, size: number, font: string): number {
-  for (let at = size; at > 22; at -= 2) if (items.every((item) => textHeight(item, width, at, font) <= height)) return at;
+// The biggest size up to `size` at which every item's label, wrapped to lines `width` wide, and its detail under it fit
+// `height`, with no word broken in two. Every item gets the same size, so they look alike.
+function fitText(items: Item[], width: number, height: number, size: number, pen: Pen): number {
+  for (let at = size; at > 22; at -= 2) if (items.every((item) => textHeight(item, width, at, pen) <= height)) return at;
   return 22;
 }
 
-function textHeight({ label, detail }: Motion["items"][number], width: number, size: number, font: string): number {
+function textHeight({ label, detail }: Item, width: number, size: number, pen: Pen): number {
   const small = Math.round(size * 0.62);
-  const under = detail ? 8 + linesOf(detail, width, `600 ${small}px ${SANS}`) * small * 1.2 : 0;
-  return linesOf(label, width, `900 ${size}px ${font}`) * size * 1.06 + under;
+  const under = detail ? 6 + linesOf(detail, width, `${pen.detail.weight} ${small}px ${pen.detail.font}`) * small * 1.2 : 0;
+  return linesOf(label, width, `${pen.label.weight} ${size}px ${pen.label.font}`) * size * 1.08 + under;
 }
 
 // How many lines `text` wraps to in `width`, the way the browser wraps it, or Infinity if a word is too wide for a line.
@@ -363,9 +594,22 @@ function linesOf(text: string, width: number, font: string): number {
   return lines;
 }
 
-// The room for a node's words, inside its border and padding.
+function widthOf(text: string, size: number, font: string, weight: number): number {
+  ruler.font = `${weight} ${size}px ${font}`;
+  return ruler.measureText(text).width;
+}
+
+// The room for a node's words, inside its padding.
 function inside(width: number, height: number): [number, number] {
   return [width - 54, height - 38];
+}
+
+// An arrow from one box to the next: across, between boxes side by side, or down, from a box to the one under it.
+function link(from: Box, to: Box): number[] {
+  const [fromX, fromY, toX, toY] = [from.x + from.width / 2, from.y + from.height / 2, to.x + to.width / 2, to.y + to.height / 2];
+  if (Math.abs(toX - fromX) <= Math.abs(toY - fromY)) return [fromX, from.y + from.height + 12, toX, to.y - 16];
+  const right = toX > fromX;
+  return [right ? from.x + from.width + 14 : from.x - 14, fromY, right ? to.x - 16 : to.x + to.width + 16, toY];
 }
 
 // Whether a frame is wide enough for a graphic's items to go side by side rather than down it.
@@ -374,7 +618,15 @@ function isWide(area: Box): boolean {
 }
 
 function place(box: Box): string {
-  return `left:${box.x}px; top:${box.y}px; width:${box.width}px; height:${box.height}px;`;
+  return `left:${f(box.x)}px; top:${f(box.y)}px; width:${f(box.width)}px; height:${f(box.height)}px;`;
+}
+
+function f(value: number): string {
+  return value.toFixed(1);
+}
+
+function q(text: string): string {
+  return JSON.stringify(text);
 }
 
 function clamp(value: number, smallest: number, biggest: number): number {
