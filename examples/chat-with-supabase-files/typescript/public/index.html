@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Chat with Supabase Files</title>
+<style>
+  /* The look every SpaceXSI Cookbook page shares, after x.ai. */
+  :root {
+    --bg: #fff;
+    --card: #f9f8f6;
+    --secondary: #f2f1ef;
+    --secondary-hover: #e9e8e5;
+    --tint: rgb(10 10 10 / 0.04);
+    --line: rgb(10 10 10 / 0.08);
+    --border: rgb(10 10 10 / 0.15);
+    --fg: #0a0a0a;
+    --muted: rgb(10 10 10 / 0.6);
+    --faint: rgb(10 10 10 / 0.36);
+    --accent: #ff6308;
+    --accent-soft: rgb(255 99 8 / 0.1);
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; font: 14px/22px var(--sans); background: var(--bg); color: var(--fg); -webkit-font-smoothing: antialiased; }
+  button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
+  a { color: inherit; }
+  svg { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  @keyframes blink { 50% { opacity: 0.3; } }
+  @keyframes pulse { to { background-color: var(--secondary-hover); } }
+  @keyframes appear { from { opacity: 0; transform: translateY(4px); } }
+
+  .site { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 12px; height: 60px; padding: 0 20px; background: rgb(255 255 255 / 0.85); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+  .logo { flex: none; margin-right: 4px; color: var(--fg); }
+  .logo svg { display: block; width: 52px; height: 20px; fill: currentColor; stroke: none; }
+  .crumbs { display: flex; align-items: center; gap: 8px; min-width: 0; color: var(--muted); white-space: nowrap; }
+  .crumbs svg { width: 12px; height: 12px; color: var(--faint); }
+  .crumbs h1 { margin: 0; overflow: hidden; text-overflow: ellipsis; font-size: inherit; line-height: inherit; font-weight: 500; color: var(--fg); }
+  .site .pill { flex: none; margin-left: auto; }
+  .models { flex: none; height: 26px; padding: 0 10px; border-radius: 9999px; box-shadow: inset 0 0 0 1px var(--line); font-size: 12px; font-weight: 500; line-height: 26px; color: var(--muted); }
+  .pill { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 40px; padding: 0 18px; border-radius: 9999px; font-size: 14px; font-weight: 500; white-space: nowrap; text-decoration: none; }
+  .pill-sm { height: 32px; padding: 0 14px; font-size: 13px; }
+  .pill-primary { background: var(--fg); color: #fff; }
+  .pill-primary:hover { background: #202329; }
+  .pill-secondary { background: var(--secondary); color: var(--fg); }
+  .pill-secondary:hover { background: var(--secondary-hover); }
+  .pill:disabled { opacity: 0.4; cursor: default; }
+  .pill svg { width: 14px; height: 14px; }
+  .field { min-width: 0; height: 40px; padding: 0 18px; border: 1px solid var(--border); border-radius: 9999px; background: var(--bg); color: var(--fg); font: inherit; outline: none; }
+  .field:focus { border-color: var(--fg); }
+  .field::placeholder { color: var(--faint); }
+  .surface { display: flex; flex-direction: column; gap: 8px; height: calc(100vh - 72px); min-height: 560px; margin: 0 12px 12px; padding: 8px; border-radius: 20px; background: var(--card); }
+  .panel { min-width: 0; padding: 20px 22px; border-radius: 16px; background: var(--bg); }
+  .label { margin: 0; font-size: 13px; font-weight: 500; color: var(--muted); }
+  @media (max-width: 900px) {
+    .models { display: none; }
+  }
+  @media (max-width: 640px) {
+    .site { padding: 0 16px; }
+    .crumbs > span, .crumbs > svg { display: none; }
+    .surface { margin: 0 8px 8px; }
+  }
+
+
+  /* Chat with Supabase Files */
+  :root { --bad: #e5484d; --bad-soft: rgb(229 72 77 / 0.1); --good: #16a34a; --good-soft: rgb(22 163 74 / 0.1); }
+  /* Dark theme, following the OS setting. Sits after both :root blocks so it wins the cascade. */
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0a0a0a; --card: #141414; --secondary: #1f1f1f; --secondary-hover: #2a2a2a;
+      --tint: rgb(255 255 255 / 0.04); --line: rgb(255 255 255 / 0.08); --border: rgb(255 255 255 / 0.16);
+      --fg: #f5f5f4; --muted: rgb(255 255 255 / 0.62); --faint: rgb(255 255 255 / 0.38);
+      --accent: #ff6308; --accent-soft: rgb(255 99 8 / 0.16);
+      --bad: #ff7b80; --bad-soft: rgb(229 72 77 / 0.16); --good: #4ade80; --good-soft: rgb(22 163 74 / 0.16);
+    }
+    .site { background: rgb(10 10 10 / 0.8); }
+    .pill-primary { background: var(--fg); color: #0a0a0a; }
+    .pill-primary:hover { background: #e7e7e5; }
+  }
+  .workspace { flex-direction: row; }
+  .col { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; }
+  .left { flex: none; width: 300px; }
+  .middle { flex: 1; }
+  .right { flex: none; width: 400px; }
+  .panel h2 { margin: 0 0 10px; font-size: 15px; line-height: 22px; font-weight: 500; }
+  .panel h2 small { font-weight: 400; color: var(--faint); font-family: var(--mono); font-size: 12px; }
+  .sub { margin: 0 0 10px; font-size: 12.5px; line-height: 18px; color: var(--muted); }
+  .badge { flex: none; margin-left: auto; height: 26px; padding: 0 10px; border-radius: 9999px; box-shadow: inset 0 0 0 1px var(--line); font-size: 12px; font-weight: 500; line-height: 26px; color: var(--muted); white-space: nowrap; }
+  .who { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+  .banner { margin: 0 12px 8px; padding: 10px 16px; border-radius: 12px; background: var(--accent-soft); font-size: 13px; line-height: 20px; }
+  .cards { display: grid; gap: 8px; }
+  .person { display: grid; gap: 2px; width: 100%; padding: 12px 14px; border-radius: 12px; background: var(--card); text-align: left; }
+  .person:hover { background: var(--secondary); }
+  .person b { font-weight: 500; }
+  .person span { font-size: 12px; color: var(--muted); font-family: var(--mono); overflow-wrap: anywhere; }
+  .files { list-style: none; margin: 0 0 10px; padding: 0; display: grid; gap: 4px; }
+  .files li { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 10px; background: var(--card); font-size: 13px; }
+  .files li.pick { box-shadow: inset 0 0 0 1px var(--accent); background: var(--accent-soft); }
+  .files button.name { flex: 1; min-width: 0; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .files small { color: var(--faint); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .files .del { color: var(--faint); font-size: 16px; line-height: 1; }
+  .files .del:hover { color: var(--bad); }
+  .drop { display: grid; place-items: center; padding: 14px; border: 1px dashed var(--border); border-radius: 12px; font-size: 12.5px; color: var(--muted); cursor: pointer; text-align: center; }
+  .drop.over { border-color: var(--accent); background: var(--accent-soft); }
+  .reads { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 12px; line-height: 17px; color: var(--muted); }
+  .reads b { font-weight: 500; color: var(--fg); }
+  .chat { flex: 1; display: flex; flex-direction: column; min-height: 0; padding: 0; overflow: hidden; }
+  #log { flex: 1; display: flex; flex-direction: column; gap: 12px; min-height: 0; padding: 20px 22px; overflow-y: auto; }
+  .start { flex: none; display: grid; place-content: center; justify-items: center; gap: 12px; min-height: 100%; padding: 24px; text-align: center; }
+  .start h2 { margin: 0; font-size: 32px; line-height: 1.15; font-weight: 450; letter-spacing: -0.02em; }
+  .start p { max-width: 520px; margin: 0; font-size: 15px; line-height: 24px; color: var(--muted); }
+  .questions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 6px; }
+  .q { margin: 0; align-self: flex-end; max-width: 80%; padding: 10px 16px; border-radius: 16px 16px 4px 16px; background: var(--secondary); animation: appear 0.3s ease-out; }
+  .turn { display: grid; gap: 8px; animation: appear 0.3s ease-out; }
+  .event { display: flex; gap: 8px; align-items: baseline; font-size: 12.5px; line-height: 19px; color: var(--muted); }
+  .event i { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--faint); transform: translateY(-1px); }
+  .event.ok i { background: var(--good); }
+  .event.bad i { background: var(--bad); }
+  .event.live i { background: var(--accent); animation: blink 1s ease-in-out infinite; }
+  .event b { font-weight: 500; color: var(--fg); }
+  .event code { font: 12px var(--mono); }
+  .a { margin: 0; padding: 14px 18px; border-radius: 14px; background: var(--card); font-size: 15px; line-height: 24px; white-space: pre-wrap; }
+  .foot { font-size: 12px; color: var(--faint); font-variant-numeric: tabular-nums; }
+  .problem { margin: 0; padding: 10px 14px; border-radius: 12px; background: var(--bad-soft); color: var(--bad); font-size: 13px; }
+  .composer { display: grid; gap: 8px; padding: 12px; border-top: 1px solid var(--line); }
+  .composer .row { display: flex; gap: 8px; align-items: center; }
+  .composer .field { flex: 1; }
+  .composer label { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+  select.field { height: 32px; padding: 0 10px; border-radius: 9999px; font-size: 12.5px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .url { margin: 0 0 8px; padding: 10px 12px; border-radius: 10px; background: var(--card); font: 12px/18px var(--mono); overflow-wrap: anywhere; }
+  .url .tok { color: var(--accent); }
+  pre.claims { margin: 0 0 6px; padding: 10px 12px; border-radius: 10px; background: var(--card); font: 12px/18px var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; }
+  .count { font: 500 28px/34px var(--sans); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+  .count.gone { color: var(--bad); }
+  .buttons { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+  .probes { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font: 12px/17px var(--mono); }
+  .probes .good { color: var(--good); }
+  .probes .no { color: var(--bad); }
+  .tries { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; font-size: 12.5px; line-height: 18px; }
+  .tries li { display: flex; gap: 8px; }
+  .tries .tag { flex: none; height: 20px; padding: 0 8px; border-radius: 9999px; font-size: 11px; font-weight: 600; line-height: 20px; }
+  .tries .blocked { background: var(--good-soft); color: var(--good); }
+  .tries .allowed { background: var(--bad-soft); color: var(--bad); }
+  .tries small { display: block; color: var(--faint); }
+  @media (max-width: 1100px) { .workspace { flex-direction: column; height: auto; } .left, .right { width: auto; } .col { overflow: visible; } }
+</style>
+</head>
+<body>
+<header class="site">
+  <a class="logo" href="https://x.ai" target="_blank" rel="noopener" aria-label="SpaceXSI"><svg viewBox="0 7.4 24 9.2" aria-hidden="true"><path d="M24 7.417C8.882 8.287 1.89 14.75.321 16.28L0 16.583h2.797C10.356 9.005 21.222 7.663 24 7.417zm-17.046 6.35c-.472.321-.945.68-1.398 1.02l2.457 1.796h2.778zM2.948 10.8H.189l3.25 2.381c.473-.321 1.02-.661 1.512-.945Z"/></svg></a>
+  <nav class="crumbs"><span>Cookbook</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg><h1>Chat with Supabase Files</h1></nav>
+  <span class="badge" id="badge"></span>
+  <span class="who" id="who" hidden><span id="email"></span><button class="pill pill-secondary pill-sm" id="switch">Switch user</button></span>
+  <a class="pill pill-secondary pill-sm" href="https://github.com/xai-org/xai-cookbook/tree/main/examples/chat-with-supabase-files" target="_blank" rel="noopener">View code</a>
+</header>
+<div class="banner" id="banner" hidden></div>
+<main class="surface workspace">
+  <div class="col left">
+    <section class="panel" id="signin" hidden>
+      <h2>Sign in</h2>
+      <p class="sub">Two demo accounts, each with one private file in the <code>files</code> bucket.</p>
+      <div class="cards" id="cards"></div>
+    </section>
+    <section class="panel" id="mine" hidden>
+      <h2>Your files <small id="folder"></small></h2>
+      <ul class="files" id="files"></ul>
+      <label class="drop" id="drop">Drop a PDF, text, Markdown, CSV, or JSON file, or click to choose<input type="file" id="picker" accept=".pdf,.txt,.md,.csv,.json" hidden></label>
+    </section>
+    <section class="panel" id="readsPanel" hidden>
+      <h2>Grok's reads</h2>
+      <p class="sub">One row each time the app hands a file to Grok. Only you can see yours.</p>
+      <ul class="reads" id="reads"></ul>
+    </section>
+  </div>
+
+  <section class="panel chat middle">
+    <div id="log">
+      <div class="start" id="start">
+        <h2>Ask about a private file</h2>
+        <p id="intro">Grok reads the file through a link that works for a couple of minutes. Sign in as Alice or Bob, pick a file, and ask.</p>
+        <div class="questions" id="samples"></div>
+      </div>
+    </div>
+    <form class="composer" id="form" hidden>
+      <div class="row">
+        <input id="question" class="field" required maxlength="2000" aria-label="Question" placeholder="Ask about the selected file">
+        <button id="go" class="pill pill-primary">Ask</button>
+      </div>
+      <div class="row">
+        <label>File <b id="target">none</b></label>
+        <label id="ttlLabel">Link lasts <select id="ttl" class="field"></select></label>
+      </div>
+    </form>
+  </section>
+
+  <div class="col right">
+    <section class="panel" id="urlPanel" hidden>
+      <h2>The URL Grok got</h2>
+      <div class="url" id="url"></div>
+      <div class="buttons"><button class="pill pill-secondary pill-sm" id="copy">Copy</button><a class="pill pill-secondary pill-sm" id="open" target="_blank" rel="noopener">Open link</a><button class="pill pill-secondary pill-sm" id="probe">Check now</button></div>
+      <p class="sub">The token names one object and an expiry. The host isn't in it.</p>
+      <pre class="claims" id="claims"></pre>
+      <div class="count" id="count"></div>
+      <ul class="probes" id="probes"></ul>
+    </section>
+    <section class="panel" id="filePanel" hidden>
+      <h2>The copy Grok got</h2>
+      <p class="sub" id="fileText"></p>
+    </section>
+    <section class="panel" id="otherPanel" hidden>
+      <h2>Try someone else's file</h2>
+      <p class="sub">Runs four attempts as you against the other demo user's file.</p>
+      <button class="pill pill-secondary pill-sm" id="try"></button>
+      <ul class="tries" id="tries"></ul>
+    </section>
+  </div>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (text) => String(text).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+const state = { status: null, me: null, files: [], file: null, history: [], source: null, expiresAt: null, url: null, timer: null, running: false };
+
+async function api(path, options = {}) {
+  const response = await fetch(path, options);
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) { const error = new Error(body.message || response.statusText); error.status = response.status; throw error; }
+  return body;
+}
+const kb = (bytes) => bytes >= 1048576 ? (bytes / 1048576).toFixed(1) + " MB" : Math.max(1, Math.round(bytes / 1024)) + " KB";
+const clock = (seconds) => Math.floor(seconds / 60) + ":" + String(Math.max(0, Math.floor(seconds % 60))).padStart(2, "0");
+
+async function boot() {
+  state.status = await api("/api/status");
+  const { status } = state;
+  $("badge").textContent = status.mode === "upload" ? (status.local ? "Local stack · Files API copy" : "Files API copy") : "Signed URL · straight from Supabase";
+  if (status.mode === "upload") {
+    $("intro").textContent = status.local
+      ? "Local stack: SpaceXSI can't reach your machine, so each file is copied to the Files API for one answer, then deleted. Sign in as Alice or Bob, pick a file, and ask."
+      : "Each file is copied to the Files API for one answer, then deleted. Sign in as Alice or Bob, pick a file, and ask.";
+  }
+  const warnings = [];
+  if (!status.hasKey) warnings.push("XAI_API_KEY isn't set, so asking Grok will fail. Add it to .env at the root of the repo and restart.");
+  $("banner").hidden = !warnings.length;
+  $("banner").textContent = warnings.join(" ");
+  $("ttl").innerHTML = status.ttl.choices.map((s) => `<option value="${s}" ${s === status.ttl.default ? "selected" : ""}>${s < 60 ? s + " seconds" : s / 60 + " minutes"}</option>`).join("");
+  $("ttlLabel").hidden = status.mode === "upload";
+  const demo = await api("/api/demo-users");
+  $("cards").innerHTML = demo.map((u) => `<button class="person" data-email="${u.email}" data-password="${u.password}"><b>${u.name}</b><span>${u.email}</span><span>${u.sample}</span></button>`).join("");
+  try { state.me = await api("/api/me"); await enter(); } catch { leave(); }
+}
+
+function leave() {
+  state.me = null; state.file = null; state.history = [];
+  $("signin").hidden = false;
+  for (const id of ["mine", "readsPanel", "form", "otherPanel", "urlPanel", "filePanel"]) $(id).hidden = true;
+  $("who").hidden = true;
+  const start = $("start");
+  $("log").innerHTML = ""; $("log").append(start); start.hidden = false;
+  $("samples").innerHTML = "";
+}
+
+async function enter() {
+  $("signin").hidden = true;
+  $("who").hidden = false; $("email").textContent = state.me.email;
+  for (const id of ["mine", "readsPanel", "form", "otherPanel"]) $(id).hidden = false;
+  $("folder").textContent = "files/" + state.me.id.slice(0, 8) + "…/";
+  $("try").textContent = "Try to read " + (state.me.email.startsWith("alice") ? "Bob" : "Alice") + "'s file";
+  $("tries").innerHTML = "";
+  await Promise.all([loadFiles(), loadReads()]);
+}
+
+async function loadFiles(select) {
+  state.files = await api("/api/files");
+  if (select) state.file = select;
+  if (!state.files.some((f) => f.name === state.file)) state.file = state.files[0]?.name ?? null;
+  $("files").innerHTML = state.files.length ? state.files.map((f) => `<li class="${f.name === state.file ? "pick" : ""}"><button class="name" data-pick="${esc(f.name)}">${esc(f.name)}</button><small>${kb(f.size)}</small><button class="del" data-del="${esc(f.name)}" aria-label="Delete ${esc(f.name)}">×</button></li>`).join("") : "<li>No files yet</li>";
+  $("target").textContent = state.file ?? "none";
+  $("go").disabled = !state.file;
+  const questions = state.status.samples[state.file] ?? [];
+  $("samples").innerHTML = questions.map((q) => `<button type="button" class="pill pill-secondary pill-sm">${esc(q)}</button>`).join("");
+}
+
+async function loadReads() {
+  const reads = await api("/api/reads");
+  $("reads").innerHTML = reads.length ? reads.map((r) => `<li><b>${esc(r.object_name.split("/").pop())}</b> · ${esc(r.mode === "upload" ? "uploaded" : "signed URL")}<br>${esc(r.question)}<br>${new Date(r.created_at).toLocaleTimeString()}</li>`).join("") : "<li>Nothing yet</li>";
+}
+
+async function login(email, password) {
+  try {
+    state.me = await api("/api/login", { method: "POST", body: JSON.stringify({ email, password }) });
+    await enter();
+  } catch (error) { alert(error.message); }
+}
+
+function add(html, cls = "turn") { const el = document.createElement("div"); el.className = cls; el.innerHTML = html; $("log").append(el); $("log").scrollTop = $("log").scrollHeight; return el; }
+
+function ask(question) {
+  if (state.running || !state.file) return;
+  $("start").hidden = true;
+  state.running = true; $("go").textContent = "Stop";
+  const turn = add(`<p class="q">${esc(question)}</p>`);
+  const events = document.createElement("div"); events.className = "turn"; turn.append(events);
+  const line = (cls, html) => { const el = document.createElement("div"); el.className = "event " + cls; el.innerHTML = "<i></i><span>" + html + "</span>"; events.append(el); $("log").scrollTop = $("log").scrollHeight; return el; };
+  let answer = null, answerText = "", finished = false;
+  const searches = new Map();
+  const end = () => { state.running = false; $("go").textContent = "Ask"; state.source?.close(); state.source = null; loadReads(); };
+
+  api("/api/ask", { method: "POST", body: JSON.stringify({ name: state.file, question, ttl: Number($("ttl").value), history: state.history }) }).then(({ id }) => {
+    const source = new EventSource("/api/ask/stream?id=" + id);
+    state.source = source;
+    const on = (name, fn) => source.addEventListener(name, (e) => fn(JSON.parse(e.data)));
+    on("attached", (a) => {
+      if (a.mode === "upload") { line("ok", `Uploaded to the Files API as <code>${esc(a.fileId)}</code>`); showFile(a.fileId); }
+      else { line("ok", `Signed a URL, expires in <b>${clock((new Date(a.expiresAt) - Date.now()) / 1000)}</b>`); showUrl(a); }
+    });
+    on("searching", (s) => searches.set(s.id, line("live", `Searching the file with <code>${esc(s.tool)}</code>`)));
+    on("searched", (s) => { const el = searches.get(s.id) ?? line("", ""); el.className = "event ok"; el.querySelector("span").innerHTML = `Searched the file with <code>${esc(s.tool)}</code>${s.queries.length ? " for <b>" + esc(s.queries.join(", ")) + "</b>" : ""}`; });
+    on("text", ({ text }) => { if (!answer) { answer = document.createElement("p"); answer.className = "a"; events.append(answer); } answerText += text; answer.textContent = answerText; $("log").scrollTop = $("log").scrollHeight; });
+    on("done", (d) => { finished = true; const el = document.createElement("div"); el.className = "foot"; el.textContent = `${d.documentSearches} searches · ${d.inputTokens} in, ${d.outputTokens} out · $${d.cost.toFixed(4)} · ${d.seconds.toFixed(1)} s`; events.append(el); state.history.push({ role: "user", text: question }, { role: "assistant", text: answerText }); });
+    on("cleanup", () => { const f = $("fileText").dataset.id; if (f) { line("ok", `Deleted <code>${esc(f)}</code> from the Files API`); $("fileText").textContent = `Uploaded as ${f}, then deleted when the answer finished.`; } });
+    on("failure", (m) => { finished = true; const p = document.createElement("p"); p.className = "problem"; p.textContent = m.message; events.append(p); });
+    source.onerror = () => { if (!finished && !answer) { /* connection ended */ } end(); };
+  }).catch((error) => { const p = document.createElement("p"); p.className = "problem"; p.textContent = error.message; events.append(p); end(); if (error.status === 401) leave(); });
+}
+
+function showFile(id) { $("urlPanel").hidden = true; $("filePanel").hidden = false; $("fileText").dataset.id = id; $("fileText").textContent = `Uploaded to the Files API as ${id}. It's deleted when the answer finishes.`; }
+
+function showUrl(a) {
+  $("filePanel").hidden = true; $("urlPanel").hidden = false;
+  state.url = a.url; state.expiresAt = new Date(a.expiresAt).getTime();
+  const [head, token = ""] = a.url.split("?token=");
+  $("url").innerHTML = esc(head) + '?token=<span class="tok">' + esc(token.slice(0, 16)) + "…" + esc(token.slice(-8)) + "</span>";
+  $("claims").textContent = JSON.stringify(a.claims, null, 2);
+  $("open").href = a.url; $("probes").innerHTML = "";
+  clearInterval(state.timer);
+  const tick = () => { const left = (state.expiresAt - Date.now()) / 1000; $("count").className = "count" + (left <= 0 ? " gone" : ""); $("count").textContent = left > 0 ? "Expires in " + clock(left) : "Expired"; };
+  tick(); state.timer = setInterval(tick, 500);
+}
+
+$("cards").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) login(b.dataset.email, b.dataset.password); });
+$("switch").addEventListener("click", async () => { await api("/api/logout", { method: "POST" }); leave(); });
+$("files").addEventListener("click", async (e) => {
+  const pick = e.target.closest("[data-pick]"), del = e.target.closest("[data-del]");
+  if (pick) { state.file = pick.dataset.pick; await loadFiles(); }
+  if (del && confirm("Delete " + del.dataset.del + "?")) { try { await api("/api/files?name=" + encodeURIComponent(del.dataset.del), { method: "DELETE" }); await loadFiles(); } catch (error) { alert(error.message); } }
+});
+async function upload(file) {
+  try { const { name } = await api("/api/files?name=" + encodeURIComponent(file.name), { method: "POST", body: file }); await loadFiles(name); }
+  catch (error) { alert(error.message); }
+}
+$("picker").addEventListener("change", (e) => { if (e.target.files[0]) upload(e.target.files[0]); e.target.value = ""; });
+$("drop").addEventListener("dragover", (e) => { e.preventDefault(); $("drop").classList.add("over"); });
+$("drop").addEventListener("dragleave", () => $("drop").classList.remove("over"));
+$("drop").addEventListener("drop", (e) => { e.preventDefault(); $("drop").classList.remove("over"); if (e.dataTransfer.files[0]) upload(e.dataTransfer.files[0]); });
+$("samples").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) { $("question").value = b.textContent; $("form").requestSubmit(); } });
+$("form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  if (state.running) { state.source?.close(); state.source = null; state.running = false; $("go").textContent = "Ask"; return; }
+  const question = $("question").value.trim(); if (question) { ask(question); $("question").value = ""; }
+});
+$("copy").addEventListener("click", () => navigator.clipboard.writeText(state.url));
+$("probe").addEventListener("click", async () => {
+  try {
+    const r = await api("/api/probe", { method: "POST", body: JSON.stringify({ url: state.url }) });
+    const left = (state.expiresAt - r.at) / 1000;
+    const text = r.status === 200 ? `${r.status} ${r.contentType} ${kb(r.bytes)}, ${clock(left)} left` : `${r.status} ${r.error || ""}`;
+    const li = document.createElement("li"); li.className = r.status === 200 ? "good" : "no"; li.textContent = text; $("probes").prepend(li);
+  } catch (error) { alert(error.message); }
+});
+$("try").addEventListener("click", async () => {
+  try {
+    const steps = await api("/api/try-other", { method: "POST" });
+    $("tries").innerHTML = steps.map((s) => `<li><span class="tag ${s.blocked ? "blocked" : "allowed"}">${s.blocked ? "Blocked" : "Allowed"}</span><span>${esc(s.step)}<small>${esc(s.detail)}</small></span></li>`).join("");
+    loadFiles();
+  } catch (error) { alert(error.message); }
+});
+boot();
+</script>
+</body>
+</html>

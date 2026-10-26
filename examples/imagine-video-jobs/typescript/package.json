@@ -1,0 +1,18 @@
+{
+  "name": "imagine-video-jobs",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22.13" },
+  "scripts": {
+    "supabase:start": "node --env-file-if-exists=../../../.env --experimental-strip-types --no-warnings=ExperimentalWarning src/start-supabase.ts real",
+    "supabase:fake": "node --env-file-if-exists=../../../.env --experimental-strip-types --no-warnings=ExperimentalWarning src/start-supabase.ts fake",
+    "supabase:stop": "supabase stop",
+    "web": "node --env-file-if-exists=../../../.env --experimental-strip-types --no-warnings=ExperimentalWarning src/server.ts",
+    "test": "node --env-file-if-exists=../../../.env --experimental-strip-types --no-warnings=ExperimentalWarning --test src/test.ts",
+    "smoke": "node --env-file-if-exists=../../../.env --experimental-strip-types --no-warnings=ExperimentalWarning src/smoke.ts",
+    "typecheck": "tsc",
+    "typecheck:worker": "deno check --config supabase/functions/worker/deno.json supabase/functions/worker/index.ts"
+  },
+  "dependencies": { "@supabase/supabase-js": "2.118.0" },
+  "devDependencies": { "@types/node": "^24.5.0", "typescript": "^5.9.0" }
+}

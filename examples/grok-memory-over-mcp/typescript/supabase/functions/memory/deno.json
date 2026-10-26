@@ -1,0 +1,5 @@
+{
+  "imports": {
+    "@supabase/server": "npm:@supabase/server@1.9.2"
+  }
+}

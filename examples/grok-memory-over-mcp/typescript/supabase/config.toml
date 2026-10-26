@@ -1,0 +1,60 @@
+# Local Supabase for this example. Ports sit in the 551xx block so this stack can run next to other
+# Supabase projects on one machine, and services the example doesn't use are off.
+project_id = "grok-memory-over-mcp"
+
+[api]
+port = 55121
+schemas = ["public"]
+extra_search_path = ["public", "extensions"]
+
+[db]
+port = 55122
+shadow_port = 55120
+major_version = 17
+
+[db.pooler]
+enabled = false
+port = 55129
+
+[db.seed]
+enabled = true
+sql_paths = ["./seed.sql"]
+
+[realtime]
+enabled = false
+
+[studio]
+enabled = true
+port = 55123
+
+[local_smtp]
+enabled = false
+port = 55124
+
+[storage]
+enabled = false
+
+[auth]
+site_url = "http://localhost:3101"
+# Sign-in with a password still works. This only turns off creating new accounts.
+enable_signup = false
+
+[auth.email]
+enable_confirmations = false
+
+[edge_runtime]
+enabled = true
+policy = "per_worker"
+inspector_port = 55126
+deno_version = 2
+
+[analytics]
+enabled = false
+port = 55127
+
+# The Edge Function that serves the MCP server. verify_jwt makes the gateway turn away any request
+# without a valid Supabase token before the function runs.
+[functions.memory]
+verify_jwt = true
+import_map = "./functions/memory/deno.json"
+entrypoint = "./functions/memory/index.ts"

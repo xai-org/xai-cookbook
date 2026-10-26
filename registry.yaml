@@ -83,6 +83,21 @@
   level: beginner
   languages:
   - typescript
+- title: Chat with Supabase Files
+  seo_title: Chat with Private Files in Supabase Storage Using the Grok API
+  path: examples/chat-with-supabase-files/README.md
+  icon: shield-check
+  description: Ask Grok about a file in a private Supabase Storage bucket by handing it a signed URL that expires in minutes, with each user's files kept apart by RLS.
+  date: 2026-10-16
+  authors:
+  - Nick Littman
+  tags:
+  - files
+  - streaming
+  type: app
+  level: intermediate
+  languages:
+  - typescript
 - title: Company to Call Brief
   seo_title: 'AI Sales Call Prep: Research an Account with the Grok API'
   path: examples/company-to-call-brief/README.md
@@ -153,6 +168,23 @@
   - files
   - structured-output
   - streaming
+  type: app
+  level: intermediate
+  languages:
+  - typescript
+- title: Long-Term Memory over MCP
+  seo_title: 'Long-Term Memory per User: Remote MCP Server with the Grok API'
+  path: examples/grok-memory-over-mcp/README.md
+  icon: person
+  description: Give Grok a long-term memory for each user through a remote MCP server on Supabase, where Postgres row-level security keeps every user's memories private.
+  date: 2026-10-16
+  authors:
+  - Nick Littman
+  tags:
+  - mcp
+  - chat
+  - streaming
+  - reasoning
   type: app
   level: intermediate
   languages:
@@ -501,6 +533,20 @@
   - streaming
   - reasoning
   - text-to-speech
+  type: app
+  level: advanced
+  languages:
+  - typescript
+- title: Video Jobs That Survive a Closed Tab
+  seo_title: Background Video Generation Queue with Grok Imagine and Postgres
+  path: examples/imagine-video-jobs/README.md
+  icon: clock
+  description: Queue Grok Imagine videos in Postgres, render them with a scheduled worker, and watch them finish live, even after you close the tab.
+  date: 2026-10-16
+  authors:
+  - Nick Littman
+  tags:
+  - video-generation
   type: app
   level: advanced
   languages:

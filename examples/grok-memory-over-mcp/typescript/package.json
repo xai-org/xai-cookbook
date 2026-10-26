@@ -1,0 +1,23 @@
+{
+  "name": "grok-memory-over-mcp",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "start": "node --env-file-if-exists=../../../.env --experimental-strip-types --no-warnings=ExperimentalWarning src/index.ts",
+    "web": "node --env-file-if-exists=../../../.env --experimental-strip-types --no-warnings=ExperimentalWarning src/server.ts",
+    "check": "node --env-file-if-exists=../../../.env --experimental-strip-types --no-warnings=ExperimentalWarning src/check.ts",
+    "typecheck": "tsc",
+    "typecheck:function": "deno check --no-lock --config supabase/functions/memory/deno.json supabase/functions/memory/index.ts"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "2.118.0",
+    "@xai-official/sdk": "0.2.2"
+  },
+  "devDependencies": {
+    "@types/node": "^24.5.0",
+    "typescript": "^5.9.0"
+  }
+}

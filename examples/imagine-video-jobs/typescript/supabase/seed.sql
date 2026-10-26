@@ -1,0 +1,1 @@
+-- Nothing to seed. npm run supabase:start (or supabase:fake) calls configure_worker() to store the worker's URL and key in Vault.

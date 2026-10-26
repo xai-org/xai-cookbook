@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Video Jobs That Survive a Closed Tab</title>
+<style>
+  /* The look every SpaceXSI Cookbook page shares, after x.ai. */
+  :root {
+    --bg: #fff; --card: #f9f8f6; --secondary: #f2f1ef; --secondary-hover: #e9e8e5;
+    --line: rgb(10 10 10 / 0.08); --border: rgb(10 10 10 / 0.15);
+    --fg: #0a0a0a; --muted: rgb(10 10 10 / 0.6); --faint: rgb(10 10 10 / 0.36);
+    --accent: #ff6308; --accent-soft: rgb(255 99 8 / 0.1);
+    --bad: #e5484d; --bad-soft: rgb(229 72 77 / 0.1); --good: #168a4a; --good-soft: rgb(22 138 74 / 0.1);
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  }
+  /* Dark theme: follows the OS setting; same palette as the other Supabase examples. */
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0a0a0a; --card: #141414; --secondary: #1f1f1f; --secondary-hover: #2a2a2a;
+      --line: rgb(255 255 255 / 0.08); --border: rgb(255 255 255 / 0.16);
+      --fg: #f5f5f4; --muted: rgb(255 255 255 / 0.62); --faint: rgb(255 255 255 / 0.38);
+      --accent: #ff6308; --accent-soft: rgb(255 99 8 / 0.16);
+      --bad: #ff6369; --bad-soft: rgb(229 72 77 / 0.16); --good: #3dd68c; --good-soft: rgb(22 138 74 / 0.16);
+    }
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; font: 14px/22px var(--sans); background: var(--bg); color: var(--fg); -webkit-font-smoothing: antialiased; }
+  button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
+  a { color: inherit; }
+  @keyframes blink { 50% { opacity: 0.3; } }
+  @keyframes pop { from { opacity: 0; transform: scale(0.98); } }
+
+  .site { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 12px; height: 60px; padding: 0 20px; background: rgb(255 255 255 / 0.85); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+  .logo { flex: none; margin-right: 4px; color: var(--fg); }
+  .logo svg { display: block; width: 52px; height: 20px; fill: currentColor; stroke: none; }
+  .crumbs { display: flex; align-items: center; gap: 8px; min-width: 0; color: var(--muted); white-space: nowrap; }
+  .crumbs svg { width: 12px; height: 12px; fill: none; stroke: var(--faint); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  .crumbs h1 { margin: 0; overflow: hidden; text-overflow: ellipsis; font-size: inherit; line-height: inherit; font-weight: 500; color: var(--fg); }
+  .site .pill { flex: none; }
+  .site .push { margin-left: auto; }
+  .pill { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 40px; padding: 0 18px; border-radius: 9999px; font-size: 14px; font-weight: 500; white-space: nowrap; text-decoration: none; }
+  .pill-sm { height: 32px; padding: 0 14px; font-size: 13px; }
+  .pill-primary { background: var(--fg); color: #fff; }
+  .pill-primary:hover { background: #202329; }
+  @media (prefers-color-scheme: dark) {
+    .site { background: rgb(10 10 10 / 0.8); }
+    .pill-primary { background: var(--fg); color: #0a0a0a; }
+    .pill-primary:hover { background: #e7e7e5; }
+  }
+  .pill-secondary { background: var(--secondary); color: var(--fg); }
+  .pill-secondary:hover { background: var(--secondary-hover); }
+  .pill:disabled { opacity: 0.4; cursor: default; }
+  .surface { display: grid; grid-template-columns: 360px minmax(0, 1fr); gap: 8px; margin: 0 12px 12px; padding: 8px; border-radius: 20px; background: var(--card); align-items: start; }
+  .panel { min-width: 0; padding: 20px 22px; border-radius: 16px; background: var(--bg); }
+  .label { margin: 0 0 10px; font-size: 13px; font-weight: 500; color: var(--muted); }
+  .live { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--faint); }
+  .dot.on { background: var(--good); }
+  .dot.wait { background: var(--accent); animation: blink 1s infinite; }
+  .who { color: var(--muted); font-size: 13px; }
+  @media (max-width: 900px) { .surface { grid-template-columns: 1fr; } .who { display: none; } }
+
+  form { display: grid; gap: 12px; }
+  textarea, input[type=email], input[type=password], select { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg); font: inherit; color: inherit; }
+  textarea { min-height: 84px; resize: vertical; }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .row label { display: grid; gap: 4px; font-size: 12px; color: var(--muted); }
+  .file { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+  .file img { width: 40px; height: 40px; border-radius: 8px; object-fit: cover; }
+  .error { margin: 0; padding: 10px 12px; border-radius: 12px; background: var(--bad-soft); color: var(--bad); font-size: 13px; }
+  .hint { margin: 0; font-size: 13px; color: var(--muted); }
+  .meter { display: grid; gap: 6px; margin-bottom: 18px; }
+  .bar { height: 6px; overflow: hidden; border-radius: 9999px; background: var(--secondary); }
+  .bar > i { display: block; height: 100%; width: 0; background: var(--accent); transition: width 0.4s; }
+  .bar.full > i { background: var(--bad); }
+
+  .jobs { display: grid; gap: 10px; }
+  .job { display: grid; grid-template-columns: minmax(0, 1fr) 200px; gap: 14px; padding: 14px; border: 1px solid var(--line); border-radius: 14px; animation: pop 0.25s ease-out; }
+  .job .prompt { margin: 0 0 6px; overflow-wrap: anywhere; }
+  .meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12px; color: var(--muted); }
+  .tag { display: inline-block; padding: 0 8px; border-radius: 9999px; background: var(--secondary); font-size: 12px; font-weight: 500; line-height: 20px; }
+  .tag.run { background: var(--accent-soft); color: var(--accent); }
+  .tag.done { background: var(--good-soft); color: var(--good); }
+  .tag.failed { background: var(--bad-soft); color: var(--bad); }
+  .job .bar { margin-top: 8px; }
+  .job .thumb { width: 44px; height: 44px; margin-right: 10px; float: left; border-radius: 8px; object-fit: cover; }
+  .job .err { margin: 6px 0 0; font-size: 12px; color: var(--bad); overflow-wrap: anywhere; }
+  .job .err.retry { color: var(--muted); }
+  .job video { width: 100%; border-radius: 10px; background: #000; }
+  .empty { padding: 30px 0; text-align: center; color: var(--muted); }
+  .foot { margin: 16px 0 0; font-size: 13px; color: var(--muted); }
+  @media (max-width: 640px) { .job { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<header class="site">
+    <a class="logo" href="https://x.ai" target="_blank" rel="noopener" aria-label="SpaceXSI"><svg viewBox="0 7.4 24 9.2" aria-hidden="true"><path d="M24 7.417C8.882 8.287 1.89 14.75.321 16.28L0 16.583h2.797C10.356 9.005 21.222 7.663 24 7.417zm-17.046 6.35c-.472.321-.945.68-1.398 1.02l2.457 1.796h2.778zM2.948 10.8H.189l3.25 2.381c.473-.321 1.02-.661 1.512-.945Z"/></svg></a>
+  <nav class="crumbs"><span>Cookbook</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg><h1>Video Jobs That Survive a Closed Tab</h1></nav>
+  <span class="live push" id="live" hidden><span class="dot" id="dot"></span><span id="liveText">Connecting</span></span>
+  <span class="who" id="who"></span>
+  <button class="pill pill-secondary pill-sm" id="signOut" hidden>Sign out</button>
+  <a class="pill pill-secondary pill-sm" href="https://github.com/xai-org/xai-cookbook/tree/main/examples/imagine-video-jobs" target="_blank" rel="noopener">View code</a>
+</header>
+
+<main class="surface">
+  <aside class="panel">
+    <form id="authForm" hidden>
+      <p class="label">Sign in to queue videos</p>
+      <input type="email" id="email" placeholder="Email" autocomplete="email" required>
+      <input type="password" id="password" placeholder="Password (6 or more characters)" autocomplete="current-password" minlength="6" required>
+      <div class="row">
+        <button class="pill pill-primary" type="submit" id="signIn">Sign in</button>
+        <button class="pill pill-secondary" type="button" id="signUp">Create account</button>
+      </div>
+      <p class="error" id="authError" hidden></p>
+      <p class="hint">Locally, an account is created on the spot. Nothing is emailed.</p>
+    </form>
+
+    <div id="app" hidden>
+      <div class="meter">
+        <p class="label" id="meterText" style="margin:0">Spend</p>
+        <div class="bar" id="meterBar"><i></i></div>
+      </div>
+      <form id="form">
+        <p class="label" style="margin:0">New video</p>
+        <textarea id="prompt" placeholder="A paper boat drifting down a rain-soaked street" required maxlength="2000"></textarea>
+        <div class="file">
+          <input type="file" id="file" accept="image/jpeg,image/png,image/webp">
+          <button type="button" class="pill pill-secondary pill-sm" id="sample">Use sample</button>
+          <img id="preview" alt="" hidden>
+        </div>
+        <div class="row">
+          <label>Length<select id="duration"><option value="1">1 second</option><option value="3">3 seconds</option><option value="6" selected>6 seconds</option><option value="10">10 seconds</option></select></label>
+          <label>Resolution<select id="resolution"><option value="480p" selected>480p</option><option value="720p">720p</option></select></label>
+        </div>
+        <p class="hint" id="estimate">&nbsp;</p>
+        <button class="pill pill-primary" type="submit" id="queue">Queue video</button>
+        <p class="error" id="error" hidden></p>
+      </form>
+    </div>
+  </aside>
+
+  <section class="panel">
+    <p class="label">Your videos</p>
+    <div class="jobs" id="jobs"></div>
+    <p class="empty" id="empty">Sign in to see your jobs.</p>
+    <p class="foot">Close this tab whenever you like. The jobs live in Postgres and a scheduled worker finishes them.</p>
+  </section>
+</main>
+
+<script src="/supabase.js"></script>
+<script type="module">
+const $ = (id) => document.getElementById(id);
+const config = await (await fetch("/config.json")).json();
+const db = supabase.createClient(config.url, config.publishableKey);
+const jobs = new Map();     // id -> row
+const signed = new Map();   // key -> { url, expires }
+const cards = new Map();    // id -> card element, so a playing video is never replaced
+let channel, cap = null, user = null;
+
+// Don't await Supabase calls inside onAuthStateChange (supabase-js can deadlock); defer them.
+db.auth.onAuthStateChange((_event, session) => setTimeout(() => (session ? showApp(session.user) : showSignIn()), 0));
+
+function showSignIn() {
+  user = null;
+  channel?.unsubscribe(); channel = null;
+  jobs.clear(); render();
+  $("authForm").hidden = false; $("app").hidden = true; $("signOut").hidden = true; $("live").hidden = true; $("who").textContent = "";
+}
+
+function showApp(u) {
+  if (user?.id === u.id) return;   // token refreshes fire this again
+  user = u;
+  $("authForm").hidden = true; $("app").hidden = false; $("signOut").hidden = false; $("live").hidden = false; $("who").textContent = u.email;
+  channel?.unsubscribe();
+  jobs.clear();
+  // Subscribe first, then load, so no change lands in between. RLS limits events to this user's rows;
+  // the filter just saves Realtime the work.
+  channel = db.channel(`generations:${u.id}`)
+    .on("postgres_changes", { event: "*", schema: "public", table: "generations", filter: `user_id=eq.${u.id}` },
+        ({ new: row }) => { jobs.set(row.id, row); render(); })
+    .subscribe((status) => { setLive(status); if (status === "SUBSCRIBED") loadJobs(); });
+  loadBudget();
+  showEstimate();
+}
+
+function setLive(status) {
+  $("dot").className = "dot " + (status === "SUBSCRIBED" ? "on" : "wait");
+  $("liveText").textContent = status === "SUBSCRIBED" ? "Live" : "Connecting";
+}
+
+async function loadBudget() {
+  const { data } = await db.from("budgets").select("cap_usd").maybeSingle();
+  if (data) { cap = Number(data.cap_usd); render(); }
+}
+async function loadJobs() {
+  const { data, error } = await db.from("generations").select("*").order("created_at", { ascending: false }).limit(50);
+  if (error) return showError(error.message);
+  for (const row of data) jobs.set(row.id, row);
+  render();
+}
+// A background tab can miss Realtime messages, so reload when the tab comes back.
+document.addEventListener("visibilitychange", () => { if (!document.hidden && channel) loadJobs(); });
+
+async function auth(kind) {
+  $("authError").hidden = true;
+  const credentials = { email: $("email").value, password: $("password").value };
+  const { data, error } = kind === "up" ? await db.auth.signUp(credentials) : await db.auth.signInWithPassword(credentials);
+  // With email confirmation on, a sign-up gets no session until the link in the email is clicked.
+  const message = error?.message ?? (kind === "up" && !data.session ? "Check your email for a link to confirm the account, then sign in." : "");
+  if (message) { $("authError").textContent = message; $("authError").hidden = false; }
+}
+$("authForm").addEventListener("submit", (event) => { event.preventDefault(); auth("in"); });
+$("signUp").addEventListener("click", () => { if ($("authForm").reportValidity()) auth("up"); });
+$("signOut").addEventListener("click", () => db.auth.signOut());
+
+// The price lives in the database, so the page asks instead of keeping its own copy.
+async function showEstimate() {
+  const { data } = await db.rpc("estimate_video_usd", { duration_seconds: Number($("duration").value), resolution: $("resolution").value });
+  $("estimate").textContent = data == null ? "" : `About ${money(data)} for this video`;
+}
+$("duration").addEventListener("change", showEstimate);
+$("resolution").addEventListener("change", showEstimate);
+
+let chosen = null;
+function choose(file) {
+  chosen = file;
+  $("preview").hidden = !file;
+  if (file) $("preview").src = URL.createObjectURL(file);
+}
+$("file").addEventListener("change", (event) => choose(event.target.files[0] ?? null));
+$("sample").addEventListener("click", async () => {
+  const blob = await (await fetch("/sample-cat.jpg")).blob();
+  choose(new File([blob], "sample-cat.jpg", { type: "image/jpeg" }));
+  if (!$("prompt").value) $("prompt").value = "The cat turns its head and blinks";
+});
+
+$("form").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  $("error").hidden = true;
+  $("queue").disabled = true;
+  try {
+    await queueVideo({ prompt: $("prompt").value.trim(), file: chosen, duration_seconds: Number($("duration").value), resolution: $("resolution").value });
+  } finally { $("queue").disabled = false; }
+});
+
+async function queueVideo({ prompt, file, duration_seconds, resolution }) {
+  let source_path = null;
+  if (file) {
+    source_path = `${user.id}/${crypto.randomUUID()}.${file.type.split("/")[1]}`;
+    const up = await db.storage.from("sources").upload(source_path, file, { contentType: file.type });
+    if (up.error) return showError(up.error.message);
+  }
+  const { data, error } = await db.from("generations").insert({ prompt, source_path, duration_seconds, resolution }).select().single();
+  if (error) {   // e.g. the spend cap's message, straight from Postgres
+    if (source_path) await db.storage.from("sources").remove([source_path]);
+    return showError(error.message);
+  }
+  jobs.set(data.id, data);
+  $("prompt").value = ""; choose(null); $("file").value = "";
+  render();
+}
+function showError(message) { $("error").textContent = message; $("error").hidden = false; }
+
+async function signedUrl(bucket, path) {   // short-lived, so sign again when close to expiry
+  const key = bucket + "/" + path;
+  const cached = signed.get(key);
+  if (cached && cached.expires > Date.now() + 60_000) return cached.url;
+  const { data } = await db.storage.from(bucket).createSignedUrl(path, 3600);
+  if (!data) return null;
+  signed.set(key, { url: data.signedUrl, expires: Date.now() + 3600_000 });
+  return data.signedUrl;
+}
+
+const money = (n) => "$" + Number(n).toFixed(2);
+function elapsed(row) {
+  if (!row.started_at) return "";
+  const seconds = Math.max(0, Math.round(((row.finished_at ? new Date(row.finished_at) : Date.now()) - new Date(row.started_at)) / 1000));
+  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+}
+
+function render() {
+  const rows = [...jobs.values()].sort((a, b) => b.created_at.localeCompare(a.created_at));
+  $("empty").hidden = rows.length > 0 || false;
+  $("empty").textContent = user ? "Nothing queued yet. Queue a video and close the tab if you like." : "Sign in to see your jobs.";
+  const spent = rows.reduce((sum, row) => sum + Number(row.billable_usd), 0);
+  if (cap != null) {
+    $("meterText").textContent = `${money(spent)} of ${money(cap)} used or reserved`;
+    $("meterBar").firstElementChild.style.width = Math.min(100, (spent / (cap || 1)) * 100) + "%";
+    $("meterBar").classList.toggle("full", spent >= cap);
+  }
+  const list = $("jobs");
+  const keep = new Set(rows.map((row) => row.id));
+  for (const [id, card] of cards) if (!keep.has(id)) { card.remove(); cards.delete(id); }
+  rows.forEach((row, index) => {
+    let card = cards.get(row.id);
+    if (!card) { card = build(row); cards.set(row.id, card); }
+    update(card, row);
+    if (list.children[index] !== card) list.insertBefore(card, list.children[index] ?? null);
+  });
+}
+
+// Each card is built once. After that only its text changes, so a playing video never restarts.
+function build(row) {
+  const card = document.createElement("article");
+  card.className = "job";
+  card.innerHTML = '<div><p class="prompt"><img class="thumb" hidden alt=""><span class="text"></span></p><div class="meta"></div><div class="bar" hidden><i></i></div><p class="err" hidden></p></div><div class="player"></div>';
+  card.querySelector(".text").textContent = row.prompt;
+  return card;
+}
+
+function update(card, row) {
+  const meta = card.querySelector(".meta");
+  const running = row.status === "running";
+  const label = { queued: "Queued", starting: "Starting", running: `Rendering ${row.progress}%`, done: "Done", failed: "Failed" }[row.status];
+  const cost = row.cost_usd != null || row.status === "failed" ? money(row.billable_usd) : "~" + money(row.estimated_usd);
+  const parts = [["tag " + (running || row.status === "starting" ? "run" : row.status), label]];
+  if (row.request_id?.startsWith("fake-")) parts.push(["tag", "Simulated"]);
+  parts.push(["", `${row.duration_seconds}s, ${row.resolution}`], ["", cost]);
+  if (running) parts.push(["clock", elapsed(row)]);
+  meta.replaceChildren(...parts.map(([cls, text]) => Object.assign(document.createElement("span"), { className: cls, textContent: text })));
+  const bar = card.querySelector(".bar");
+  bar.hidden = !running;
+  bar.firstElementChild.style.width = row.progress + "%";
+  const err = card.querySelector(".err");
+  err.hidden = !row.error;
+  err.textContent = row.status === "failed" ? row.error ?? "" : row.error ? "Retrying: " + row.error : "";
+  err.className = "err" + (row.status === "failed" ? "" : " retry");
+  if (row.source_path && !card.dataset.thumb) {
+    card.dataset.thumb = "1";
+    signedUrl("sources", row.source_path).then((url) => { const img = card.querySelector(".thumb"); if (url) { img.src = url; img.hidden = false; } });
+  }
+  if (row.video_path && !card.dataset.video) {
+    card.dataset.video = "1";
+    signedUrl("videos", row.video_path).then((url) => {
+      if (!url) { delete card.dataset.video; return; }
+      const video = Object.assign(document.createElement("video"), { src: url, controls: true, playsInline: true, preload: "metadata" });
+      card.querySelector(".player").replaceChildren(video);
+    });
+  }
+}
+setInterval(() => { for (const row of jobs.values()) if (row.status === "running") { const card = cards.get(row.id); if (card) update(card, row); } }, 1000);
+</script>
+</body>
+</html>
