@@ -17,8 +17,7 @@ function App() {
   const currentTranscriptRef = useRef<{ role: "user" | "assistant"; content: string } | null>(null);
   const sendMessageRef = useRef<((message: Message) => void) | null>(null);
 
-  const { isCapturing, startCapture, stopCapture, stopPlayback, playAudio, audioLevel, sampleRate } =
-    useAudioStream();
+  const { isCapturing, startCapture, stopCapture, stopPlayback, playAudio, audioLevel } = useAudioStream();
 
   // Store callback to start audio capture (used when XAI is ready)
   const startCaptureRef = useRef<((onAudioData: (base64Audio: string) => void) => void) | null>(null);
