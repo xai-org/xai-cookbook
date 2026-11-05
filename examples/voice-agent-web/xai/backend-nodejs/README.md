@@ -159,10 +159,7 @@ npm run dev
 # Build TypeScript to dist/
 npm run build
 
-# Watch mode (auto-build)
-npm run watch
-
-# Run built version
+# Run the server once, without auto-reload
 npm start
 ```
 
