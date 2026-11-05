@@ -145,7 +145,7 @@ app.post("/sessions", (req, res) => {
   const requestedSampleRate = req.body.sample_rate || 24000;
   
   // Validate and find closest supported sample rate
-  const SUPPORTED_SAMPLE_RATES = [8000, 16000, 21050, 24000, 32000, 44100, 48000];
+  const SUPPORTED_SAMPLE_RATES = [8000, 16000, 22050, 24000, 32000, 44100, 48000];
   let sampleRate = 24000; // default
   if (SUPPORTED_SAMPLE_RATES.includes(requestedSampleRate)) {
     sampleRate = requestedSampleRate;
