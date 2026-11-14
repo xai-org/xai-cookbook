@@ -58,12 +58,14 @@ async function makeEpisode(source: string, res: ServerResponse): Promise<void> {
         line: (line, index) => {
           startWriting();
           emit("line", { index, speaker: line.speaker, name: HOSTS[line.speaker].name, text: line.text });
-          recordings.push(
-            record(async () => {
-              clips[index] = await recordLine(line, abort.signal);
-              emit("audio", { index, url: `/audio/${id}/${index}.mp3` });
-            }),
-          );
+          const recording = record(async () => {
+            clips[index] = await recordLine(line, abort.signal);
+            emit("audio", { index, url: `/audio/${id}/${index}.mp3` });
+          });
+          // Promise.all below only sees a failed recording once the script is written. Until then, a recording
+          // that fails or is aborted because the page was closed would be an unhandled rejection, which stops the server.
+          recording.catch(() => {});
+          recordings.push(recording);
         },
       },
       abort.signal,
