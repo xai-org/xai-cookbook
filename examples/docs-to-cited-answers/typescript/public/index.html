@@ -541,7 +541,7 @@
   // Lines a PDF wrapped are joined back into paragraphs, and blank lines are dropped to keep passages
   // short. Markdown headings get a marker in place of their # signs, which highlight() makes bold.
   function displayText(text) {
-    return text.replace(/^#+\s*/gm, "\u0001").replace(/([^\n])\n(?=[^\n])/g, "$1 ").replace(/\n{2,}/g, "\n");
+    return text.replace(/^#+[ \t]*(.*)$/gm, "\u0001$1\u0002").replace(/([^\n])\n(?=[^\n])/g, "$1 ").replace(/\n{2,}/g, "\n");
   }
 
   function highlight(text, quotes) {
@@ -554,7 +554,7 @@
       html += `${escapeHtml(text.slice(at, from))}<mark>${escapeHtml(text.slice(from, end))}</mark>`;
       at = end;
     }
-    return (html + escapeHtml(text.slice(at))).replace(/\u0001([^\n]*)/g, "<b>$1</b>");
+    return (html + escapeHtml(text.slice(at))).replace(/\u0001([^\u0002\n]*)\u0002?/g, "<b>$1</b>");
   }
 
   // Matches a quote however its words are spaced or wrapped, and with straight or curly quote marks.
