@@ -112,7 +112,10 @@ export function readReviews(csv: string): Review[] {
     .map((row, index) => ({
       id: String(index + 1),
       date: date < 0 ? null : isoDate(row[date]),
-      rating: rating < 0 ? null : Number(row[rating]) || null,
+      rating:
+        rating < 0 || !(row[rating] ?? "").trim() || !Number.isFinite(Number(row[rating]))
+          ? null
+          : Number(row[rating]),
       text: (row[text] ?? "").trim(),
     }))
     .filter((review) => review.text);
@@ -424,7 +427,7 @@ function summarize(run: Run, labels: Labels, named: Array<{ name: string; summar
       const reviews = newest.filter((review) => labels[review.id]?.some((mention) => theme.candidates.includes(mention.theme)));
       const weekly = weeks.map(() => 0);
       for (const review of reviews) if (review.date) weekly[weekIndex(review.date, weeks)]++;
-      const ratings = reviews.flatMap((review) => (review.rating ? [review.rating] : []));
+      const ratings = reviews.flatMap((review) => (review.rating != null ? [review.rating] : []));
       const quotes = reviews.flatMap((review) => {
         const quote = labels[review.id].find((mention) => theme.candidates.includes(mention.theme))?.quote ?? "";
         // Grok is asked to copy the words exactly, and the few quotes it reworded are left out, along with ones
