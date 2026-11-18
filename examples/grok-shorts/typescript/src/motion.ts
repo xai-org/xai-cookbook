@@ -72,8 +72,17 @@ export function cueTimes(motion: Motion, words: Array<{ text: string; start: num
     const [to, toTime] = next < 0 ? [said.length, last] : [next, said[next]!];
     return fromTime + ((toTime - fromTime) * (index - from)) / (to - from);
   });
-  for (let index = 1; index < times.length; index++) times[index] = Math.max(times[index], times[index - 1] + 0.33);
-  return times.map((time) => Math.min(Math.max(0, time), Math.max(0, seconds - 0.6)));
+  // Clamp to the end cap first, then space forward, then pull any overflow back from the end so the
+  // 0.33s gap survives near the end. Clamping last (as before) pinned every overflowing cue to the
+  // cap, collapsing late-clustered items onto one instant.
+  const cap = Math.max(0, seconds - 0.6);
+  const cued = times.map((time) => Math.min(Math.max(0, time), cap));
+  for (let index = 1; index < cued.length; index++) cued[index] = Math.max(cued[index], cued[index - 1] + 0.33);
+  for (let index = cued.length - 1; index >= 0; index--) {
+    const ceiling = index + 1 < cued.length ? cued[index + 1] - 0.33 : cap;
+    cued[index] = Math.max(0, Math.min(cued[index], ceiling));
+  }
+  return cued;
 }
 
 // Renders the graphic to `file`, `seconds` long, sized for `layout`, with item i coming on screen `times[i]` seconds in.
