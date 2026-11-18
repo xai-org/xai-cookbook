@@ -392,7 +392,7 @@ export function setLayout(draft: Draft, index: number, layout: Layout): Draft {
   if (!segment || !LAYOUTS.includes(layout)) throw new Error("There's no such segment or layout.");
   const framed = layoutFor(layout, segment.screen);
   const segments = draft.segments.with(index, { ...segment, layout: framed });
-  const edits = [...draft.edits.filter((edit) => !edit.startsWith(`Segment ${index + 1} `)), `Segment ${index + 1} ("${segment.label}") uses the ${framed} layout.`];
+  const edits = [...draft.edits.filter((edit) => !edit.startsWith(`Segment ${index + 1} ("${segment.label}") uses the`)), `Segment ${index + 1} ("${segment.label}") uses the ${framed} layout.`];
   return { ...draft, segments, edits };
 }
 
